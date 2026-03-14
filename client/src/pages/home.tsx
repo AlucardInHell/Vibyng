@@ -19,11 +19,11 @@ import {
 } from "@/components/ui/dialog";
 import { useUpload } from "@/hooks/use-upload";
 
-import studioImage from "@assets/generated_images/music_studio_recording_session.png";
-import djImage from "@assets/generated_images/dj_live_performance_nightclub.png";
-import acousticImage from "@assets/generated_images/acoustic_guitar_cozy_room.png";
-import beatImage from "@assets/generated_images/beat_producer_urban_studio.png";
-import concertImage from "@assets/generated_images/live_concert_stage_performance.png";
+const studioImage = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80";
+const djImage = "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&q=80";
+const acousticImage = "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80";
+const beatImage = "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80";
+const concertImage = "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&q=80";
 
 type PostWithAuthor = Post & { author: User };
 type CommentWithAuthor = Comment & { author: User };
