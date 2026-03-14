@@ -504,8 +504,6 @@ function SettingsMenu() {
           img.src = reader.result as string;
         };
         reader.readAsDataURL(file);
-        };
-        reader.readAsDataURL(file);
       }}
     />
   </label>
