@@ -467,11 +467,37 @@ function SettingsMenu() {
           ) : (
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                    {profileData.displayName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+               <div className="relative">
+  <Avatar className="w-16 h-16">
+    <AvatarImage src={profileData.avatarUrl || ""} />
+    <AvatarFallback className="bg-primary/10 text-primary text-xl">
+      {profileData.displayName.charAt(0)}
+    </AvatarFallback>
+  </Avatar>
+  <label className="absolute bottom-0 right-0 bg-primary rounded-full w-6 h-6 flex items-center justify-center cursor-pointer">
+    <Camera className="w-3 h-3 text-white" />
+    <input
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const imageData = reader.result as string;
+          await fetch("/api/uploads/avatar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageData, userId: 4 }),
+          });
+          await updateProfile({ avatarUrl: imageData });
+        };
+        reader.readAsDataURL(file);
+      }}
+    />
+  </label>
+</div>
                 <div>
                   <h3 className="font-semibold">{profileData.displayName}</h3>
                   <p className="text-sm text-muted-foreground">@{profileData.username}</p>
