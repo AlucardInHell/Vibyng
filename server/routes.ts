@@ -77,7 +77,23 @@ export async function registerRoutes(
   });
 
   // === OBJECT STORAGE ===
-  registerObjectStorageRoutes(app);
+  // === AVATAR UPLOAD ===
+app.post("/api/uploads/avatar", async (req, res) => {
+  try {
+    const { imageData, userId } = req.body;
+    if (!imageData || !userId) {
+      return res.status(400).json({ error: "Missing imageData or userId" });
+    }
+    const updated = await storage.updateUser(Number(userId), { avatarUrl: imageData });
+    if (!updated) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ avatarUrl: imageData });
+  } catch (error) {
+    console.error("Avatar upload error:", error);
+    res.status(500).json({ error: "Failed to upload avatar" });
+  }
+});;
 
   // === POSTS ===
   app.get(api.posts.list.path, async (_req, res) => {
