@@ -77,6 +77,19 @@ export async function registerRoutes(
   });
 
   // === OBJECT STORAGE ===
+  // === IMAGE UPLOAD (base64) ===
+app.post("/api/uploads/image", async (req, res) => {
+  try {
+    const { imageData } = req.body;
+    if (!imageData) {
+      return res.status(400).json({ error: "Missing imageData" });
+    }
+    res.json({ objectPath: imageData });
+  } catch (error) {
+    console.error("Image upload error:", error);
+    res.status(500).json({ error: "Failed to upload image" });
+  }
+});
   // === AVATAR UPLOAD ===
 app.post("/api/uploads/avatar", async (req, res) => {
   try {
