@@ -111,12 +111,36 @@ export default function Points() {
     }
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      await uploadFile(file);
-    }
-  };
+ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        const MAX = 400;
+        const ratio = Math.min(MAX / img.width, MAX / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+        canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const imageData = canvas.toDataURL("image/jpeg", 0.7);
+        await fetch("/api/uploads/avatar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageData, userId: CURRENT_USER_ID }),
+        });
+        await updateProfile({ avatarUrl: imageData });
+        toast({ title: "Foto profilo aggiornata!", description: "La tua immagine è stata salvata" });
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  } catch {
+    toast({ title: "Errore", description: "Non è stato possibile caricare l'immagine", variant: "destructive" });
+  }
+};
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
