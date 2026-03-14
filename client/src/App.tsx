@@ -485,31 +485,25 @@ function SettingsMenu() {
         if (!file) return;
         const reader = new FileReader();
      reader.onload = async () => {
-  const img = new Image();
-  img.onload = async () => {
-    const canvas = document.createElement("canvas");
-    const MAX = 400;
-    const ratio = Math.min(MAX / img.width, MAX / img.height);
-    canvas.width = img.width * ratio;
-    canvas.height = img.height * ratio;
-    canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const imageData = canvas.toDataURL("image/jpeg", 0.7);
-    await fetch("/api/uploads/avatar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageData, userId: 4 }),
-    });
-    await updateProfile({ avatarUrl: imageData });
-  };
-  img.src = reader.result as string;
-};
-          const imageData = reader.result as string;
-          await fetch("/api/uploads/avatar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ imageData, userId: 4 }),
-          });
-          await updateProfile({ avatarUrl: imageData });
+          const img = new Image();
+          img.onload = async () => {
+            const canvas = document.createElement("canvas");
+            const MAX = 400;
+            const ratio = Math.min(MAX / img.width, MAX / img.height);
+            canvas.width = img.width * ratio;
+            canvas.height = img.height * ratio;
+            canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL("image/jpeg", 0.7);
+            await fetch("/api/uploads/avatar", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ imageData, userId: 4 }),
+            });
+            await updateProfile({ avatarUrl: imageData });
+          };
+          img.src = reader.result as string;
+        };
+        reader.readAsDataURL(file);
         };
         reader.readAsDataURL(file);
       }}
