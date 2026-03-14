@@ -1,0 +1,363 @@
+import { db } from "./db";
+import { 
+  users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories,
+  type User, type InsertUser,
+  type Post, type InsertPost,
+  type ArtistGoal, type InsertArtistGoal,
+  type Support, type InsertSupport,
+  type ArtistPhoto, type InsertArtistPhoto,
+  type ArtistVideo, type InsertArtistVideo,
+  type ArtistSong, type InsertArtistSong,
+  type Message, type InsertMessage,
+  type Comment, type InsertComment,
+  type Story, type InsertStory
+} from "@shared/schema";
+import { eq, desc, count, or, and, asc, ilike, gt } from "drizzle-orm";
+
+export interface IStorage {
+  // Users
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl'>>): Promise<User | undefined>;
+  getArtists(): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
+  searchUsers(query: string, role?: string): Promise<User[]>;
+  updateUserPoints(id: number, points: number): Promise<void>;
+
+  // Posts
+  getPosts(): Promise<(Post & { author: User })[]>;
+  getPostsByUser(userId: number): Promise<(Post & { author: User })[]>;
+  createPost(post: InsertPost): Promise<Post>;
+  likePost(postId: number): Promise<void>;
+
+  // Goals
+  getGoalsByArtist(artistId: number): Promise<ArtistGoal[]>;
+  createGoal(goal: InsertArtistGoal): Promise<ArtistGoal>;
+
+  // Support
+  createSupport(support: InsertSupport): Promise<Support>;
+
+  // Artist Media
+  getPhotosByArtist(artistId: number): Promise<ArtistPhoto[]>;
+  createPhoto(photo: InsertArtistPhoto): Promise<ArtistPhoto>;
+  getVideosByArtist(artistId: number): Promise<ArtistVideo[]>;
+  createVideo(video: InsertArtistVideo): Promise<ArtistVideo>;
+  getSongsByArtist(artistId: number): Promise<ArtistSong[]>;
+  createSong(song: InsertArtistSong): Promise<ArtistSong>;
+
+  // Followers
+  getFollowersCount(artistId: number): Promise<number>;
+  getFollowingByFan(fanId: number): Promise<User[]>;
+  followArtist(fanId: number, artistId: number): Promise<void>;
+  unfollowArtist(fanId: number, artistId: number): Promise<void>;
+  isFollowing(fanId: number, artistId: number): Promise<boolean>;
+
+  // User Media (photos/videos for any user)
+  getPhotosByUser(userId: number): Promise<ArtistPhoto[]>;
+  getVideosByUser(userId: number): Promise<ArtistVideo[]>;
+
+  // Messages
+  getConversation(userId1: number, userId2: number): Promise<(Message & { sender: User })[]>;
+  sendMessage(message: InsertMessage): Promise<Message>;
+
+  // Comments
+  getCommentsByPost(postId: number): Promise<(Comment & { author: User })[]>;
+  createComment(comment: InsertComment): Promise<Comment>;
+  getCommentsCount(postId: number): Promise<number>;
+
+  // Stories
+  getActiveStories(): Promise<(Story & { user: User })[]>;
+  getStoriesByUser(userId: number): Promise<Story[]>;
+  createStory(story: InsertStory): Promise<Story>;
+}
+
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async getArtists(): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, "artist"));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async searchUsers(query: string, role?: string): Promise<User[]> {
+    const pattern = `%${query}%`;
+    const searchCondition = or(
+      ilike(users.displayName, pattern),
+      ilike(users.username, pattern),
+      ilike(users.genre, pattern),
+      ilike(users.city, pattern)
+    );
+    
+    if (role && role !== 'all') {
+      return await db.select().from(users).where(
+        and(searchCondition, eq(users.role, role))
+      );
+    }
+    
+    return await db.select().from(users).where(searchCondition);
+  }
+
+  async updateUserPoints(id: number, points: number): Promise<void> {
+    const user = await this.getUser(id);
+    if (user) {
+      await db.update(users)
+        .set({ vibyngPoints: user.vibyngPoints + points })
+        .where(eq(users.id, id));
+    }
+  }
+
+  async updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl'>>): Promise<User | undefined> {
+    const [updated] = await db.update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
+  }
+
+  async getPosts(): Promise<(Post & { author: User })[]> {
+    const results = await db.select({
+      post: posts,
+      author: users
+    })
+    .from(posts)
+    .innerJoin(users, eq(posts.authorId, users.id))
+    .orderBy(desc(posts.createdAt));
+
+    return results.map(r => ({ ...r.post, author: r.author }));
+  }
+
+  async getPostsByUser(userId: number): Promise<(Post & { author: User })[]> {
+    const results = await db.select({
+      post: posts,
+      author: users
+    })
+    .from(posts)
+    .innerJoin(users, eq(posts.authorId, users.id))
+    .where(eq(posts.authorId, userId))
+    .orderBy(desc(posts.createdAt));
+
+    return results.map(r => ({ ...r.post, author: r.author }));
+  }
+
+  async createPost(insertPost: InsertPost): Promise<Post> {
+    const [post] = await db.insert(posts).values(insertPost).returning();
+    // Reward artist for posting (+10 points)
+    const author = await this.getUser(insertPost.authorId);
+    if (author?.role === "artist") {
+      await this.updateUserPoints(insertPost.authorId, 10);
+    }
+    return post;
+  }
+
+  async likePost(postId: number): Promise<void> {
+    const [post] = await db.select().from(posts).where(eq(posts.id, postId));
+    if (post) {
+      await db.update(posts)
+        .set({ likesCount: post.likesCount + 1 })
+        .where(eq(posts.id, postId));
+    }
+  }
+
+  async getGoalsByArtist(artistId: number): Promise<ArtistGoal[]> {
+    return await db.select().from(artistGoals).where(eq(artistGoals.artistId, artistId));
+  }
+
+  async createGoal(insertGoal: InsertArtistGoal): Promise<ArtistGoal> {
+    const [goal] = await db.insert(artistGoals).values(insertGoal).returning();
+    return goal;
+  }
+
+  async createSupport(insertSupport: InsertSupport): Promise<Support> {
+    const [support] = await db.insert(supports).values(insertSupport).returning();
+    // Reward fan for support (+50 points)
+    await this.updateUserPoints(insertSupport.fanId, 50);
+    // Reward artist for receiving support (+25 points)
+    await this.updateUserPoints(insertSupport.artistId, 25);
+    
+    // Update goal if applicable
+    const goals = await this.getGoalsByArtist(insertSupport.artistId);
+    const activeGoal = goals.find(g => !g.isCompleted);
+    if (activeGoal) {
+      const newAmount = Number(activeGoal.currentAmount) + Number(insertSupport.amount);
+      await db.update(artistGoals)
+        .set({ 
+          currentAmount: newAmount.toString(),
+          isCompleted: newAmount >= Number(activeGoal.targetAmount)
+        })
+        .where(eq(artistGoals.id, activeGoal.id));
+    }
+    
+    return support;
+  }
+
+  async getPhotosByArtist(artistId: number): Promise<ArtistPhoto[]> {
+    return await db.select().from(artistPhotos)
+      .where(eq(artistPhotos.artistId, artistId))
+      .orderBy(desc(artistPhotos.createdAt));
+  }
+
+  async createPhoto(insertPhoto: InsertArtistPhoto): Promise<ArtistPhoto> {
+    const [photo] = await db.insert(artistPhotos).values(insertPhoto).returning();
+    return photo;
+  }
+
+  async getVideosByArtist(artistId: number): Promise<ArtistVideo[]> {
+    return await db.select().from(artistVideos)
+      .where(eq(artistVideos.artistId, artistId))
+      .orderBy(desc(artistVideos.createdAt));
+  }
+
+  async createVideo(insertVideo: InsertArtistVideo): Promise<ArtistVideo> {
+    const [video] = await db.insert(artistVideos).values(insertVideo).returning();
+    return video;
+  }
+
+  async getSongsByArtist(artistId: number): Promise<ArtistSong[]> {
+    return await db.select().from(artistSongs)
+      .where(eq(artistSongs.artistId, artistId))
+      .orderBy(desc(artistSongs.createdAt));
+  }
+
+  async createSong(insertSong: InsertArtistSong): Promise<ArtistSong> {
+    const [song] = await db.insert(artistSongs).values(insertSong).returning();
+    return song;
+  }
+
+  async getFollowersCount(artistId: number): Promise<number> {
+    const result = await db.select({ count: count() })
+      .from(followers)
+      .where(eq(followers.artistId, artistId));
+    return result[0]?.count ?? 0;
+  }
+
+  async getFollowingByFan(fanId: number): Promise<User[]> {
+    const results = await db.select({ artist: users })
+      .from(followers)
+      .innerJoin(users, eq(followers.artistId, users.id))
+      .where(eq(followers.fanId, fanId));
+    return results.map(r => r.artist);
+  }
+
+  async followArtist(fanId: number, artistId: number): Promise<void> {
+    const existing = await db.select().from(followers)
+      .where(and(eq(followers.fanId, fanId), eq(followers.artistId, artistId)));
+    if (existing.length === 0) {
+      await db.insert(followers).values({ fanId, artistId });
+    }
+  }
+
+  async unfollowArtist(fanId: number, artistId: number): Promise<void> {
+    await db.delete(followers)
+      .where(and(eq(followers.fanId, fanId), eq(followers.artistId, artistId)));
+  }
+
+  async isFollowing(fanId: number, artistId: number): Promise<boolean> {
+    const result = await db.select().from(followers)
+      .where(and(eq(followers.fanId, fanId), eq(followers.artistId, artistId)));
+    return result.length > 0;
+  }
+
+  async getPhotosByUser(userId: number): Promise<ArtistPhoto[]> {
+    return await db.select().from(artistPhotos)
+      .where(eq(artistPhotos.artistId, userId))
+      .orderBy(desc(artistPhotos.createdAt));
+  }
+
+  async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
+    return await db.select().from(artistVideos)
+      .where(eq(artistVideos.artistId, userId))
+      .orderBy(desc(artistVideos.createdAt));
+  }
+
+  async getConversation(userId1: number, userId2: number): Promise<(Message & { sender: User })[]> {
+    const results = await db.select({
+      message: messages,
+      sender: users
+    })
+    .from(messages)
+    .innerJoin(users, eq(messages.senderId, users.id))
+    .where(
+      or(
+        and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
+        and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
+      )
+    )
+    .orderBy(asc(messages.createdAt));
+
+    return results.map(r => ({ ...r.message, sender: r.sender }));
+  }
+
+  async sendMessage(insertMessage: InsertMessage): Promise<Message> {
+    const [message] = await db.insert(messages).values(insertMessage).returning();
+    return message;
+  }
+
+  async getCommentsByPost(postId: number): Promise<(Comment & { author: User })[]> {
+    const results = await db.select({
+      comment: comments,
+      author: users
+    })
+    .from(comments)
+    .innerJoin(users, eq(comments.authorId, users.id))
+    .where(eq(comments.postId, postId))
+    .orderBy(asc(comments.createdAt));
+
+    return results.map(r => ({ ...r.comment, author: r.author }));
+  }
+
+  async createComment(insertComment: InsertComment): Promise<Comment> {
+    const [comment] = await db.insert(comments).values(insertComment).returning();
+    return comment;
+  }
+
+  async getCommentsCount(postId: number): Promise<number> {
+    const result = await db.select({ count: count() })
+      .from(comments)
+      .where(eq(comments.postId, postId));
+    return result[0]?.count ?? 0;
+  }
+
+  async getActiveStories(): Promise<(Story & { user: User })[]> {
+    const now = new Date();
+    const results = await db.select({
+      story: stories,
+      user: users
+    })
+    .from(stories)
+    .innerJoin(users, eq(stories.userId, users.id))
+    .where(gt(stories.expiresAt, now))
+    .orderBy(desc(stories.createdAt));
+
+    return results.map(r => ({ ...r.story, user: r.user }));
+  }
+
+  async getStoriesByUser(userId: number): Promise<Story[]> {
+    return await db.select().from(stories)
+      .where(eq(stories.userId, userId))
+      .orderBy(desc(stories.createdAt));
+  }
+
+  async createStory(insertStory: InsertStory): Promise<Story> {
+    const [story] = await db.insert(stories).values(insertStory).returning();
+    return story;
+  }
+}
+
+export const storage = new DatabaseStorage();
