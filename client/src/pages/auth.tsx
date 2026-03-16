@@ -21,7 +21,7 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
+  const [success, setSuccess] = useState("");
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -55,12 +55,12 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
         setError(data.message || "Errore sconosciuto");
         return;
       }
-      onLogin(data);
-    } catch {
-      setError("Errore di connessione. Riprova.");
-    } finally {
-      setIsLoading(false);
-    }
+     if (mode === "register") {
+        setSuccess("✅ Registrazione completata! Controlla la tua email per confermare l'account.");
+        setForm({ email: "", password: "", username: "", displayName: "", role: "fan" });
+      } else {
+        onLogin(data);
+      }
   };
 
   return (
@@ -221,7 +221,15 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
               {error}
             </div>
           )}
-
+{success && (
+            <div style={{
+              background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)",
+              borderRadius: 10, padding: "10px 14px", marginBottom: 16,
+              color: "#4ade80", fontSize: 13,
+            }}>
+              {success}
+            </div>
+          )}
           {/* Bottone */}
           <button
             onClick={handleSubmit}
