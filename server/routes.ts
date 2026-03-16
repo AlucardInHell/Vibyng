@@ -138,8 +138,11 @@ app.post("/api/auth/login", async (req, res) => {
     }
     const allUsers = await storage.getAllUsers();
     const user = allUsers.find(u => u.email === email);
-    if (!user || user.password !== hashPassword(password)) {
+   if (!user || user.password !== hashPassword(password)) {
       return res.status(401).json({ message: "Email o password non corretti" });
+    }
+    if (!user.emailVerified) {
+      return res.status(401).json({ message: "Devi confermare la tua email prima di accedere. Controlla la tua casella di posta." });
     }
     const { password: _, ...safeUser } = user;
     res.json(safeUser);
