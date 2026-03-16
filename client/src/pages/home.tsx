@@ -375,7 +375,7 @@ function Stories() {
       </div>
 
       <Dialog open={!!activeStory} onOpenChange={() => closeStory()}>
-        <DialogContent className="max-w-md p-0 overflow-hidden bg-black border-0" data-testid="dialog-story">
+       <DialogContent className="max-w-md p-0 overflow-hidden bg-black border-0 [&::-webkit-scrollbar]:hidden [&>button]:hidden" data-testid="dialog-story">
           {activeStory && (
             <div 
               className="relative w-full aspect-[9/16] max-h-[80vh]"
