@@ -21,6 +21,8 @@ export const users = pgTable("users", {
   phone: text("phone"), // Telefono
   website: text("website"), // Sito web
   city: text("city"), // Città
+  emailVerified: boolean("email_verified").notNull().default(false),
+  verificationToken: text("verification_token"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
