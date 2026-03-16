@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 import { Search, X, ArrowLeft, Music, Users, Building2, Store, Home, Disc3, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -44,24 +43,32 @@ export default function SearchPage() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<RoleFilter>("all");
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const searchUrl = `/api/users/search?q=${encodeURIComponent(searchQuery)}&role=${activeFilter}`;
-
-const { data: searchResults = [], isLoading } = useQuery<User[]>({
-  queryKey: ["/api/users/search", searchQuery, activeFilter],
-  queryFn: async () => {
-    const url = `/api/users/search?q=${encodeURIComponent(searchQuery)}&role=${activeFilter}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Errore nella ricerca");
-    return res.json();
-  },
-  staleTime: 0,
-});
 
   useEffect(() => {
     searchInputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      setIsLoading(true);
+      setHasSearched(true);
+      try {
+        const url = `/api/users/search?q=${encodeURIComponent(searchQuery)}&role=${activeFilter}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        setSearchResults(data);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, activeFilter]);
 
   const getRoleLabel = (role: string): string => {
     const labels: Record<string, string> = {
@@ -89,20 +96,20 @@ const { data: searchResults = [], isLoading } = useQuery<User[]>({
     <div className="min-h-screen bg-background" data-testid="page-search">
       <div className="sticky top-0 z-40 bg-background border-b">
         <div className="flex items-center gap-2 p-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setLocation("/")}
             data-testid="button-search-back"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          
+
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               ref={searchInputRef}
-              placeholder="Cerca artisti, negozi, sale prove..."
+              placeholder="Cerca artisti, fan, negozi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-9"
@@ -113,7 +120,7 @@ const { data: searchResults = [], isLoading } = useQuery<User[]>({
                 variant="ghost"
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                onClick={() => setSearchQuery("")}
+                onClick={() => { setSearchQuery(""); setSearchResults([]); setHasSearched(false); }}
                 data-testid="button-clear-search"
               >
                 <X className="w-4 h-4" />
@@ -126,9 +133,9 @@ const { data: searchResults = [], isLoading } = useQuery<User[]>({
           <Tabs value={activeFilter} onValueChange={(v) => setActiveFilter(v as RoleFilter)}>
             <TabsList className="h-9 w-full justify-start overflow-x-auto" data-testid="tabs-role-filter">
               {(Object.entries(roleLabels) as [RoleFilter, string][]).map(([key, label]) => (
-                <TabsTrigger 
-                  key={key} 
-                  value={key} 
+                <TabsTrigger
+                  key={key}
+                  value={key}
                   className="text-xs px-3"
                   data-testid={`tab-filter-${key}`}
                 >
@@ -149,10 +156,7 @@ const { data: searchResults = [], isLoading } = useQuery<User[]>({
           <div className="space-y-2">
             {searchResults.map((user) => (
               <Link key={user.id} href={getProfileUrl(user)}>
-                <Card 
-                  className="hover-elevate cursor-pointer"
-                  data-testid={`search-result-${user.id}`}
-                >
+                <Card className="hover-elevate cursor-pointer" data-testid={`search-result-${user.id}`}>
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-12 h-12">
@@ -161,55 +165,40 @@ const { data: searchResults = [], isLoading } = useQuery<User[]>({
                           {user.displayName.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold truncate">{user.displayName}</h3>
-                          <Badge 
-                            variant="secondary" 
-                            className={`text-xs shrink-0 ${roleBadgeColors[user.role] || ""}`}
-                          >
+                          <Badge variant="secondary" className={`text-xs shrink-0 ${roleBadgeColors[user.role] || ""}`}>
                             <RoleIcon role={user.role} />
                             <span className="ml-1">{getRoleLabel(user.role)}</span>
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
-                        {user.genre && (
-                          <p className="text-xs text-muted-foreground truncate">{user.genre}</p>
-                        )}
+                        {user.genre && <p className="text-xs text-muted-foreground truncate">{user.genre}</p>}
                         {user.city && (
                           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                            <MapPin className="w-3 h-3" />
-                            {user.city}
+                            <MapPin className="w-3 h-3" />{user.city}
                           </p>
                         )}
                       </div>
                     </div>
-                    
-                    {user.bio && (
-                      <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{user.bio}</p>
-                    )}
+                    {user.bio && <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{user.bio}</p>}
                   </CardContent>
                 </Card>
               </Link>
             ))}
           </div>
-        ) : searchQuery ? (
+        ) : hasSearched ? (
           <div className="text-center py-12">
             <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="font-semibold mb-1">Nessun risultato</h3>
-            <p className="text-sm text-muted-foreground">
-              Nessun risultato per "{searchQuery}"
-              {activeFilter !== "all" && ` nella categoria ${roleLabels[activeFilter]}`}
-            </p>
+            <p className="text-sm text-muted-foreground">Nessun risultato per "{searchQuery}"</p>
           </div>
         ) : (
           <div className="text-center py-12">
             <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="font-semibold mb-1">Cerca su Vibyng</h3>
-            <p className="text-sm text-muted-foreground">
-              Trova artisti, sale prove, negozi di musica e altro
-            </p>
+            <p className="text-sm text-muted-foreground">Trova artisti, fan, sale prove, negozi di musica e altro</p>
           </div>
         )}
       </div>
