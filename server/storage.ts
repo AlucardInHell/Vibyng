@@ -103,36 +103,11 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     }
     return await db.select().from(users);
   }
-  const pattern = `%${query}%`;
-  const searchCondition = or(
-    ilike(users.displayName, pattern),
-    ilike(users.username, pattern),
-    ilike(users.genre, pattern),
-    ilike(users.city, pattern)
-  );
-  if (role) {
-    return await db.select().from(users).where(
-      and(searchCondition, eq(users.role, role))
+ 
     );
   }
   return await db.select().from(users).where(searchCondition);
 }
-    const pattern = `%${query}%`;
-    const searchCondition = or(
-      ilike(users.displayName, pattern),
-      ilike(users.username, pattern),
-      ilike(users.genre, pattern),
-      ilike(users.city, pattern)
-    );
-    
-    if (role && role !== 'all') {
-      return await db.select().from(users).where(
-        and(searchCondition, eq(users.role, role))
-      );
-    }
-    
-    return await db.select().from(users).where(searchCondition);
-  }
 
   async updateUserPoints(id: number, points: number): Promise<void> {
     const user = await this.getUser(id);
