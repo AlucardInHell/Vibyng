@@ -117,7 +117,6 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     }
     return await db.select().from(users).where(searchCondition);
   }
-  }
   async updateUserPoints(id: number, points: number): Promise<void> {
     const user = await this.getUser(id);
     if (user) {
