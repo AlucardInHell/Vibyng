@@ -5,6 +5,9 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import crypto from "crypto";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
@@ -84,20 +87,49 @@ app.post("/api/auth/register", async (req, res) => {
     if (existing) {
       return res.status(400).json({ message: "Username già in uso" });
     }
+    const allUsers = await storage.getAllUsers();
+    const emailExists = allUsers.find(u => u.email === email);
+    if (emailExists) {
+      return res.status(400).json({ message: "Email già registrata" });
+    }
+    const verificationToken = crypto.randomBytes(32).toString("hex");
     const user = await storage.createUser({
       email,
       password: hashPassword(password),
       username,
       displayName,
       role: role || "fan",
+      emailVerified: false,
+      verificationToken,
     });
-    const { password: _, ...safeUser } = user;
-    res.status(201).json(safeUser);
+    const verifyUrl = `${process.env.APP_URL || "https://vibyng-production.up.railway.app"}/api/auth/verify?token=${verificationToken}`;
+    await resend.emails.send({
+      from: "Vibyng <noreply@vibyng.com>",
+      to: email,
+      subject: "Conferma il tuo account Vibyng",
+      html: `
+        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; background: #0f0a1e; color: white; padding: 40px; border-radius: 16px;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="color: #7c3aed; font-size: 28px; margin: 0;">vibyng</h1>
+            <p style="color: #9c88cc; margin-top: 8px;">La community della musica indipendente</p>
+          </div>
+          <h2 style="color: white;">Benvenuto, ${displayName}! 🎵</h2>
+          <p style="color: #9c88cc;">Grazie per esserti registrato. Clicca il pulsante qui sotto per confermare il tuo account:</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${verifyUrl}" style="background: linear-gradient(135deg, #7c3aed, #db2777); color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
+              Conferma Account
+            </a>
+          </div>
+          <p style="color: #5a4a7a; font-size: 12px; text-align: center;">Se non hai creato un account su Vibyng, ignora questa email.</p>
+        </div>
+      `,
+    });
+    res.status(201).json({ message: "Registrazione completata! Controlla la tua email per confermare l'account." });
   } catch (err) {
+    console.error("Registration error:", err);
     res.status(500).json({ message: "Errore durante la registrazione" });
   }
 });
-
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -113,6 +145,23 @@ app.post("/api/auth/login", async (req, res) => {
     res.json(safeUser);
   } catch (err) {
     res.status(500).json({ message: "Errore durante il login" });
+  }
+});
+  app.get("/api/auth/verify", async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).send("Token mancante");
+    }
+    const allUsers = await storage.getAllUsers();
+    const user = allUsers.find(u => u.verificationToken === token);
+    if (!user) {
+      return res.status(400).send("Token non valido o già utilizzato");
+    }
+    await storage.updateUser(user.id, { emailVerified: true, verificationToken: null } as any);
+    res.redirect("https://vibyng-production.up.railway.app?verified=true");
+  } catch (err) {
+    res.status(500).send("Errore durante la verifica");
   }
 });
   // === IMAGE UPLOAD (base64) ===
