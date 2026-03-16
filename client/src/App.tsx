@@ -13,6 +13,7 @@ import Messages from "@/pages/messages";
 import Chat from "@/pages/chat";
 import SearchPage from "@/pages/search";
 import { AudioPlayerProvider, MiniPlayer } from "@/components/audio-player";
+import AuthPage from "@/pages/auth";
 import { useState, createContext, useContext, useEffect, useRef, useCallback } from "react";
 import type { User as UserType } from "@shared/schema";
 import { Home as HomeIcon, Users, Zap, Music, MessageCircle, Settings, User, Shield, Bell, Globe, Moon, Sun, HelpCircle, FileText, LogOut, Check, X, Plus, Camera, Video, Upload, Search } from "lucide-react";
@@ -67,6 +68,15 @@ export type ProfileData = {
 };
 
 const CURRENT_USER_ID = 4;
+
+function getStoredUser() {
+  try {
+    const stored = localStorage.getItem("vibyng-user");
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+}
 
 export const ProfileContext = createContext<{
   profileData: ProfileData;
@@ -155,7 +165,20 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AppWithAuth() {
+  const [currentUser, setCurrentUser] = useState<any>(getStoredUser());
 
+  const handleLogin = (user: any) => {
+    localStorage.setItem("vibyng-user", JSON.stringify(user));
+    setCurrentUser(user);
+  };
+
+  if (!currentUser) {
+    return <AuthPage onLogin={handleLogin} />;
+  }
+
+  return <AppLayout />;
+}
 function Router() {
   return (
     <Switch>
@@ -806,7 +829,61 @@ function SettingsMenu() {
     </>
   );
 }
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <ProfileProvider>
+          <AudioPlayerProvider>
+            <TooltipProvider>
+              <AppWithAuth />
+              <Toaster />
+            </TooltipProvider>
+          </AudioPlayerProvider>
+        </ProfileProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+export default App;
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
+        <div className="flex items-center justify-between h-14 px-4 max-w-md mx-auto gap-4">
+          <div className="flex items-center gap-2">
+            <Music className="w-6 h-6 text-primary" />
+            <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Vibyng
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <SettingsMenu />
+          </div>
+        </div>
+      </header>
+      <main className="pb-36 pt-4 px-4 max-w-md mx-auto">
+        <Router />
+      </main>
+      <MiniPlayer />
+      <BottomNav />
+    </div>
+  );
+}
 
+function AppWithAuth() {
+  const [currentUser, setCurrentUser] = useState<any>(getStoredUser());
+
+  const handleLogin = (user: any) => {
+    localStorage.setItem("vibyng-user", JSON.stringify(user));
+    setCurrentUser(user);
+  };
+
+  if (!currentUser) {
+    return <AuthPage onLogin={handleLogin} />;
+  }
+
+  return <AppLayout />;
+}
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
