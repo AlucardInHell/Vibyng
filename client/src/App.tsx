@@ -165,20 +165,6 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AppWithAuth() {
-  const [currentUser, setCurrentUser] = useState<any>(getStoredUser());
-
-  const handleLogin = (user: any) => {
-    localStorage.setItem("vibyng-user", JSON.stringify(user));
-    setCurrentUser(user);
-  };
-
-  if (!currentUser) {
-    return <AuthPage onLogin={handleLogin} />;
-  }
-
-  return <AppLayout />;
-}
 function Router() {
   return (
     <Switch>
