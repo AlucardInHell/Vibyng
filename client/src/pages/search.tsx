@@ -48,14 +48,16 @@ export default function SearchPage() {
 
   const searchUrl = `/api/users/search?q=${encodeURIComponent(searchQuery)}&role=${activeFilter}`;
 
-  const { data: searchResults = [], isLoading } = useQuery<User[]>({
-    queryKey: ["/api/users/search", searchQuery, activeFilter],
-    queryFn: async () => {
-      const res = await fetch(searchUrl);
-      if (!res.ok) throw new Error("Errore nella ricerca");
-      return res.json();
-    },
-  });
+const { data: searchResults = [], isLoading } = useQuery<User[]>({
+  queryKey: ["/api/users/search", searchQuery, activeFilter],
+  queryFn: async () => {
+    const url = `/api/users/search?q=${encodeURIComponent(searchQuery)}&role=${activeFilter}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Errore nella ricerca");
+    return res.json();
+  },
+  staleTime: 0,
+});
 
   useEffect(() => {
     searchInputRef.current?.focus();
