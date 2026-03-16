@@ -1,3 +1,4 @@
+// v2
 import { useState, useRef, useEffect } from "react";
 import type { User } from "@shared/schema";
 import { Search, X, ArrowLeft, Music, Users, Building2, Store, Home, Disc3, MapPin } from "lucide-react";
