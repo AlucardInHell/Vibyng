@@ -4,6 +4,11 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import crypto from "crypto";
+
+function hashPassword(password: string): string {
+  return crypto.createHash("sha256").update(password).digest("hex");
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -68,6 +73,48 @@ export async function registerRoutes(
   });
 
   // === OBJECT STORAGE ===
+  // === AUTH ===
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const { email, password, username, displayName, role } = req.body;
+    if (!email || !password || !username || !displayName) {
+      return res.status(400).json({ message: "Tutti i campi sono obbligatori" });
+    }
+    const existing = await storage.getUserByUsername(username);
+    if (existing) {
+      return res.status(400).json({ message: "Username già in uso" });
+    }
+    const user = await storage.createUser({
+      email,
+      password: hashPassword(password),
+      username,
+      displayName,
+      role: role || "fan",
+    });
+    const { password: _, ...safeUser } = user;
+    res.status(201).json(safeUser);
+  } catch (err) {
+    res.status(500).json({ message: "Errore durante la registrazione" });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email e password sono obbligatori" });
+    }
+    const allUsers = await storage.getAllUsers();
+    const user = allUsers.find(u => u.email === email);
+    if (!user || user.password !== hashPassword(password)) {
+      return res.status(401).json({ message: "Email o password non corretti" });
+    }
+    const { password: _, ...safeUser } = user;
+    res.json(safeUser);
+  } catch (err) {
+    res.status(500).json({ message: "Errore durante il login" });
+  }
+});
   // === IMAGE UPLOAD (base64) ===
 app.post("/api/uploads/image", async (req, res) => {
   try {
