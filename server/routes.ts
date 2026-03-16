@@ -24,7 +24,7 @@ export async function registerRoutes(
  app.get("/api/users/search", async (req, res) => {
   const query = req.query.q as string || "";
   const role = req.query.role as string || "all";
-  const results = await storage.searchUsers(query, role !== "all" ? role : undefined);
+  const results = await storage.searchUsers(query || "", role !== "all" ? role : undefined);
   res.json(results);
 });
 
