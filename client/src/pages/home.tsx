@@ -724,31 +724,32 @@ function PostComments({ postId }: { postId: number }) {
   );
 }
 
-const searchableUsers = [
-  { id: 1, username: "luna_melody", displayName: "Luna Melody", genre: "Pop", role: "artist" },
-  { id: 2, username: "dj_marco", displayName: "DJ Marco", genre: "Electronic", role: "artist" },
-  { id: 3, username: "sara_acoustic", displayName: "Sara Acoustic", genre: "Acoustic", role: "artist" },
-  { id: 5, username: "beatmaster", displayName: "BeatMaster", genre: "Hip-Hop", role: "artist" },
-  { id: 6, username: "indie_vibes", displayName: "Indie Vibes", genre: "Indie Rock", role: "artist" },
-  { id: 4, username: "mariofan", displayName: "Mario Fan", genre: null, role: "fan" },
-];
+const searchableUsers: { id: number; username: string; displayName: string; genre: string | null; role: string }[] = [];
 
 export default function Home() {
   const { toast } = useToast();
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
+const [searchQuery, setSearchQuery] = useState("");
+const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
+const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredUsers = searchQuery.trim() 
-    ? searchableUsers.filter(user => 
-        user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (user.genre && user.genre.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : searchableUsers;
+const filteredUsers = searchResults;
 
+useEffect(() => {
+  if (!searchOpen) return;
+  const timer = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(searchQuery)}&role=all`);
+      const data = await res.json();
+      setSearchResults(data);
+    } catch {
+      setSearchResults([]);
+    }
+  }, 300);
+  return () => clearTimeout(timer);
+}, [searchQuery, searchOpen]);
   useEffect(() => {
     if (searchOpen && searchInputRef.current) {
       searchInputRef.current.focus();
