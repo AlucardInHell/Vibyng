@@ -21,21 +21,12 @@ export async function registerRoutes(
     res.json(allUsers);
   });
 
-  app.get("/api/users/search", async (req, res) => {
-    const query = req.query.q as string || "";
-    const role = req.query.role as string || "all";
-    if (!query.trim()) {
-      // Ritorna utenti filtrati per ruolo se specificato
-      if (role && role !== 'all') {
-        const results = await storage.searchUsers("", role);
-        return res.json(results);
-      }
-      const allUsers = await storage.getAllUsers();
-      return res.json(allUsers);
-    }
-    const results = await storage.searchUsers(query, role);
-    res.json(results);
-  });
+ app.get("/api/users/search", async (req, res) => {
+  const query = req.query.q as string || "";
+  const role = req.query.role as string || "all";
+  const results = await storage.searchUsers(query, role !== "all" ? role : undefined);
+  res.json(results);
+});
 
   app.get(api.users.get.path, async (req, res) => {
     const user = await storage.getUser(Number(req.params.id));
