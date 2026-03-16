@@ -96,7 +96,27 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async searchUsers(query: string, role?: string): Promise<User[]> {
+async searchUsers(query: string, role?: string): Promise<User[]> {
+  if (!query.trim()) {
+    if (role) {
+      return await db.select().from(users).where(eq(users.role, role));
+    }
+    return await db.select().from(users);
+  }
+  const pattern = `%${query}%`;
+  const searchCondition = or(
+    ilike(users.displayName, pattern),
+    ilike(users.username, pattern),
+    ilike(users.genre, pattern),
+    ilike(users.city, pattern)
+  );
+  if (role) {
+    return await db.select().from(users).where(
+      and(searchCondition, eq(users.role, role))
+    );
+  }
+  return await db.select().from(users).where(searchCondition);
+}
     const pattern = `%${query}%`;
     const searchCondition = or(
       ilike(users.displayName, pattern),
