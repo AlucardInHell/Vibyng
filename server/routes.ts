@@ -38,9 +38,7 @@ export async function registerRoutes(
 
   app.get(api.users.get.path, async (req, res) => {
     const user = await storage.getUser(Number(req.params.id));
-    if (!user) {
-      return res.status(404).json({ message: "Utente non trovato" });
-    }
+   
     res.json(user);
   });
 
