@@ -38,7 +38,9 @@ export async function registerRoutes(
 
   app.get(api.users.get.path, async (req, res) => {
     const user = await storage.getUser(Number(req.params.id));
-   
+   if (!user.emailVerified) {
+      return res.status(401).json({ message: "Devi confermare la tua email prima di accedere. Controlla la tua casella di posta." });
+    }
     res.json(user);
   });
 
