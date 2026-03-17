@@ -352,14 +352,15 @@ function SettingsMenu() {
     setEditMode(true);
   };
 
-  const handleLogout = () => {
+ const handleLogout = () => {
     setLogoutOpen(false);
+    localStorage.removeItem("vibyng-user");
+    window.location.href = "/";
     toast({
       title: "Disconnesso",
       description: "Hai effettuato il logout con successo.",
     });
   };
-
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
