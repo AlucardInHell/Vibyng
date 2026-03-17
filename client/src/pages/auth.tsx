@@ -62,6 +62,11 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
       } else {
         onLogin(data);
       }
+    } catch {
+      setError("Errore di connessione. Riprova.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
