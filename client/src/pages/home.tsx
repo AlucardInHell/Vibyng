@@ -331,7 +331,7 @@ function Stories() {
 
   return (
     <>
-      <div className="flex gap-3 overflow-x-auto -mx-4 px-4 scrollbar-hide" data-testid="stories-container">
+     <div className="flex gap-3 overflow-x-auto -mx-4 px-4 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{msOverflowStyle: "none", scrollbarWidth: "none"}} data-testid="stories-container">
         <button
           onClick={handleAddStory}
           className="flex flex-col items-center gap-1 flex-shrink-0"
