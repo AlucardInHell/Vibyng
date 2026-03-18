@@ -106,16 +106,17 @@ export function useProfile() {
 }
 
 function ProfileProvider({ children }: { children: React.ReactNode }) {
+  const userId = getCurrentUserId();
   const { data: user, isLoading } = useQuery<UserType>({
-    queryKey: ["/api/users", CURRENT_USER_ID],
+    queryKey: ["/api/users", userId],
   });
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<ProfileData>) => {
-      return apiRequest("PATCH", `/api/users/${CURRENT_USER_ID}`, data);
+      return apiRequest("PATCH", `/api/users/${userId}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", userId] });
     },
   });
 
