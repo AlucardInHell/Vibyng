@@ -168,12 +168,20 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     }
     return post;
   }
-
-  async likePost(postId: number): Promise<void> {
+async likePost(postId: number): Promise<void> {
     const [post] = await db.select().from(posts).where(eq(posts.id, postId));
     if (post) {
       await db.update(posts)
         .set({ likesCount: post.likesCount + 1 })
+        .where(eq(posts.id, postId));
+    }
+  }
+
+  async unlikePost(postId: number): Promise<void> {
+    const [post] = await db.select().from(posts).where(eq(posts.id, postId));
+    if (post && post.likesCount > 0) {
+      await db.update(posts)
+        .set({ likesCount: post.likesCount - 1 })
         .where(eq(posts.id, postId));
     }
   }
