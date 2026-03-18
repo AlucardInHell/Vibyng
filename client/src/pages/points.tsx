@@ -143,24 +143,36 @@ export default function Points() {
   }
 };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+ const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingType("photo");
     try {
-      const presignRes = await fetch("/api/uploads/request-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+      const imageData = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const MAX = 800;
+            const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+            canvas.width = img.width * ratio;
+            canvas.height = img.height * ratio;
+            canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL("image/jpeg", 0.7));
+          };
+          img.onerror = reject;
+          img.src = reader.result as string;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
-      const { uploadURL, objectPath } = await presignRes.json();
-      await fetch(uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
       await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
         title: file.name.replace(/\.[^/.]+$/, ""),
-        imageUrl: objectPath,
+        imageUrl: imageData,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-      await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: "Ho condiviso una nuova foto!", mediaUrl: objectPath });
+      await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: "Ho condiviso una nuova foto!", mediaUrl: imageData });
       queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       toast({ title: "Foto caricata!", description: "La tua foto è stata aggiunta alla galleria e al feed" });
