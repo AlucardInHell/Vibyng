@@ -442,7 +442,15 @@ app.post("/api/uploads/avatar", async (req, res) => {
      res.status(400).json({ message: "Errore nel salvare la foto" });
     }
   });
-
+app.delete("/api/posts/:postId", async (req, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      await storage.deletePost(postId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'eliminazione del post" });
+    }
+  });
 app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     try {
       const photoId = Number(req.params.photoId);
