@@ -227,13 +227,25 @@ app.post("/api/uploads/avatar", async (req, res) => {
   });
 
   // === LIKE POST ===
-  app.post("/api/posts/:postId/like", async (req, res) => {
+ app.post("/api/posts/:postId/like", async (req, res) => {
     try {
       const postId = Number(req.params.postId);
       await storage.likePost(postId);
-      res.json({ success: true });
+      const post = await storage.getPost(postId);
+      res.json({ success: true, likesCount: post?.likesCount ?? 0 });
     } catch (err) {
       res.status(400).json({ message: "Errore nel mettere like" });
+    }
+  });
+
+  app.post("/api/posts/:postId/unlike", async (req, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      await storage.unlikePost(postId);
+      const post = await storage.getPost(postId);
+      res.json({ success: true, likesCount: post?.likesCount ?? 0 });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel rimuovere like" });
     }
   });
 
