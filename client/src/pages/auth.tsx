@@ -17,8 +17,6 @@ interface AuthPageProps {
   onLogin: (user: any) => void;
   onRegister: (user: any) => void;
 }
-  onLogin: (user: any) => void;
-}
 
 export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
