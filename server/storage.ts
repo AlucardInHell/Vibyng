@@ -290,7 +290,9 @@ async likePost(postId: number): Promise<void> {
       .where(eq(artistPhotos.artistId, userId))
       .orderBy(desc(artistPhotos.createdAt));
  }
-
+async deletePost(postId: number): Promise<void> {
+    await db.delete(posts).where(eq(posts.id, postId));
+  }
   async deletePhoto(photoId: number): Promise<void> {
     const [photo] = await db.select().from(artistPhotos).where(eq(artistPhotos.id, photoId));
     if (photo?.imageUrl) {
