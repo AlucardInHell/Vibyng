@@ -443,6 +443,20 @@ app.post("/api/uploads/avatar", async (req, res) => {
     }
   });
 
+});
+
+  app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const photoId = Number(req.params.photoId);
+      await storage.deletePhoto(photoId);
+      await storage.deletePostsByMediaOwner(userId, photoId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'eliminazione della foto" });
+    }
+  });
+
   app.get("/api/users/:userId/videos", async (req, res) => {
     const videos = await storage.getVideosByUser(Number(req.params.userId));
     res.json(videos);
