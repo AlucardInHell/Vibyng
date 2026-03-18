@@ -535,6 +535,21 @@ export default function Points() {
                         <Share2 className="w-5 h-5" />
                         Condividi
                       </button>
+                     <button
+                        className="flex items-center gap-1 text-sm text-red-500"
+                        onClick={async () => {
+                          try {
+                            await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${selectedPhoto.id}`);
+                            queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
+                            setSelectedPhoto(null);
+                            toast({ title: "Foto eliminata" });
+                          } catch {
+                            toast({ title: "Errore", description: "Non è stato possibile eliminare la foto", variant: "destructive" });
+                          }
+                        }}
+                      >
+                        🗑️ Elimina
+                      </button>
                       <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
                     </div>
                     <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
