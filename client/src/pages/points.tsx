@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus } from "lucide-react";
+import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2 } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
@@ -41,6 +41,10 @@ export default function Points() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
+  const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
+  const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
+  const [commentInput, setCommentInput] = useState("");
 
   const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/users", CURRENT_USER_ID],
@@ -485,12 +489,12 @@ export default function Points() {
           </div>
         </TabsContent>
 
-        <TabsContent value="photos" className="mt-4">
+       <TabsContent value="photos" className="mt-4">
           <p className="text-sm text-muted-foreground mb-2">Le tue foto salvate ({myPhotos.length})</p>
           {myPhotos.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
               {myPhotos.map((photo) => (
-                <Card key={photo.id} className="overflow-hidden hover-elevate" data-testid={`card-photo-${photo.id}`}>
+                <Card key={photo.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedPhoto(photo)} data-testid={`card-photo-${photo.id}`}>
                   <img src={photo.imageUrl ?? undefined} alt={photo.title} className="w-full h-32 object-cover" />
                   <CardContent className="p-2">
                     <p className="text-xs text-muted-foreground truncate">{photo.title}</p>
@@ -501,8 +505,74 @@ export default function Points() {
           ) : (
             <p className="text-center text-muted-foreground py-8">Nessuna foto. Usa l'icona foto per caricare!</p>
           )}
-        </TabsContent>
 
+          {selectedPhoto && (
+            <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
+              <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+                <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
+                  <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[60vh] object-contain bg-black" />
+                  <div className="p-4">
+                    <p className="font-medium mb-3">{selectedPhoto.title}</p>
+                    <div className="flex items-center gap-4 mb-4 border-b pb-3">
+                      <button
+                        className={`flex items-center gap-1 text-sm ${photoLikes[selectedPhoto.id] ? "text-red-500" : "text-muted-foreground"}`}
+                        onClick={() => setPhotoLikes(prev => ({ ...prev, [selectedPhoto.id]: !prev[selectedPhoto.id] }))}
+                      >
+                        <Heart className={`w-5 h-5 ${photoLikes[selectedPhoto.id] ? "fill-red-500" : ""}`} />
+                        {photoLikes[selectedPhoto.id] ? "Mi piace" : "Like"}
+                      </button>
+                      <button
+                        className="flex items-center gap-1 text-sm text-muted-foreground"
+                        onClick={() => {
+                          if (navigator.share) {
+                            navigator.share({ title: selectedPhoto.title, text: "Guarda questa foto su Vibyng!" });
+                          } else {
+                            navigator.clipboard.writeText(window.location.href);
+                            toast({ title: "Link copiato!" });
+                          }
+                        }}
+                      >
+                        <Share2 className="w-5 h-5" />
+                        Condividi
+                      </button>
+                      <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
+                      {(photoComments[selectedPhoto.id] || []).map((c, i) => (
+                        <p key={i} className="text-sm bg-muted rounded-lg px-3 py-1">{c}</p>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
+                        placeholder="Scrivi un commento..."
+                        value={commentInput}
+                        onChange={e => setCommentInput(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && commentInput.trim()) {
+                            setPhotoComments(prev => ({ ...prev, [selectedPhoto.id]: [...(prev[selectedPhoto.id] || []), commentInput.trim()] }));
+                            setCommentInput("");
+                          }
+                        }}
+                      />
+                      <button
+                        className="text-sm text-primary font-medium px-2"
+                        onClick={() => {
+                          if (commentInput.trim()) {
+                            setPhotoComments(prev => ({ ...prev, [selectedPhoto.id]: [...(prev[selectedPhoto.id] || []), commentInput.trim()] }));
+                            setCommentInput("");
+                          }
+                        }}
+                      >
+                        Invia
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </TabsContent>
         <TabsContent value="videos" className="mt-4">
           <p className="text-sm text-muted-foreground mb-2">I tuoi video salvati ({myVideos.length})</p>
           {myVideos.length > 0 ? (
