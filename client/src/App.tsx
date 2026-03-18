@@ -325,6 +325,10 @@ function SettingsMenu() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const userId = getCurrentUserId();
+  const { data: user } = useQuery<UserType>({ queryKey: ["/api/users", userId] });
+  const { data: followingList = [] } = useQuery<UserType[]>({ queryKey: ["/api/users", userId, "following"] });
+  const followingCount = followingList.length;
 
   const [editFormData, setEditFormData] = useState({
     displayName: "",
@@ -535,18 +539,20 @@ function SettingsMenu() {
               {profileData.bio && (
                 <p className="text-sm text-muted-foreground border-t pt-3">{profileData.bio}</p>
               )}
-              <div className="space-y-2 pt-2 border-t">
+             <div className="space-y-2 pt-2 border-t">
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Membro dal</span>
-                  <span className="text-sm text-muted-foreground">Gennaio 2024</span>
+                  <span className="text-sm text-muted-foreground">
+                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString("it-IT", { month: "long", year: "numeric" }) : "—"}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Artisti seguiti</span>
-                  <span className="text-sm text-muted-foreground">3</span>
+                  <span className="text-sm text-muted-foreground">{followingCount ?? "—"}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">VibyngPoints</span>
-                  <span className="text-sm font-semibold text-primary">1.250</span>
+                  <span className="text-sm font-semibold text-primary">{user?.vibyngPoints ?? 0}</span>
                 </div>
               </div>
             </div>
