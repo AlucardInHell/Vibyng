@@ -846,10 +846,11 @@ function AppWithAuth() {
   const [currentUser, setCurrentUser] = useState<any>(getStoredUser());
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
 
-  const handleLogin = (user: any) => {
+ const handleLogin = (user: any) => {
     localStorage.setItem("vibyng-user", JSON.stringify(user));
     setCurrentUser(user);
-    setNeedsOnboarding(false);
+    const isFirstLogin = !user.bio && !user.avatarUrl;
+    setNeedsOnboarding(isFirstLogin);
   };
 
   const handleRegister = (user: any) => {
