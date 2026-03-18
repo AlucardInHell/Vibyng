@@ -104,7 +104,7 @@ app.post("/api/auth/register", async (req, res) => {
     });
     const verifyUrl = `${process.env.APP_URL || "https://vibyng-production.up.railway.app"}/api/auth/verify?token=${verificationToken}`;
     await resend.emails.send({
-      from: "Vibyng <noreply@vibyng.com>",
+     from: "Vibyng <noreply@mail.vibyng.com>",
       to: email,
       subject: "Conferma il tuo account Vibyng",
       html: `
