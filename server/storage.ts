@@ -289,6 +289,14 @@ async likePost(postId: number): Promise<void> {
     return await db.select().from(artistPhotos)
       .where(eq(artistPhotos.artistId, userId))
       .orderBy(desc(artistPhotos.createdAt));
+ }
+
+  async deletePhoto(photoId: number): Promise<void> {
+    const [photo] = await db.select().from(artistPhotos).where(eq(artistPhotos.id, photoId));
+    if (photo?.imageUrl) {
+      await db.delete(posts).where(and(eq(posts.authorId, photo.artistId), eq(posts.mediaUrl, photo.imageUrl)));
+    }
+    await db.delete(artistPhotos).where(eq(artistPhotos.id, photoId));
   }
 
   async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
