@@ -68,8 +68,14 @@ export type ProfileData = {
   avatarUrl?: string | null;
 };
 
-const CURRENT_USER_ID = 4;
-
+function getCurrentUserId(): number {
+  try {
+    const stored = localStorage.getItem("vibyng-user");
+    if (stored) return JSON.parse(stored).id || 4;
+  } catch {}
+  return 4;
+}
+const CURRENT_USER_ID = getCurrentUserId();
 function getStoredUser() {
   try {
     const stored = localStorage.getItem("vibyng-user");
