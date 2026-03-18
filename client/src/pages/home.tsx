@@ -29,7 +29,14 @@ type PostWithAuthor = Post & { author: User };
 type CommentWithAuthor = Comment & { author: User };
 type StoryWithUser = Story & { user: User };
 
-const CURRENT_USER_ID = 4;
+function getCurrentUserId(): number {
+  try {
+    const stored = localStorage.getItem("vibyng-user");
+    if (stored) return JSON.parse(stored).id || 1;
+  } catch {}
+  return 1;
+}
+const CURRENT_USER_ID = getCurrentUserId();
 
 interface StoryUserGroup {
   userId: number;
@@ -883,9 +890,22 @@ useEffect(() => {
                     </Badge>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground">@{post.author.username}</span>
-              </div>
-            </CardHeader>
+              <span className="text-xs text-muted-foreground">@{post.author.username}</span>
+            </div>
+            {post.authorId === CURRENT_USER_ID && (
+              <button className="text-xs text-red-400 hover:text-red-600 ml-auto self-start pt-1"
+                onClick={async () => {
+                  try {
+                    await apiRequest("DELETE", `/api/posts/${post.id}`);
+                    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                    toast({ title: "Post eliminato" });
+                  } catch {
+                    toast({ title: "Errore", variant: "destructive" });
+                  }
+                }}
+              >🗑️</button>
+            )}
+          </CardHeader>
             <CardContent className="pt-0">
               <p className="text-sm mb-3" data-testid={`text-content-${post.id}`}>{post.content}</p>
               {post.mediaUrl && (
