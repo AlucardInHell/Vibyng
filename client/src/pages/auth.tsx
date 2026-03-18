@@ -15,9 +15,12 @@ const roleLabels: Record<Role, string> = {
 
 interface AuthPageProps {
   onLogin: (user: any) => void;
+  onRegister: (user: any) => void;
+}
+  onLogin: (user: any) => void;
 }
 
-export default function AuthPage({ onLogin }: AuthPageProps) {
+export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
