@@ -24,12 +24,6 @@ function getCurrentUserId(): number {
 }
 const CURRENT_USER_ID = getCurrentUserId();
 
-const initialLikedSongs: Song[] = [
-  { id: 101, title: "Notte Stellata", artist: "Luna Indie", duration: 234, audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-  { id: 102, title: "Beat Drop", artist: "Marco Beats", duration: 198, audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-  { id: 103, title: "Soul Deep", artist: "Alessia Voice", duration: 267, audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-];
-
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
@@ -40,7 +34,7 @@ export default function Points() {
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const { toast } = useToast();
   const { profileData, updateProfile } = useProfile();
-  const [myPlaylist, setMyPlaylist] = useState<Song[]>(initialLikedSongs);
+ const [myPlaylist, setMyPlaylist] = useState<Song[]>([]);
   const [postText, setPostText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
