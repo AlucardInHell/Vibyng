@@ -79,62 +79,6 @@ function groupStoriesByUser(stories: StoryWithUser[]): StoryUserGroup[] {
   return Object.values(groups);
 }
 
-const fallbackStoriesData: StoryUserGroup[] = [
-  {
-    userId: 1,
-    username: "luna_melody",
-    displayName: "Luna Melody",
-    avatarUrl: null,
-    hasUnseenStory: true,
-    stories: [
-      { id: 1, content: "Oggi in studio a registrare il nuovo singolo!", imageUrl: studioImage, timestamp: "2h" },
-      { id: 2, content: "Grazie a tutti per il supporto!", imageUrl: studioImage, timestamp: "1h" },
-    ],
-  },
-  {
-    userId: 2,
-    username: "dj_marco",
-    displayName: "DJ Marco",
-    avatarUrl: null,
-    hasUnseenStory: true,
-    stories: [
-      { id: 3, content: "Set live stasera alle 22:00!", imageUrl: djImage, timestamp: "3h" },
-      { id: 8, content: "Vi aspetto tutti in console!", imageUrl: djImage, timestamp: "2h" },
-    ],
-  },
-  {
-    userId: 3,
-    username: "sara_acoustic",
-    displayName: "Sara Acoustic",
-    avatarUrl: null,
-    hasUnseenStory: false,
-    stories: [
-      { id: 4, content: "Cover acustica in arrivo domani!", imageUrl: acousticImage, timestamp: "5h" },
-    ],
-  },
-  {
-    userId: 5,
-    username: "beatmaster",
-    displayName: "BeatMaster",
-    avatarUrl: null,
-    hasUnseenStory: true,
-    stories: [
-      { id: 5, content: "Nuovo beat trap disponibile!", imageUrl: beatImage, timestamp: "4h" },
-      { id: 6, content: "Link in bio per il download gratuito", imageUrl: beatImage, timestamp: "3h" },
-    ],
-  },
-  {
-    userId: 6,
-    username: "indie_vibes",
-    displayName: "Indie Vibes",
-    avatarUrl: null,
-    hasUnseenStory: true,
-    stories: [
-      { id: 7, content: "Concerto sold out! Grazie Milano!", imageUrl: concertImage, timestamp: "6h" },
-    ],
-  },
-];
-
 const STORY_DURATION = 5000;
 
 function Stories() {
@@ -159,9 +103,7 @@ function Stories() {
     queryKey: ['/api/stories'],
   });
   
-  const storiesData = storiesFromDb.length > 0 
-    ? groupStoriesByUser(storiesFromDb) 
-    : fallbackStoriesData;
+  const storiesData = groupStoriesByUser(storiesFromDb);
   
   const createStoryMutation = useMutation({
     mutationFn: async (data: { userId: number; imageUrl: string; content: string }) => {
