@@ -497,8 +497,8 @@ app.post("/api/uploads/avatar", async (req, res) => {
 }
 
 async function seedDatabase() {
-  const artists = await storage.getArtists();
-  if (artists.length === 0) {
+const artists = await storage.getArtists();
+  if (false) {
     // Creiamo artisti demo
     const artist1 = await storage.createUser({
       username: "luna_indie",
