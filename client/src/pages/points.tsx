@@ -15,7 +15,14 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { User, ArtistPhoto, ArtistVideo, Post } from "@shared/schema";
 
-const CURRENT_USER_ID = 4;
+function getCurrentUserId(): number {
+  try {
+    const stored = localStorage.getItem("vibyng-user");
+    if (stored) return JSON.parse(stored).id || 1;
+  } catch {}
+  return 1;
+}
+const CURRENT_USER_ID = getCurrentUserId();
 
 const initialLikedSongs: Song[] = [
   { id: 101, title: "Notte Stellata", artist: "Luna Indie", duration: 234, audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
