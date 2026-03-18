@@ -14,6 +14,7 @@ import Chat from "@/pages/chat";
 import SearchPage from "@/pages/search";
 import { AudioPlayerProvider, MiniPlayer } from "@/components/audio-player";
 import AuthPage from "@/pages/auth";
+import Onboarding from "@/pages/onboarding";
 import { useState, createContext, useContext, useEffect, useRef, useCallback } from "react";
 import type { User as UserType } from "@shared/schema";
 import { Home as HomeIcon, Users, Zap, Music, MessageCircle, Settings, User, Shield, Bell, Globe, Moon, Sun, HelpCircle, FileText, LogOut, Check, X, Plus, Camera, Video, Upload, Search } from "lucide-react";
@@ -843,14 +844,32 @@ function AppLayout() {
 
 function AppWithAuth() {
   const [currentUser, setCurrentUser] = useState<any>(getStoredUser());
+  const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
 
   const handleLogin = (user: any) => {
     localStorage.setItem("vibyng-user", JSON.stringify(user));
     setCurrentUser(user);
+    setNeedsOnboarding(false);
+  };
+
+  const handleRegister = (user: any) => {
+    localStorage.setItem("vibyng-user", JSON.stringify(user));
+    setCurrentUser(user);
+    setNeedsOnboarding(true);
+  };
+
+  const handleOnboardingComplete = (updatedUser: any) => {
+    localStorage.setItem("vibyng-user", JSON.stringify(updatedUser));
+    setCurrentUser(updatedUser);
+    setNeedsOnboarding(false);
   };
 
   if (!currentUser) {
-    return <AuthPage onLogin={handleLogin} />;
+    return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
+  }
+
+  if (needsOnboarding) {
+    return <Onboarding user={currentUser} onComplete={handleOnboardingComplete} />;
   }
 
   return <AppLayout />;
