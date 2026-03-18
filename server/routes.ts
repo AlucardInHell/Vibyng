@@ -439,11 +439,9 @@ app.post("/api/uploads/avatar", async (req, res) => {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });
       }
-      res.status(400).json({ message: "Errore nel salvare la foto" });
+     res.status(400).json({ message: "Errore nel salvare la foto" });
     }
   });
-
-});
 
   app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     try {
@@ -457,7 +455,7 @@ app.post("/api/uploads/avatar", async (req, res) => {
     }
   });
 
-  app.get("/api/users/:userId/videos", async (req, res) => {
+  app.get("/api/users/:userId/videos",
     const videos = await storage.getVideosByUser(Number(req.params.userId));
     res.json(videos);
   });
