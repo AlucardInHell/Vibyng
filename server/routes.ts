@@ -455,7 +455,7 @@ app.post("/api/uploads/avatar", async (req, res) => {
     }
   });
 
-  app.get("/api/users/:userId/videos",
+  app.get("/api/users/:userId/videos", async (req, res) => {
     const videos = await storage.getVideosByUser(Number(req.params.userId));
     res.json(videos);
   });
