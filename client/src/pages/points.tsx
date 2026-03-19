@@ -652,7 +652,7 @@ export default function Points() {
                                 newLiked.add(post.id);
                                 await apiRequest("POST", `/api/posts/${post.id}/like`);
                               }
-                              setLikedPosts(newLiked);
+                             setLikedPosts(new Set(newLiked));
                               queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
                             }}
                           >
