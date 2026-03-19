@@ -662,6 +662,18 @@ export default function Points() {
                           >🗑️</button>
                         </div>
                       </div>
+                      <button className="text-xs text-red-400 hover:text-red-600 self-start"
+                        onClick={async () => {
+                          try {
+                            await apiRequest("DELETE", `/api/posts/${post.id}`);
+                            queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                            toast({ title: "Post eliminato" });
+                          } catch {
+                            toast({ title: "Errore", variant: "destructive" });
+                          }
+                        }}
+                      >🗑️</button>
                     </div>
                   </CardContent>
                 </Card>
