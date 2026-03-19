@@ -46,8 +46,7 @@ export default function Points() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
-  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
-
+  
   const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/users", CURRENT_USER_ID],
   });
