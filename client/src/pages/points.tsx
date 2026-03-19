@@ -639,7 +639,7 @@ export default function Points() {
                           </span>
                         </div>
                         <p className="text-sm mt-1" data-testid={`text-post-content-${post.id}`}>{post.content}</p>
-                        <div className="flex items-center gap-4 mt-2 text-muted-foreground">
+                      <div className="flex items-center gap-4 mt-2 text-muted-foreground">
                           <span className="flex items-center gap-1 text-xs">
                             <Heart className="w-3 h-3" />
                             {post.likesCount}
@@ -647,6 +647,19 @@ export default function Points() {
                           {post.isExclusive && (
                             <Badge variant="secondary" className="text-xs">Esclusivo</Badge>
                           )}
+                          <button
+                            className="text-xs text-red-400 hover:text-red-600 ml-auto"
+                            onClick={async () => {
+                              try {
+                                await apiRequest("DELETE", `/api/posts/${post.id}`);
+                                queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
+                                queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                                toast({ title: "Post eliminato" });
+                              } catch {
+                                toast({ title: "Errore", variant: "destructive" });
+                              }
+                            }}
+                          >🗑️</button>
                         </div>
                       </div>
                     </div>
