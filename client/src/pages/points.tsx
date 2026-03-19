@@ -644,9 +644,9 @@ export default function Points() {
                             <Heart className="w-3 h-3" />
                             {post.likesCount}
                           </span>
-                          {post.isExclusive && (
+                         {post.isExclusive && (
                             <Badge variant="secondary" className="text-xs">Esclusivo</Badge>
-                          )
+                          )}
                         </div>
                       </div>
                       <button className="text-xs text-red-400 hover:text-red-600 self-start"
