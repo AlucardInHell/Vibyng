@@ -34,7 +34,8 @@ export default function Points() {
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const { toast } = useToast();
   const { profileData, updateProfile } = useProfile();
- const [myPlaylist, setMyPlaylist] = useState<Song[]>([]);
+  const [myPlaylist, setMyPlaylist] = useState<Song[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -640,10 +641,24 @@ export default function Points() {
                         </div>
                         <p className="text-sm mt-1" data-testid={`text-post-content-${post.id}`}>{post.content}</p>
                       <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-                          <span className="flex items-center gap-1 text-xs">
-                            <Heart className="w-3 h-3" />
-                            {post.likesCount}
-                          </span>
+                         <button
+                            className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"}`}
+                            onClick={async () => {
+                              const newLiked = new Set(likedPosts);
+                              if (newLiked.has(post.id)) {
+                                newLiked.delete(post.id);
+                                await apiRequest("POST", `/api/posts/${post.id}/unlike`);
+                              } else {
+                                newLiked.add(post.id);
+                                await apiRequest("POST", `/api/posts/${post.id}/like`);
+                              }
+                              setLikedPosts(newLiked);
+                              queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
+                            }}
+                          >
+                            <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
+                            {post.likesCount + (likedPosts.has(post.id) ? 1 : 0)}
+                          </button>
                          {post.isExclusive && (
                             <Badge variant="secondary" className="text-xs">Esclusivo</Badge>
                           )}
