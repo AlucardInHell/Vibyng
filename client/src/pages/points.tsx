@@ -376,7 +376,7 @@ export default function Points() {
       </Card>
 
       <Tabs defaultValue="songs" className="w-full">
-        <TabsList className="w-full grid grid-cols-5">
+        <TabsList className="w-full grid grid-cols-6">
           <TabsTrigger value="songs" className="px-1 text-xs" data-testid="tab-songs">
             <Music className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Musica</span>
@@ -392,6 +392,10 @@ export default function Points() {
           <TabsTrigger value="posts" className="px-1 text-xs" data-testid="tab-posts">
             <MessageCircle className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
+          </TabsTrigger>
+          <TabsTrigger value="following" className="px-1 text-xs" data-testid="tab-following">
+            <Users className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Seguiti</span>
           </TabsTrigger>
           <TabsTrigger value="vpoints" className="px-1 text-xs" data-testid="tab-vpoints">
             <Zap className="w-4 h-4 sm:mr-1" />
@@ -444,49 +448,6 @@ export default function Points() {
               )}
             </div>
 
-            <Card data-testid="card-followed-artists">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-primary" />
-                  Artisti che segui ({followedArtists.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {followedArtists.length > 0 ? (
-                  followedArtists.map((artist) => (
-                    <div key={artist.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/30" data-testid={`item-followed-${artist.id}`}>
-                      <Link href={`/artist/${artist.id}`}>
-                        <Avatar className="w-10 h-10 cursor-pointer hover-elevate">
-                          {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {artist.displayName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Link>
-                      <Link href={`/artist/${artist.id}`} className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm hover:text-primary cursor-pointer">{artist.displayName}</h4>
-                        <span className="text-xs text-muted-foreground">{artist.genre || "Artista"}</span>
-                      </Link>
-                      <Link href={`/chat/${artist.id}`}>
-                        <Button size="icon" variant="ghost" data-testid={`button-chat-${artist.id}`}>
-                          <MessageCircle className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                      <Button 
-                        size="icon" 
-                        variant="ghost"
-                        onClick={() => handleUnfollowArtist(artist.id, artist.displayName)}
-                        data-testid={`button-unfollow-${artist.id}`}
-                      >
-                        <UserMinus className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-muted-foreground py-4 text-sm">Non segui ancora nessun artista</p>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </TabsContent>
 
@@ -687,6 +648,43 @@ export default function Points() {
           )}
         </TabsContent>
 
+        <TabsContent value="following" className="mt-4">
+          <p className="text-sm text-muted-foreground mb-2">Profili che seguo ({followedArtists.length})</p>
+          {followedArtists.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {followedArtists.map((artist) => (
+                <div key={artist.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
+                  <Link href={`/artist/${artist.id}`}>
+                    <Avatar className="w-10 h-10 cursor-pointer hover-elevate">
+                      {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {artist.displayName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
+                  <Link href={`/artist/${artist.id}`} className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm hover:text-primary cursor-pointer">{artist.displayName}</h4>
+                    <span className="text-xs text-muted-foreground">{artist.genre || "Fan"}</span>
+                  </Link>
+                  <Link href={`/chat/${artist.id}`}>
+                    <Button size="icon" variant="ghost">
+                      <MessageCircle className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleUnfollowArtist(artist.id, artist.displayName)}
+                  >
+                    <UserMinus className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8 text-sm">Non segui ancora nessun profilo</p>
+          )}
+        </TabsContent>
         <TabsContent value="vpoints" className="mt-4">
           <div className="space-y-4">
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20" data-testid="card-points-balance">
