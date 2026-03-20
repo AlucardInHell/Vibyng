@@ -275,3 +275,50 @@ export type InsertComment = z.infer<typeof insertCommentSchema>;
 
 export type Story = typeof stories.$inferSelect;
 export type InsertStory = z.infer<typeof insertStorySchema>;
+
+// === AVAILABILITY SLOTS ===
+export const availabilitySlots = pgTable("availability_slots", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  dayOfWeek: integer("day_of_week").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  pricePerHour: numeric("price_per_hour"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertAvailabilitySlotSchema = createInsertSchema(availabilitySlots);
+export type AvailabilitySlot = typeof availabilitySlots.$inferSelect;
+export type InsertAvailabilitySlot = z.infer<typeof insertAvailabilitySlotSchema>;
+
+// === SERVICES ===
+export const services = pgTable("services", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: numeric("price"),
+  durationHours: numeric("duration_hours"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertServiceSchema = createInsertSchema(services);
+export type Service = typeof services.$inferSelect;
+export type InsertService = z.infer<typeof insertServiceSchema>;
+
+// === ROSTER ARTISTS ===
+export const rosterArtists = pgTable("roster_artists", {
+  id: serial("id").primaryKey(),
+  labelId: integer("label_id").notNull().references(() => users.id),
+  vibyngUserId: integer("vibyng_user_id").references(() => users.id),
+  name: text("name").notNull(),
+  genre: text("genre"),
+  bio: text("bio"),
+  avatarUrl: text("avatar_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRosterArtistSchema = createInsertSchema(rosterArtists);
+export type RosterArtist = typeof rosterArtists.$inferSelect;
+export type InsertRosterArtist = z.infer<typeof insertRosterArtistSchema>;
