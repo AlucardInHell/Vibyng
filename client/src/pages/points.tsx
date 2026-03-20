@@ -654,10 +654,11 @@ export default function Points() {
                               }
                              setLikedPosts(new Set(newLiked));
                               queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
+                              queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                             }}
                           >
                             <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
-                            {post.likesCount + (likedPosts.has(post.id) ? 1 : 0)}
+                            {post.likesCount}
                           </button>
                          {post.isExclusive && (
                             <Badge variant="secondary" className="text-xs">Esclusivo</Badge>
