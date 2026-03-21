@@ -59,6 +59,14 @@ export default function Points() {
     queryKey: ["/api/users", CURRENT_USER_ID, "photos"],
   });
 
+  const { data: attendingEvents = [] } = useQuery<{ event: any }[]>({
+    queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${CURRENT_USER_ID}/events/attending`);
+      return res.json();
+    },
+  });
+  
   const { data: myVideos = [] } = useQuery<ArtistVideo[]>({
     queryKey: ["/api/users", CURRENT_USER_ID, "videos"],
   });
@@ -651,6 +659,31 @@ export default function Points() {
           )}
         </TabsContent>
 
+        <TabsContent value="events" className="mt-4">
+          <p className="text-sm text-muted-foreground mb-2">Eventi a cui partecipi ({attendingEvents.length})</p>
+          {attendingEvents.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {attendingEvents.map(({ event }) => (
+                <Card key={event.id} className="hover-elevate">
+                  <CardContent className="p-4">
+                    <h4 className="font-medium">{event.name}</h4>
+                    <p className="text-sm text-primary mt-1">
+                      {new Date(event.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    {(event.city || event.venue) && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        📍 {[event.venue, event.city].filter(Boolean).join(" — ")}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">Non partecipi ancora a nessun evento</p>
+          )}
+        </TabsContent>
+        
         <TabsContent value="connections" className="mt-4">
           <p className="text-sm text-muted-foreground mb-2">Profili che seguo ({followedArtists.length})</p>
           {followedArtists.length > 0 ? (
