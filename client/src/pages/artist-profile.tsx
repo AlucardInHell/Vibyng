@@ -52,6 +52,8 @@ export default function ArtistProfile() {
   const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: artist, isLoading: artistLoading } = useQuery<User>({
@@ -559,7 +561,45 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
 {/* Tab Eventi — solo Artista */}
         {isArtist && (
           <TabsContent value="events" className="mt-4">
-            <p className="text-sm text-muted-foreground mb-2">Eventi ({artistEvents.length})</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-muted-foreground">Eventi ({artistEvents.length})</p>
+              {isOwnProfile && (
+                <Button size="sm" variant="outline" onClick={() => setShowEventForm(!showEventForm)}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Aggiungi
+                </Button>
+              )}
+            </div>
+            {isOwnProfile && showEventForm && (
+              <Card className="mb-3">
+                <CardContent className="p-4 space-y-3">
+                  <Input placeholder="Nome evento *" value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} />
+                  <Input type="datetime-local" value={eventForm.eventDate} onChange={e => setEventForm(p => ({ ...p, eventDate: e.target.value }))} />
+                  <Input placeholder="Città" value={eventForm.city} onChange={e => setEventForm(p => ({ ...p, city: e.target.value }))} />
+                  <Input placeholder="Venue / Locale" value={eventForm.venue} onChange={e => setEventForm(p => ({ ...p, venue: e.target.value }))} />
+                  <Textarea placeholder="Descrizione (opzionale)" value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} rows={2} />
+                  <Input placeholder="Link biglietti (opzionale)" value={eventForm.ticketUrl} onChange={e => setEventForm(p => ({ ...p, ticketUrl: e.target.value }))} />
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setShowEventForm(false)}>Annulla</Button>
+                    <Button className="flex-1" onClick={async () => {
+                      if (!eventForm.name || !eventForm.eventDate) {
+                        toast({ title: "Compila nome e data", variant: "destructive" });
+                        return;
+                      }
+                      try {
+                        await apiRequest("POST", `/api/artists/${id}/events`, { ...eventForm, eventDate: new Date(eventForm.eventDate).toISOString() });
+                        queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
+                        setShowEventForm(false);
+                        setEventForm({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
+                        toast({ title: "Evento aggiunto!" });
+                      } catch {
+                        toast({ title: "Errore", variant: "destructive" });
+                      }
+                    }}>Salva</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {artistEvents.length > 0 ? (
               <div className="flex flex-col gap-3">
                 {artistEvents.map((event) => (
