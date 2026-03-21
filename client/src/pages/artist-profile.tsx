@@ -7,14 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music2, Target, Heart, Zap, ArrowLeft, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText } from "lucide-react";
+import { Music2, Target, Heart, Zap, ArrowLeft, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
-import type { User, ArtistGoal, ArtistPhoto, ArtistVideo, ArtistSong, Post } from "@shared/schema";
+import type { User, ArtistGoal, ArtistPhoto, ArtistVideo, ArtistSong, Post, Event } from "@shared/schema";
 
 function getCurrentUserId(): number {
   try {
@@ -92,7 +92,10 @@ export default function ArtistProfile() {
   const { data: artistPosts = [] } = useQuery<(Post & { author: User })[]>({
     queryKey: ["/api/users", artistId, "posts"],
   });
-
+const { data: artistEvents = [] } = useQuery<Event[]>({
+    queryKey: [`/api/artists/${id}/events`],
+    enabled: isArtist,
+  });
   const followMutation = useMutation({
     mutationFn: async () => {
       if (isFollowingData?.isFollowing) {
@@ -355,7 +358,7 @@ export default function ArtistProfile() {
 
       {/* Tabs dinamiche per ruolo */}
       <Tabs defaultValue="posts" className="w-full">
-      <TabsList className="w-full grid grid-cols-5 p-1">
+      <TabsList className="w-full grid grid-cols-6 p-1">
        <TabsTrigger value="posts" className="px-1 text-xs">
             <FileText className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
@@ -382,6 +385,12 @@ export default function ArtistProfile() {
             <TabsTrigger value="songs" className="px-1 text-xs">
               <Music className="w-4 h-4 sm:mr-1" />
               <span className="hidden sm:inline">Canzoni</span>
+            </TabsTrigger>
+          )}
+          {isArtist && (
+            <TabsTrigger value="events" className="px-1 text-xs">
+              <Calendar className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Eventi</span>
             </TabsTrigger>
           )}
         </TabsList>
@@ -547,7 +556,59 @@ export default function ArtistProfile() {
             <p className="text-center text-muted-foreground py-8">Artisti seguiti da {artist.displayName}</p>
           </TabsContent>
         )}
-
+{/* Tab Eventi — solo Artista */}
+        {isArtist && (
+          <TabsContent value="events" className="mt-4">
+            <p className="text-sm text-muted-foreground mb-2">Eventi ({artistEvents.length})</p>
+            {artistEvents.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {artistEvents.map((event) => (
+                  <Card key={event.id} className="hover-elevate">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{event.name}</h4>
+                          <p className="text-sm text-primary mt-1">
+                            {new Date(event.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                          {(event.city || event.venue) && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              📍 {[event.venue, event.city].filter(Boolean).join(" — ")}
+                            </p>
+                          )}
+                          {event.description && (
+                            <p className="text-sm text-muted-foreground mt-2">{event.description}</p>
+                          )}
+                          {event.ticketUrl && (
+                            <a href={event.ticketUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline mt-2 inline-block">
+                              🎟️ Acquista biglietti
+                            </a>
+                          )}
+                        </div>
+                        {isOwnProfile && (
+                          <button
+                            className="text-xs text-red-400 hover:text-red-600"
+                            onClick={async () => {
+                              try {
+                                await apiRequest("DELETE", `/api/events/${event.id}`);
+                                queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
+                                toast({ title: "Evento eliminato" });
+                              } catch {
+                                toast({ title: "Errore", variant: "destructive" });
+                              }
+                            }}
+                          >🗑️</button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">Nessun evento in programma</p>
+            )}
+          </TabsContent>
+        )}
         {/* Tab Messaggi */}
         <TabsContent value="messages" className="mt-4">
           <Card>
