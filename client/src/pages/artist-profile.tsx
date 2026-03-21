@@ -257,13 +257,7 @@ export default function ArtistProfile() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/artists">
-        <Button variant="ghost" size="sm" className="mb-2">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Indietro
-        </Button>
-      </Link>
-
+    
       {/* Card Profilo */}
       <Card>
         <CardContent className="pt-6">
