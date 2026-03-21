@@ -375,7 +375,7 @@ export default function Points() {
       </Card>
 
       <Tabs defaultValue="songs" className="w-full">
-        <TabsList className="w-full grid grid-cols-6">
+       <TabsList className={`w-full grid ${currentUser?.role === "artist" ? "grid-cols-6" : "grid-cols-6"} `}>
           <TabsTrigger value="songs" className="px-1 text-xs" data-testid="tab-songs">
             <Music className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Musica</span>
