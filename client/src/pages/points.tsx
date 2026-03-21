@@ -349,15 +349,11 @@ export default function Points() {
                 <div className="flex gap-1">
                   <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" data-testid="input-photo-upload" />
                   <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" data-testid="input-video-upload" />
-                  <input ref={musicInputRef} type="file" accept="audio/*" onChange={handleMusicUpload} className="hidden" data-testid="input-music-upload" />
                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => photoInputRef.current?.click()} disabled={uploadingType === "photo"} data-testid="button-add-photo">
                     <ImagePlus className="w-4 h-4 text-muted-foreground" />
                   </Button>
                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => videoInputRef.current?.click()} disabled={uploadingType === "video"} data-testid="button-add-video">
                     <Video className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => musicInputRef.current?.click()} disabled={uploadingType === "music"} data-testid="button-add-music">
-                    <Music className="w-4 h-4 text-muted-foreground" />
                   </Button>
                 </div>
                 <Button 
