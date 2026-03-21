@@ -322,3 +322,18 @@ export const rosterArtists = pgTable("roster_artists", {
 export const insertRosterArtistSchema = createInsertSchema(rosterArtists);
 export type RosterArtist = typeof rosterArtists.$inferSelect;
 export type InsertRosterArtist = z.infer<typeof insertRosterArtistSchema>;
+// === NOTIFICATIONS ===
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  type: text("type").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  relatedUserId: integer("related_user_id").references(() => users.id),
+  relatedPostId: integer("related_post_id").references(() => posts.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications);
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
