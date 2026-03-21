@@ -293,6 +293,30 @@ async likePost(postId: number): Promise<void> {
 async deletePost(postId: number): Promise<void> {
     await db.delete(posts).where(eq(posts.id, postId));
   }
+
+  async getNotifications(userId: number) {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(data: { userId: number; type: string; message: string; relatedUserId?: number; relatedPostId?: number }) {
+    const [notification] = await db.insert(notifications).values(data).returning();
+    return notification;
+  }
+
+  async markNotificationRead(notificationId: number): Promise<void> {
+    await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, notificationId));
+  }
+
+  async markAllNotificationsRead(userId: number): Promise<void> {
+    await db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.userId, userId));
+  }
+
   async deletePhoto(photoId: number): Promise<void> {
     const [photo] = await db.select().from(artistPhotos).where(eq(artistPhotos.id, photoId));
     if (photo?.imageUrl) {
