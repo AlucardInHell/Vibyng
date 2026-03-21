@@ -371,7 +371,7 @@ export default function ArtistProfile() {
 
       {/* Tabs dinamiche per ruolo */}
       <Tabs defaultValue="posts" className="w-full">
-        <TabsList className={`w-full grid grid-cols-${tabs.length} p-1`}>
+       <TabsList className="w-full flex flex-wrap gap-1 h-auto p-1">
           {tabs.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className="text-xs">
               {tab.label}
