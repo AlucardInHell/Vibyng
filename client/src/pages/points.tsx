@@ -649,7 +649,7 @@ export default function Points() {
           )}
         </TabsContent>
 
-        <TabsContent value="following" className="mt-4">
+        <TabsContent value="connections" className="mt-4">
           <p className="text-sm text-muted-foreground mb-2">Profili che seguo ({followedArtists.length})</p>
           {followedArtists.length > 0 ? (
             <div className="flex flex-col gap-2">
@@ -685,6 +685,11 @@ export default function Points() {
           ) : (
             <p className="text-center text-muted-foreground py-8 text-sm">Non segui ancora nessun profilo</p>
           )}
+        </TabsContent>
+        <TabsContent value="events" className="mt-4">
+          <p className="text-center text-muted-foreground py-8">
+            Gestisci i tuoi eventi dal tuo profilo pubblico
+          </p>
         </TabsContent>
         <TabsContent value="vpoints" className="mt-4">
           <div className="space-y-4">
