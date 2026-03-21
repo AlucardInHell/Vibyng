@@ -402,12 +402,10 @@ export default function Points() {
             <FileText className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
           </TabsTrigger>
-         {currentUser?.role === "artist" && (
-            <TabsTrigger value="events" className="px-1 text-xs">
-              <Calendar className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Eventi</span>
-            </TabsTrigger>
-          )}
+        <TabsTrigger value="events" className="px-1 text-xs">
+            <Calendar className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Eventi</span>
+          </TabsTrigger>
          <TabsTrigger value="connections" className="px-1 text-xs">
             <Users className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Connessioni</span>
