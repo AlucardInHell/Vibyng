@@ -223,18 +223,8 @@ export default function ArtistProfile() {
     );
   }
 
-  if (!artist) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <span className="text-muted-foreground">Profilo non trovato</span>
-        <Link href="/artists">
-          <Button variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna indietro
-          </Button>
-        </Link>
-      </div>
-    );
+ if (!artist) {
+    return null;
   }
 
   const activeGoal = goals?.find((g) => !g.isCompleted);
