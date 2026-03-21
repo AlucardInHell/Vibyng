@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText } from "lucide-react";
+import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
@@ -392,6 +392,12 @@ export default function Points() {
             <FileText className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
           </TabsTrigger>
+         {currentUser?.role === "artist" && (
+            <TabsTrigger value="events" className="px-1 text-xs">
+              <Calendar className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Eventi</span>
+            </TabsTrigger>
+          )}
          <TabsTrigger value="connections" className="px-1 text-xs">
             <Users className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Connessioni</span>
