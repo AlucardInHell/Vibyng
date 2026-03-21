@@ -392,13 +392,13 @@ export default function Points() {
             <FileText className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
           </TabsTrigger>
-          <TabsTrigger value="following" className="px-1 text-xs" data-testid="tab-following">
+         <TabsTrigger value="connections" className="px-1 text-xs">
             <Users className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Seguiti</span>
+            <span className="hidden sm:inline">Connessioni</span>
           </TabsTrigger>
-          <TabsTrigger value="vpoints" className="px-1 text-xs" data-testid="tab-vpoints">
-            <Zap className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">VPoints</span>
+         <TabsTrigger value="connections" className="px-1 text-xs">
+            <Users className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Connessioni</span>
           </TabsTrigger>
         </TabsList>
 
