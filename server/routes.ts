@@ -227,11 +227,22 @@ app.post("/api/uploads/avatar", async (req, res) => {
   });
 
   // === LIKE POST ===
- app.post("/api/posts/:postId/like", async (req, res) => {
+app.post("/api/posts/:postId/like", async (req, res) => {
     try {
       const postId = Number(req.params.postId);
+      const { userId } = req.body;
       await storage.likePost(postId);
       const post = await storage.getPost(postId);
+      if (post && userId && post.authorId !== userId) {
+        const liker = await storage.getUser(userId);
+        await storage.createNotification({
+          userId: post.authorId,
+          type: "like",
+          message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo post`,
+          relatedUserId: userId,
+          relatedPostId: postId,
+        });
+      }
       res.json({ success: true, likesCount: post?.likesCount ?? 0 });
     } catch (err) {
       res.status(400).json({ message: "Errore nel mettere like" });
@@ -390,9 +401,18 @@ app.post("/api/uploads/avatar", async (req, res) => {
     res.json(following);
   });
 
-  app.post("/api/users/:userId/follow/:artistId", async (req, res) => {
+ app.post("/api/users/:userId/follow/:artistId", async (req, res) => {
     try {
-      await storage.followArtist(Number(req.params.userId), Number(req.params.artistId));
+      const userId = Number(req.params.userId);
+      const artistId = Number(req.params.artistId);
+      await storage.followArtist(userId, artistId);
+      const follower = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: artistId,
+        type: "follow",
+        message: `${follower?.displayName || "Qualcuno"} ha iniziato a seguirti`,
+        relatedUserId: userId,
+      });
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ message: "Errore nel seguire l'artista" });
