@@ -396,10 +396,6 @@ export default function Points() {
             <Users className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Connessioni</span>
           </TabsTrigger>
-         <TabsTrigger value="connections" className="px-1 text-xs">
-            <Users className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Connessioni</span>
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="songs" className="mt-4">
