@@ -83,9 +83,9 @@ export default function Messages() {
                 </div>
               </Link>
             ))
-          ) : searchQuery ? (
-            <p className="text-center text-muted-foreground py-4">Nessuna conversazione trovata per "{searchQuery}"</p>
-          )}
+         ) : searchQuery ? (
+              <p className="text-center text-muted-foreground py-4">Nessuna conversazione trovata per "{searchQuery}"</p>
+            ) : null}
         </CardContent>
       </Card>
     </div>
