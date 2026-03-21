@@ -1,229 +1,28 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { useParams } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music2, Target, Heart, Zap, ArrowLeft, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { Users, Music2, ChevronRight } from "lucide-react";
 import { Link } from "wouter";
-import { useState, useRef } from "react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAudioPlayer, type Song } from "@/components/audio-player";
-import type { User, ArtistGoal, ArtistPhoto, ArtistVideo, ArtistSong, Post } from "@shared/schema";
+import type { User } from "@shared/schema";
 
-function getCurrentUserId(): number {
-  try {
-    const stored = localStorage.getItem("vibyng-user");
-    if (stored) return JSON.parse(stored).id || 1;
-  } catch {}
-  return 1;
-}
-
-function getRoleLabel(role: string): string {
-  switch (role) {
-    case "artist": return "Artista";
-    case "rehearsal_studio": return "Sala Prove";
-    case "recording_studio": return "Studio di Registrazione";
-    case "record_label": return "Casa Discografica";
-    default: return "Fan";
-  }
-}
-
-function formatDuration(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
-
-export default function ArtistProfile() {
-  const { id } = useParams<{ id: string }>();
-  const artistId = Number(id);
-  const currentUserId = getCurrentUserId();
-  const isOwnProfile = artistId === currentUserId;
-
-  const { toast } = useToast();
-  const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
-  const [supportAmount, setSupportAmount] = useState("5");
-  const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
-  const [postText, setPostText] = useState("");
-  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { data: artist, isLoading: artistLoading } = useQuery<User>({
-    queryKey: [`/api/users/${id}`],
+export default function Artists() {
+  const { data: artists, isLoading } = useQuery<User[]>({
+    queryKey: ["/api/artists"],
   });
 
-  const { data: goals } = useQuery<ArtistGoal[]>({
-    queryKey: [`/api/artists/${id}/goals`],
-    enabled: artist?.role === "artist",
-  });
-
-  const { data: photos } = useQuery<ArtistPhoto[]>({
-    queryKey: ["/api/users", artistId, "photos"],
-  });
-
-  const { data: videos } = useQuery<ArtistVideo[]>({
-    queryKey: ["/api/users", artistId, "videos"],
-  });
-
-  const { data: songs } = useQuery<ArtistSong[]>({
-    queryKey: [`/api/artists/${id}/songs`],
-    enabled: artist?.role === "artist",
-  });
-
-  const { data: followersData } = useQuery<{ count: number }>({
-    queryKey: [`/api/artists/${id}/followers/count`],
-  });
-
-  const { data: isFollowingData } = useQuery<{ isFollowing: boolean }>({
-    queryKey: ["/api/users", currentUserId, "following", artistId],
-    queryFn: async () => {
-      const res = await fetch(`/api/users/${currentUserId}/following/${artistId}`);
-      return res.json();
-    },
-    enabled: !isOwnProfile,
-  });
-
-  const { data: artistPosts = [] } = useQuery<(Post & { author: User })[]>({
-    queryKey: ["/api/users", artistId, "posts"],
-  });
-
-  const followMutation = useMutation({
-    mutationFn: async () => {
-      if (isFollowingData?.isFollowing) {
-        return apiRequest("DELETE", `/api/users/${currentUserId}/follow/${artistId}`);
-      } else {
-        return apiRequest("POST", `/api/users/${currentUserId}/follow/${artistId}`);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "following", artistId] });
-      queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/followers/count`] });
-      toast({
-        title: isFollowingData?.isFollowing ? "Non segui più" : "Ora segui",
-        description: isFollowingData?.isFollowing
-          ? `Hai smesso di seguire ${artist?.displayName}`
-          : `Stai seguendo ${artist?.displayName}`,
-      });
-    },
-  });
-
-  const supportMutation = useMutation({
-    mutationFn: async (amount: string) => {
-      return apiRequest("POST", "/api/supports", {
-        fanId: currentUserId,
-        artistId: artistId,
-        amount: amount,
-        message: "Supporto dall'app Vibyng",
-        isSubscription: false,
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Grazie per il supporto!",
-        description: "Hai guadagnato 50 VibyngPoints",
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/goals`] });
-    },
-    onError: () => {
-      toast({ title: "Errore", description: "Non è stato possibile completare il supporto", variant: "destructive" });
-    },
-  });
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isOwnProfile) return;
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const img = new Image();
-        img.onload = async () => {
-          const canvas = document.createElement("canvas");
-          const MAX = 400;
-          const ratio = Math.min(MAX / img.width, MAX / img.height);
-          canvas.width = img.width * ratio;
-          canvas.height = img.height * ratio;
-          canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const imageData = canvas.toDataURL("image/jpeg", 0.7);
-          await fetch("/api/uploads/avatar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ imageData, userId: currentUserId }),
-          });
-          queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
-          toast({ title: "Foto profilo aggiornata!" });
-        };
-        img.src = reader.result as string;
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      toast({ title: "Errore", variant: "destructive" });
-    }
-  };
-
-  const handlePublishPost = async () => {
-    if (!postText.trim()) return;
-    try {
-      await apiRequest("POST", "/api/posts", { authorId: currentUserId, content: postText });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-      toast({ title: "Post pubblicato!" });
-      setPostText("");
-    } catch {
-      toast({ title: "Errore", variant: "destructive" });
-    }
-  };
-
-  const handlePlaySong = (song: ArtistSong) => {
-    if (currentSong?.id === song.id) {
-      togglePlay();
-    } else {
-      const playlist: Song[] = (songs || []).map(s => ({
-        id: s.id,
-        title: s.title,
-        artist: artist?.displayName || "Artista",
-        audioUrl: s.audioUrl,
-        coverUrl: s.coverUrl || undefined,
-        duration: s.duration || undefined,
-      }));
-      playSong({
-        id: song.id,
-        title: song.title,
-        artist: artist?.displayName || "Artista",
-        audioUrl: song.audioUrl,
-        coverUrl: song.coverUrl || undefined,
-        duration: song.duration || undefined,
-      }, playlist);
-    }
-  };
-
-  const handleAddToPlaylist = (songId: number, songTitle: string) => {
-    if (addedSongs.has(songId)) {
-      toast({ title: "Già nella playlist", description: `"${songTitle}" è già nella tua playlist` });
-      return;
-    }
-    setAddedSongs(prev => new Set(prev).add(songId));
-    toast({ title: "Aggiunto alla playlist", description: `"${songTitle}" è stato aggiunto` });
-  };
-
-  if (artistLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex flex-col items-center gap-2">
           <Music2 className="w-8 h-8 text-primary" />
-          <span className="text-muted-foreground">Caricamento...</span>
+          <span className="text-muted-foreground">Caricamento artisti...</span>
         </div>
       </div>
     );
   }
 
- if (!artists || artists.length === 0) {
+  if (!artists || artists.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-2">
         <Music2 className="w-8 h-8 text-muted-foreground" />
@@ -232,401 +31,48 @@ export default function ArtistProfile() {
     );
   }
 
-  const activeGoal = goals?.find((g) => !g.isCompleted);
-  const progress = activeGoal
-    ? (Number(activeGoal.currentAmount) / Number(activeGoal.targetAmount)) * 100
-    : 0;
-
-  const isArtist = artist.role === "artist";
-  const isFan = artist.role === "fan" || !artist.role;
-
-  // Calcola le tab in base al ruolo
-  const tabs = [
-    { value: "posts", label: "Post" },
-    { value: "photos", label: "Foto" },
-    { value: "videos", label: "Video" },
-    ...(isArtist ? [{ value: "songs", label: "Canzoni" }] : []),
-    ...(isFan ? [{ value: "following", label: "Seguiti" }] : []),
-    { value: "messages", label: "Messaggi" },
-  ];
-
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/artists">
-        <Button variant="ghost" size="sm" className="mb-2">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Indietro
-        </Button>
-      </Link>
+      <div className="flex items-center gap-2 mb-2">
+        <Users className="w-5 h-5 text-primary" />
+        <h1 className="text-xl font-semibold">Artisti</h1>
+      </div>
 
-      {/* Card Profilo */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center text-center">
-            <div className="relative mb-3">
-              <Avatar className="w-20 h-20">
-                {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                  {artist.displayName.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              {isOwnProfile && (
-                <>
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Camera className="w-3.5 h-3.5" />
-                  </Button>
-                </>
-              )}
-            </div>
-            <h1 className="text-xl font-bold">{artist.displayName}</h1>
-            <span className="text-sm text-muted-foreground">@{artist.username}</span>
-            <Badge variant="outline" className="mt-2">
-              {getRoleLabel(artist.role || "fan")}
-            </Badge>
-            {artist.genre && (
-              <Badge variant="secondary" className="mt-1">{artist.genre}</Badge>
-            )}
-            <div className="flex items-center gap-4 mt-3">
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span className="text-sm font-medium">{followersData?.count ?? 0} follower</span>
-              </div>
-              <div className="flex items-center gap-1 text-primary">
-                <Zap className="w-4 h-4" />
-                <span className="text-sm font-medium">{artist.vibyngPoints} VibyngPoints</span>
-              </div>
-            </div>
-            {!isOwnProfile && (
-              <Button
-                className="mt-3"
-                variant={isFollowingData?.isFollowing ? "outline" : "default"}
-                size="sm"
-                onClick={() => followMutation.mutate()}
-                disabled={followMutation.isPending}
-              >
-                {isFollowingData?.isFollowing ? (
-                  <><UserMinus className="w-4 h-4 mr-1" /> Non seguire più</>
-                ) : (
-                  <><UserPlus className="w-4 h-4 mr-1" /> Segui</>
-                )}
-              </Button>
-            )}
-          </div>
-          {artist.bio && (
-            <p className="text-sm text-muted-foreground mt-4 text-center">{artist.bio}</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Box scrivi post — solo sul proprio profilo */}
-      {isOwnProfile && (
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="flex gap-3">
-              <Avatar className="w-10 h-10 flex-shrink-0">
-                {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
-                <AvatarFallback className="bg-primary/10 text-primary">{artist.displayName.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 space-y-3">
-                <Textarea
-                  placeholder="A cosa stai pensando?"
-                  value={postText}
-                  onChange={(e) => setPostText(e.target.value)}
-                  className="resize-none border-0 bg-muted/50 focus-visible:ring-1"
-                  rows={2}
-                />
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8">
-                      <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8">
-                      <Video className="w-4 h-4 text-muted-foreground" />
-                    </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8">
-                      <Music className="w-4 h-4 text-muted-foreground" />
-                    </Button>
+      {artists.map((artist) => (
+        <Link key={artist.id} href={`/artist/${artist.id}`}>
+          <Card className="overflow-visible hover-elevate cursor-pointer" data-testid={`card-artist-${artist.id}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-14 h-14" data-testid={`avatar-artist-${artist.id}`}>
+                  {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
+                  <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                    {artist.displayName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold truncate" data-testid={`text-name-${artist.id}`}>
+                      {artist.displayName}
+                    </span>
                   </div>
-                  <Button size="sm" onClick={handlePublishPost} disabled={!postText.trim()}>
-                    <Send className="w-4 h-4 mr-1" />
-                    Pubblica
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Tabs dinamiche per ruolo */}
-      <Tabs defaultValue="posts" className="w-full">
-        <TabsList className={`w-full grid grid-cols-${tabs.length} p-1`}>
-          {tabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className="text-xs">
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {/* Tab Post */}
-        <TabsContent value="posts" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-2">Post ({artistPosts.length})</p>
-          {artistPosts.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {artistPosts.map((post) => (
-                <Card key={post.id} className="hover-elevate">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={post.author.avatarUrl || undefined} alt={post.author.displayName} />
-                        <AvatarFallback>{post.author.displayName.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{post.author.displayName}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {post.createdAt ? new Date(post.createdAt).toLocaleDateString("it-IT") : ""}
-                          </span>
-                        </div>
-                        <p className="text-sm mt-1">{post.content}</p>
-                        {post.mediaUrl && (
-                          <img src={post.mediaUrl} alt="media" className="w-full mt-2 rounded-lg max-h-60 object-cover" />
-                        )}
-                        <div className="flex items-center gap-3 mt-2">
-                          <button
-                            className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"}`}
-                            onClick={async () => {
-                              const newLiked = new Set(likedPosts);
-                              if (newLiked.has(post.id)) {
-                                newLiked.delete(post.id);
-                                await apiRequest("POST", `/api/posts/${post.id}/unlike`);
-                              } else {
-                                newLiked.add(post.id);
-                                await apiRequest("POST", `/api/posts/${post.id}/like`);
-                              }
-                              setLikedPosts(new Set(newLiked));
-                              queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
-                            }}
-                          >
-                            <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-red-500" : ""}`} />
-                            {post.likesCount}
-                          </button>
-                          {isOwnProfile && (
-                            <button
-                              className="text-xs text-red-400 hover:text-red-600 ml-auto"
-                              onClick={async () => {
-                                try {
-                                  await apiRequest("DELETE", `/api/posts/${post.id}`);
-                                  queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
-                                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-                                  toast({ title: "Post eliminato" });
-                                } catch {
-                                  toast({ title: "Errore", variant: "destructive" });
-                                }
-                              }}
-                            >🗑️</button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-8">Nessun post ancora.</p>
-          )}
-        </TabsContent>
-
-        {/* Tab Foto */}
-        <TabsContent value="photos" className="mt-4">
-          <div className="grid grid-cols-2 gap-2">
-            {photos && photos.length > 0 ? (
-              photos.map((photo) => (
-                <Card key={photo.id} className="overflow-hidden hover-elevate">
-                  <img src={photo.imageUrl ?? undefined} alt={photo.title || "Foto"} className="w-full h-32 object-cover" />
-                  {photo.title && (
-                    <CardContent className="p-2">
-                      <p className="text-xs text-muted-foreground truncate">{photo.title}</p>
-                    </CardContent>
+                  <span className="text-xs text-muted-foreground block">@{artist.username}</span>
+                  {artist.genre && (
+                    <Badge variant="outline" className="text-xs mt-1" data-testid={`badge-genre-${artist.id}`}>
+                      {artist.genre}
+                    </Badge>
                   )}
-                </Card>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8 col-span-2">Nessuna foto disponibile</p>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* Tab Video */}
-        <TabsContent value="videos" className="mt-4">
-          <div className="flex flex-col gap-3">
-            {videos && videos.length > 0 ? (
-              videos.map((video) => (
-                <Card key={video.id} className="overflow-hidden hover-elevate">
-                  <div className="relative">
-                    {video.videoUrl ? (
-                      <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
-                    ) : video.thumbnailUrl ? (
-                      <img src={video.thumbnailUrl} alt={video.title} className="w-full h-40 object-cover" />
-                    ) : (
-                      <div className="w-full h-40 bg-primary/10 flex items-center justify-center">
-                        <Video className="w-12 h-12 text-primary" />
-                      </div>
-                    )}
-                  </div>
-                  <CardContent className="p-3">
-                    <h4 className="font-medium">{video.title}</h4>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">Nessun video disponibile</p>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* Tab Canzoni — solo Artista */}
-        {isArtist && (
-          <TabsContent value="songs" className="mt-4">
-            <div className="flex flex-col gap-2">
-              {songs && songs.length > 0 ? (
-                songs.map((song) => (
-                  <Card key={song.id} className="hover-elevate">
-                    <CardContent className="p-3 flex items-center gap-3">
-                      <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-                        {song.coverUrl ? (
-                          <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                            <Music className="w-6 h-6 text-primary" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">{song.title}</h4>
-                        {song.duration && <span className="text-xs text-muted-foreground">{formatDuration(song.duration)}</span>}
-                      </div>
-                      <Button size="icon" variant="ghost" onClick={() => handleAddToPlaylist(song.id, song.title)}>
-                        {addedSongs.has(song.id) ? <Check className="w-5 h-5 text-green-500" /> : <Plus className="w-5 h-5" />}
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handlePlaySong(song)}>
-                        {currentSong?.id === song.id && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <p className="text-center text-muted-foreground py-8">Nessuna canzone disponibile</p>
-              )}
-            </div>
-          </TabsContent>
-        )}
-
-        {/* Tab Artisti Seguiti — solo Fan */}
-        {isFan && (
-          <TabsContent value="following" className="mt-4">
-            <p className="text-center text-muted-foreground py-8">Artisti seguiti da {artist.displayName}</p>
-          </TabsContent>
-        )}
-
-        {/* Tab Messaggi */}
-        <TabsContent value="messages" className="mt-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center py-8">
-                <MessageCircle className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="font-medium mb-2">Messaggi con {artist.displayName}</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Invia un messaggio privato per interagire direttamente!
-                </p>
-                <Link href={`/chat/${artist.id}`}>
-                  <Button>Inizia una conversazione</Button>
-                </Link>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
+              {artist.bio && (
+                <p className="text-sm text-muted-foreground mt-2 line-clamp-2" data-testid={`text-bio-${artist.id}`}>
+                  {artist.bio}
+                </p>
+              )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Obiettivo attivo — solo Artista */}
-      {isArtist && activeGoal && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">Obiettivo Attivo</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <h3 className="font-medium mb-1">{activeGoal.title}</h3>
-            {activeGoal.description && (
-              <p className="text-sm text-muted-foreground mb-3">{activeGoal.description}</p>
-            )}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{Number(activeGoal.currentAmount).toFixed(2)}</span>
-                <span>{Number(activeGoal.targetAmount).toFixed(2)}</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">{progress.toFixed(1)}% raggiunto</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Supporto — solo Artista e non il proprio profilo */}
-      {isArtist && !isOwnProfile && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">Supporta l'artista</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Aiuta {artist.displayName} a raggiungere i suoi obiettivi!
-            </p>
-            <div className="flex gap-2 mb-3">
-              {["5", "10", "25", "50"].map((amount) => (
-                <Button
-                  key={amount}
-                  variant={supportAmount === amount ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSupportAmount(amount)}
-                >
-                  {amount}€
-                </Button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                value={supportAmount}
-                onChange={(e) => setSupportAmount(e.target.value)}
-                min="1"
-                className="flex-1"
-              />
-              <Button
-                onClick={() => supportMutation.mutate(supportAmount)}
-                disabled={supportMutation.isPending}
-              >
-                {supportMutation.isPending ? "..." : "Supporta"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Riceverai 50 VibyngPoints per il tuo supporto!
-            </p>
-          </CardContent>
-        </Card>
-      )}
+        </Link>
+      ))}
     </div>
   );
 }
