@@ -1,6 +1,5 @@
 import { db } from "./db";
-import { 
-  users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories,
+import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications,
   type User, type InsertUser,
   type Post, type InsertPost,
   type ArtistGoal, type InsertArtistGoal,
