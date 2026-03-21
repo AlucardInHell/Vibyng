@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music2, Target, Heart, Zap, ArrowLeft, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus } from "lucide-react";
+import { Music2, Target, Heart, Zap, ArrowLeft, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
@@ -371,12 +371,23 @@ export default function ArtistProfile() {
 
       {/* Tabs dinamiche per ruolo */}
       <Tabs defaultValue="posts" className="w-full">
-       <TabsList className="w-full flex flex-wrap gap-1 h-auto p-1">
-          {tabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className="text-xs">
-              {tab.label}
-            </TabsTrigger>
-          ))}
+      <TabsList className="w-full grid grid-cols-4 p-1">
+        <TabsTrigger value="posts" className="px-1 text-xs">
+            <MessageCircle className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Post</span>
+          </TabsTrigger>
+          <TabsTrigger value="photos" className="px-1 text-xs">
+            <ImageIcon className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Foto</span>
+          </TabsTrigger>
+          <TabsTrigger value="videos" className="px-1 text-xs">
+            <Video className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Video</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="px-1 text-xs">
+            <MessageCircle className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Messaggi</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab Post */}
