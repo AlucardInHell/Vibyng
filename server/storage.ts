@@ -1,16 +1,6 @@
 import { db } from "./db";
-import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications, events,
-  type User, type InsertUser,
-  type Post, type InsertPost,
-  type ArtistGoal, type InsertArtistGoal,
-  type Support, type InsertSupport,
-  type ArtistPhoto, type InsertArtistPhoto,
-  type ArtistVideo, type InsertArtistVideo,
-  type ArtistSong, type InsertArtistSong,
-  type Message, type InsertMessage,
-  type Comment, type InsertComment,
-  type Story, type InsertStory
-} from "@shared/schema";
+import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications, events } from "@shared/schema";
+import type { User, InsertUser, Post, InsertPost, ArtistGoal, InsertArtistGoal, Support, InsertSupport, ArtistPhoto, InsertArtistPhoto, ArtistVideo, InsertArtistVideo, ArtistSong, InsertArtistSong, Message, InsertMessage, Comment, InsertComment, Story, InsertStory } from "@shared/schema";
 import { eq, desc, count, or, and, asc, ilike, gt } from "drizzle-orm";
 
 export interface IStorage {
