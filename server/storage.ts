@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications,
+import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications, events,
   type User, type InsertUser,
   type Post, type InsertPost,
   type ArtistGoal, type InsertArtistGoal,
@@ -293,6 +293,20 @@ async deletePost(postId: number): Promise<void> {
     await db.delete(posts).where(eq(posts.id, postId));
   }
 
+  async getEventsByArtist(artistId: number) {
+    return await db.select().from(events)
+      .where(eq(events.artistId, artistId))
+      .orderBy(asc(events.eventDate));
+  }
+
+  async createEvent(data: any) {
+    const [event] = await db.insert(events).values(data).returning();
+    return event;
+  }
+
+  async deleteEvent(eventId: number): Promise<void> {
+    await db.delete(events).where(eq(events.id, eventId));
+  }
   async getNotifications(userId: number) {
     return await db.select().from(notifications)
       .where(eq(notifications.userId, userId))
