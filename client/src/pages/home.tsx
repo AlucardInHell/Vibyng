@@ -520,57 +520,6 @@ function Stories() {
   );
 }
 
-const sponsoredAds = [
-  {
-    id: "ad-1",
-    brand: "SoundPro Studio",
-    tagline: "Produci musica come un professionista",
-    description: "Software di produzione musicale con oltre 1000 preset. Prova gratuita di 30 giorni!",
-    cta: "Scopri di più",
-    gradient: "from-purple-600 to-pink-500",
-  },
-  {
-    id: "ad-2",
-    brand: "MusicGear Italia",
-    tagline: "Strumenti per ogni artista",
-    description: "Chitarre, tastiere, microfoni e accessori. Spedizione gratuita sopra i 50€.",
-    cta: "Acquista ora",
-    gradient: "from-blue-600 to-cyan-500",
-  },
-  {
-    id: "ad-3",
-    brand: "LiveStream Pro",
-    tagline: "Porta i tuoi concerti online",
-    description: "Piattaforma di streaming per artisti. Monetizza le tue performance dal vivo.",
-    cta: "Inizia gratis",
-    gradient: "from-orange-500 to-red-500",
-  },
-];
-
-function SponsoredAd({ ad }: { ad: typeof sponsoredAds[0] }) {
-  return (
-    <Card className="overflow-hidden border-dashed" data-testid={`card-sponsored-${ad.id}`}>
-      <div className={`bg-gradient-to-r ${ad.gradient} p-4 text-white`}>
-        <div className="flex items-center gap-2 mb-2">
-          <Megaphone className="w-4 h-4" />
-          <Badge variant="secondary" className="text-xs bg-white/20 text-white border-0">
-            Sponsorizzato
-          </Badge>
-        </div>
-        <h3 className="font-bold text-lg">{ad.brand}</h3>
-        <p className="text-sm opacity-90">{ad.tagline}</p>
-      </div>
-      <CardContent className="pt-4">
-        <p className="text-sm text-muted-foreground mb-3">{ad.description}</p>
-        <Button size="sm" className="w-full" data-testid={`button-cta-${ad.id}`}>
-          {ad.cta}
-          <ExternalLink className="w-3 h-3 ml-2" />
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
 function PostComments({ postId }: { postId: number }) {
   const [newComment, setNewComment] = useState("");
 
@@ -961,12 +910,3 @@ useEffect(() => {
               )}
             </CardContent>
           </Card>
-
-          {(index + 1) % 2 === 0 && index < (posts?.length ?? 0) - 1 && sponsoredAds[Math.floor(index / 2) % sponsoredAds.length] && (
-            <SponsoredAd ad={sponsoredAds[Math.floor(index / 2) % sponsoredAds.length]} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
