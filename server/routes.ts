@@ -569,6 +569,38 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nell'eliminazione evento" });
     }
   });
+  // === EVENT ATTENDEES ===
+  app.post("/api/events/:eventId/attend", async (req, res) => {
+    try {
+      const eventId = Number(req.params.eventId);
+      const { userId } = req.body;
+      await storage.attendEvent(eventId, userId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
+    }
+  });
+
+  app.delete("/api/events/:eventId/attend", async (req, res) => {
+    try {
+      const eventId = Number(req.params.eventId);
+      const { userId } = req.body;
+      await storage.unattendEvent(eventId, userId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
+    }
+  });
+
+  app.get("/api/users/:userId/events/attending", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const events = await storage.getAttendingEvents(userId);
+      res.json(events);
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
@@ -631,14 +663,6 @@ const artists = await storage.getArtists();
       bio: "Soul singer con influenze R&B. La musica è la mia vita.",
       role: "artist",
       genre: "Soul / R&B",
-    });
-
-    // Creiamo fan demo
-    await storage.createUser({
-      username: "music_lover_22",
-      displayName: "Giulia",
-      bio: "Appassionata di musica indipendente",
-      role: "fan",
     });
 
     // Creiamo obiettivi per artisti
