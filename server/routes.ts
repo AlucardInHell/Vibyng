@@ -539,6 +539,36 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nella creazione della storia" });
     }
   });
+  // === EVENTS ===
+  app.get("/api/artists/:artistId/events", async (req, res) => {
+    try {
+      const artistId = Number(req.params.artistId);
+      const artistEvents = await storage.getEventsByArtist(artistId);
+      res.json(artistEvents);
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel recupero eventi" });
+    }
+  });
+
+  app.post("/api/artists/:artistId/events", async (req, res) => {
+    try {
+      const artistId = Number(req.params.artistId);
+      const event = await storage.createEvent({ ...req.body, artistId });
+      res.status(201).json(event);
+    } catch (err) {
+      res.status(400).json({ message: "Errore nella creazione evento" });
+    }
+  });
+
+  app.delete("/api/events/:eventId", async (req, res) => {
+    try {
+      const eventId = Number(req.params.eventId);
+      await storage.deleteEvent(eventId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'eliminazione evento" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
