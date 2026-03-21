@@ -223,16 +223,11 @@ export default function ArtistProfile() {
     );
   }
 
-  if (!artist) {
+ if (!artists || artists.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <span className="text-muted-foreground">Profilo non trovato</span>
-        <Link href="/artists">
-          <Button variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna indietro
-          </Button>
-        </Link>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-2">
+        <Music2 className="w-8 h-8 text-muted-foreground" />
+        <p className="text-muted-foreground">Nessun artista disponibile</p>
       </div>
     );
   }
