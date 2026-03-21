@@ -909,10 +909,10 @@ useEffect(() => {
                 <PostComments postId={post.id} />
               )}
             </CardContent>
-          </Card>
-          ))}
-        </div>
-      )}
+         </Card>
+        ))}
+      </div>
+    )}
     </div>
   );
 }
