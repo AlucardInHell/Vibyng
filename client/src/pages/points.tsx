@@ -318,10 +318,12 @@ export default function Points() {
                   {followedArtists.length} seguiti
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-primary">
-                <Zap className="w-4 h-4" />
-                <span className="text-sm font-medium" data-testid="text-my-points">{currentUser?.vibyngPoints ?? 0} VibyngPoints</span>
-              </div>
+             <Link href="/vpoints">
+                <div className="flex items-center gap-1 text-primary cursor-pointer hover:opacity-80">
+                  <Zap className="w-4 h-4" />
+                  <span className="text-sm font-medium" data-testid="text-my-points">{currentUser?.vibyngPoints ?? 0} VibyngPoints</span>
+                </div>
+              </Link>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4 text-center" data-testid="text-my-bio">
