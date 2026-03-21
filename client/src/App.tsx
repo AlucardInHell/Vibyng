@@ -201,6 +201,7 @@ function BottomNav() {
   ];
 
   const navItemsRight = [
+    { path: "/notifications", icon: Bell, label: "Notifiche" },
     { path: "/messages", icon: MessageCircle, label: "Messaggi" },
     { path: "/me", icon: User, label: "Me" },
   ];
@@ -278,33 +279,6 @@ function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50" data-testid="nav-bottom">
         <div className="flex items-center justify-around h-16 max-w-md mx-auto">
           {navItemsLeft.map(renderNavItem)}
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors text-muted-foreground hover:text-foreground"
-              data-testid="nav-add"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <Plus className="w-6 h-6 text-primary-foreground" />
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" className="w-48" data-testid="menu-add">
-            <DropdownMenuItem onClick={handleTakePhoto} data-testid="menu-item-photo">
-              <Camera className="w-4 h-4 mr-2" />
-              Scatta una foto
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleRecordVideo} data-testid="menu-item-video">
-              <Video className="w-4 h-4 mr-2" />
-              Registra un video
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleUploadMedia} data-testid="menu-item-upload">
-              <Upload className="w-4 h-4 mr-2" />
-              Carica file multimediale
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
 
         {navItemsRight.map(renderNavItem)}
         </div>
