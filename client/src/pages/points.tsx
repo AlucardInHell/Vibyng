@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2 } from "lucide-react";
+import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
@@ -389,8 +389,8 @@ export default function Points() {
             <Video className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Video</span>
           </TabsTrigger>
-          <TabsTrigger value="posts" className="px-1 text-xs" data-testid="tab-posts">
-            <MessageCircle className="w-4 h-4 sm:mr-1" />
+         <TabsTrigger value="posts" className="px-1 text-xs" data-testid="tab-posts">
+            <FileText className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
           </TabsTrigger>
           <TabsTrigger value="following" className="px-1 text-xs" data-testid="tab-following">
