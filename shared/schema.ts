@@ -337,3 +337,19 @@ export const notifications = pgTable("notifications", {
 export const insertNotificationSchema = createInsertSchema(notifications);
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+// === EVENTS ===
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  eventDate: timestamp("event_date").notNull(),
+  city: text("city"),
+  venue: text("venue"),
+  description: text("description"),
+  ticketUrl: text("ticket_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertEventSchema = createInsertSchema(events);
+export type Event = typeof events.$inferSelect;
+export type InsertEvent = z.infer<typeof insertEventSchema>;
