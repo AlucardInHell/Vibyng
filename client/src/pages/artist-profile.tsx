@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music2, Target, Heart, Zap, ArrowLeft, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon } from "lucide-react";
+import { Music2, Target, Heart, Zap, ArrowLeft, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
@@ -372,8 +372,8 @@ export default function ArtistProfile() {
       {/* Tabs dinamiche per ruolo */}
       <Tabs defaultValue="posts" className="w-full">
       <TabsList className="w-full grid grid-cols-5 p-1">
-        <TabsTrigger value="posts" className="px-1 text-xs">
-            <MessageCircle className="w-4 h-4 sm:mr-1" />
+       <TabsTrigger value="posts" className="px-1 text-xs">
+            <FileText className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
           </TabsTrigger>
           <TabsTrigger value="photos" className="px-1 text-xs">
