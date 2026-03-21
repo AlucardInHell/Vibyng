@@ -2,15 +2,15 @@
 import { useState } from "react";
 import { Music, Eye, EyeOff, Loader2 } from "lucide-react";
 
-type Role = "fan" | "artist" | "business" | "rehearsal_room" | "music_store" | "record_label";
+type Role = "fan" | "artist" | "rehearsal_studio" | "recording_studio" | "record_label" | "business";
 
 const roleLabels: Record<Role, string> = {
   fan: "🎧 Fan",
   artist: "🎤 Artista",
+  rehearsal_studio: "🎸 Sala Prove",
+  recording_studio: "🎙️ Studio di Registrazione",
+  record_label: "💿 Casa Discografica",
   business: "🏢 Azienda",
-  rehearsal_room: "🎸 Sala Prove",
-  music_store: "🎹 Negozio Musica",
-  record_label: "💿 Etichetta Discografica",
 };
 
 interface AuthPageProps {
