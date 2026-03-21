@@ -371,7 +371,7 @@ export default function ArtistProfile() {
 
       {/* Tabs dinamiche per ruolo */}
       <Tabs defaultValue="posts" className="w-full">
-      <TabsList className="w-full grid grid-cols-4 p-1">
+      <TabsList className="w-full grid grid-cols-5 p-1">
         <TabsTrigger value="posts" className="px-1 text-xs">
             <MessageCircle className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
@@ -388,6 +388,18 @@ export default function ArtistProfile() {
             <MessageCircle className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Messaggi</span>
           </TabsTrigger>
+        {isFan && (
+            <TabsTrigger value="following" className="px-1 text-xs">
+              <Users className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Seguiti</span>
+            </TabsTrigger>
+          )}
+          {isArtist && (
+            <TabsTrigger value="songs" className="px-1 text-xs">
+              <Music className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Canzoni</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Tab Post */}
