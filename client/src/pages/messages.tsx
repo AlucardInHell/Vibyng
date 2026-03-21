@@ -85,8 +85,6 @@ export default function Messages() {
             ))
           ) : searchQuery ? (
             <p className="text-center text-muted-foreground py-4">Nessuna conversazione trovata per "{searchQuery}"</p>
-          ) : (
-            <p className="text-center text-muted-foreground py-4">Nessun artista disponibile</p>
           )}
         </CardContent>
       </Card>
