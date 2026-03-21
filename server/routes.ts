@@ -519,7 +519,36 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nella creazione della storia" });
     }
   });
+// === NOTIFICATIONS ===
+  app.get("/api/notifications/:userId", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const userNotifications = await storage.getNotifications(userId);
+      res.json(userNotifications);
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel recupero notifiche" });
+    }
+  });
 
+  app.post("/api/notifications/:notificationId/read", async (req, res) => {
+    try {
+      const notificationId = Number(req.params.notificationId);
+      await storage.markNotificationRead(notificationId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
+    }
+  });
+
+  app.post("/api/notifications/:userId/read-all", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      await storage.markAllNotificationsRead(userId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
+    }
+  });
   // === SEED DATABASE ===
   await seedDatabase();
 
