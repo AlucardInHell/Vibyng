@@ -305,8 +305,11 @@ export default function Points() {
             </div>
             <h1 className="text-xl font-bold" data-testid="text-my-name">{profileData.displayName}</h1>
             <span className="text-sm text-muted-foreground">@{profileData.username}</span>
-            <Badge variant="outline" className="mt-2" data-testid="badge-role">
-              Fan
+          <Badge variant="outline" className="mt-2" data-testid="badge-role">
+              {currentUser?.role === "artist" ? "Artista" : 
+               currentUser?.role === "rehearsal_studio" ? "Sala Prove" :
+               currentUser?.role === "recording_studio" ? "Studio di Registrazione" :
+               currentUser?.role === "record_label" ? "Casa Discografica" : "Fan"}
             </Badge>
             <div className="flex items-center gap-4 mt-3">
               <div className="flex items-center gap-1 text-muted-foreground">
