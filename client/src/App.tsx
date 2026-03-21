@@ -15,6 +15,7 @@ import SearchPage from "@/pages/search";
 import { AudioPlayerProvider, MiniPlayer } from "@/components/audio-player";
 import AuthPage from "@/pages/auth";
 import Onboarding from "@/pages/onboarding";
+import Notifications from "@/pages/notifications";
 import { useState, createContext, useContext, useEffect, useRef, useCallback } from "react";
 import type { User as UserType } from "@shared/schema";
 import { Home as HomeIcon, Users, Zap, Music, MessageCircle, Settings, User, Shield, Bell, Globe, Moon, Sun, HelpCircle, FileText, LogOut, Check, X, Plus, Camera, Video, Upload, Search } from "lucide-react";
@@ -183,6 +184,7 @@ function Router() {
       <Route path="/messages" component={Messages} />
       <Route path="/chat/:artistId" component={Chat} />
       <Route path="/me" component={Points} />
+      <Route path="/notifications" component={Notifications} />
       <Route component={NotFound} />
     </Switch>
   );
