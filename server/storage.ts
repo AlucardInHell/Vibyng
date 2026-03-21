@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications, events } from "@shared/schema";
+import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications, events, eventAttendees } from "@shared/schema";
 import type { User, InsertUser, Post, InsertPost, ArtistGoal, InsertArtistGoal, Support, InsertSupport, ArtistPhoto, InsertArtistPhoto, ArtistVideo, InsertArtistVideo, ArtistSong, InsertArtistSong, Message, InsertMessage, Comment, InsertComment, Story, InsertStory } from "@shared/schema";
 import { eq, desc, count, or, and, asc, ilike, gt } from "drizzle-orm";
 
@@ -279,10 +279,26 @@ async likePost(postId: number): Promise<void> {
       .where(eq(artistPhotos.artistId, userId))
       .orderBy(desc(artistPhotos.createdAt));
  }
+  
 async deletePost(postId: number): Promise<void> {
     await db.delete(posts).where(eq(posts.id, postId));
   }
+async attendEvent(eventId: number, userId: number): Promise<void> {
+    await db.insert(eventAttendees).values({ eventId, userId }).onConflictDoNothing();
+  }
 
+  async unattendEvent(eventId: number, userId: number): Promise<void> {
+    await db.delete(eventAttendees)
+      .where(and(eq(eventAttendees.eventId, eventId), eq(eventAttendees.userId, userId)));
+  }
+
+  async getAttendingEvents(userId: number) {
+    return await db.select({ event: events })
+      .from(eventAttendees)
+      .innerJoin(events, eq(eventAttendees.eventId, events.id))
+      .where(eq(eventAttendees.userId, userId))
+      .orderBy(asc(events.eventDate));
+  }
   async getEventsByArtist(artistId: number) {
     return await db.select().from(events)
       .where(eq(events.artistId, artistId))
