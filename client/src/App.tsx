@@ -266,7 +266,7 @@ function BottomNav() {
   };
 
   const renderNavItem = (item: { path: string; icon: React.ComponentType<{ className?: string }>; label: string }) => {
-    const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+   const isActive = location === item.path || (item.path !== "/" && item.path !== "/me" && location.startsWith(item.path));
     return (
       <Link key={item.path} href={item.path}>
         <button
