@@ -191,6 +191,39 @@ function Router() {
     </Switch>
   );
 }
+function MessagesButton() {
+  const [location] = useLocation();
+  const isActive = location === "/messages";
+  const userId = getCurrentUserId();
+  const { data: unreadCount = 0 } = useQuery<number>({
+    queryKey: ["/api/messages/unread", userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/messages/unread/${userId}`);
+      return res.json();
+    },
+    refetchInterval: 10000,
+  });
+
+  return (
+    <Link href="/messages">
+      <button
+        className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors relative ${
+          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <div className="relative">
+          <MessageCircle className="w-5 h-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </div>
+        <span className="text-xs font-medium">Messaggi</span>
+      </button>
+    </Link>
+  );
+}
 function NotificationBell() {
   const [location] = useLocation();
   const isActive = location === "/notifications";
@@ -237,8 +270,7 @@ function BottomNav() {
     { path: "/artists", icon: Users, label: "Artisti" },
   ];
 
- const navItemsRight = [
-    { path: "/messages", icon: MessageCircle, label: "Messaggi" },
+const navItemsRight = [
     { path: "/me", icon: User, label: "Me" },
   ];
 
@@ -315,7 +347,8 @@ function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50" data-testid="nav-bottom">
         <div className="flex items-center justify-around h-16 max-w-md mx-auto">
           {navItemsLeft.map(renderNavItem)}
-          <NotificationBell />
+         <NotificationBell />
+          <MessagesButton />
           {navItemsRight.map(renderNavItem)}
         </div>
       </nav>
