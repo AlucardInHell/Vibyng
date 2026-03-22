@@ -6,17 +6,30 @@ import { Link } from "wouter";
 import { useState } from "react";
 import type { User } from "@shared/schema";
 
+function getCurrentUserId(): number {
+  try {
+    const stored = localStorage.getItem("vibyng-user");
+    if (stored) return JSON.parse(stored).id || 1;
+  } catch {}
+  return 1;
+}
+
 export default function Messages() {
+  const userId = getCurrentUserId();
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
 
-  const { data: artists, isLoading } = useQuery<User[]>({
-    queryKey: ["/api/artists"],
+  const { data: conversations = [], isLoading } = useQuery<User[]>({
+    queryKey: ["/api/users", userId, "conversations"],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${userId}/conversations`);
+      return res.json();
+    },
   });
 
-  const filtered = artists?.filter(a =>
-    a.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.username.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = conversations.filter(u =>
+    u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (isLoading) {
@@ -61,31 +74,29 @@ export default function Messages() {
           <CardTitle className="text-base">Conversazioni</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
-          {filtered && filtered.length > 0 ? (
-            filtered.map((artist) => (
-              <Link key={artist.id} href={`/chat/${artist.id}`}>
-                <div className="flex items-center gap-3 p-3 rounded-lg hover-elevate cursor-pointer" data-testid={`chat-artist-${artist.id}`}>
+          {filtered.length > 0 ? (
+            filtered.map((user) => (
+              <Link key={user.id} href={`/chat/${user.id}`}>
+                <div className="flex items-center gap-3 p-3 rounded-lg hover-elevate cursor-pointer">
                   <Avatar className="w-10 h-10">
-                    {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
+                    {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
                     <AvatarFallback className="bg-primary/10 text-primary">
-                      {artist.displayName.charAt(0)}
+                      {user.displayName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate" data-testid={`text-chat-name-${artist.id}`}>
-                      {artist.displayName}
-                    </h3>
-                    <p className="text-xs text-muted-foreground truncate">
-                      Clicca per inviare un messaggio
-                    </p>
+                    <h3 className="font-medium truncate">{user.displayName}</h3>
+                    <p className="text-xs text-muted-foreground truncate">Clicca per aprire la chat</p>
                   </div>
                   <MessageCircle className="w-5 h-5 text-muted-foreground" />
                 </div>
               </Link>
             ))
-         ) : searchQuery ? (
-              <p className="text-center text-muted-foreground py-4">Nessuna conversazione trovata per "{searchQuery}"</p>
-            ) : null}
+          ) : searchQuery ? (
+            <p className="text-center text-muted-foreground py-4">Nessuna conversazione trovata per "{searchQuery}"</p>
+          ) : (
+            <p className="text-center text-muted-foreground py-8 text-sm">Nessuna conversazione ancora. Vai sul profilo di un utente e inizia a chattare!</p>
+          )}
         </CardContent>
       </Card>
     </div>
