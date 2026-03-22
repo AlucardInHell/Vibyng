@@ -518,12 +518,16 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   });
 
   // === MESSAGES ===
-  app.get("/api/messages/:userId1/:userId2", async (req, res) => {
-    const messages = await storage.getConversation(
-      Number(req.params.userId1),
-      Number(req.params.userId2)
-    );
-    res.json(messages);
+app.get("/api/messages/:userId1/:userId2", async (req, res) => {
+    try {
+      const userId1 = Number(req.params.userId1);
+      const userId2 = Number(req.params.userId2);
+      if (isNaN(userId1) || isNaN(userId2)) return res.json([]);
+      const messages = await storage.getConversation(userId1, userId2);
+      res.json(messages);
+    } catch (err) {
+      res.json([]);
+    }
   });
 
  app.post("/api/messages", async (req, res) => {
