@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music2, Target, Heart, Zap, ArrowLeft, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar } from "lucide-react";
+import { Music2, Target, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
@@ -62,7 +62,7 @@ export default function ArtistProfile() {
 
   const { data: goals } = useQuery<ArtistGoal[]>({
     queryKey: [`/api/artists/${id}/goals`],
-    enabled: artist?.role === "artist",
+    enabled: !!artist && artist.role === "artist",
   });
 
   const { data: photos } = useQuery<ArtistPhoto[]>({
@@ -75,7 +75,7 @@ export default function ArtistProfile() {
 
   const { data: songs } = useQuery<ArtistSong[]>({
     queryKey: [`/api/artists/${id}/songs`],
-    enabled: artist?.role === "artist",
+    enabled: !!artist && artist.role === "artist",
   });
 
   const { data: followersData } = useQuery<{ count: number }>({
@@ -94,10 +94,12 @@ export default function ArtistProfile() {
   const { data: artistPosts = [] } = useQuery<(Post & { author: User })[]>({
     queryKey: ["/api/users", artistId, "posts"],
   });
-const { data: artistEvents = [] } = useQuery<Event[]>({
+
+  const { data: artistEvents = [] } = useQuery<Event[]>({
     queryKey: [`/api/artists/${id}/events`],
-    enabled: isArtist,
+    enabled: !!artist && artist.role === "artist",
   });
+
   const followMutation = useMutation({
     mutationFn: async () => {
       if (isFollowingData?.isFollowing) {
@@ -129,10 +131,7 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
       });
     },
     onSuccess: () => {
-      toast({
-        title: "Grazie per il supporto!",
-        description: "Hai guadagnato 50 VibyngPoints",
-      });
+      toast({ title: "Grazie per il supporto!", description: "Hai guadagnato 50 VibyngPoints" });
       queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/goals`] });
     },
     onError: () => {
@@ -228,31 +227,21 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
     );
   }
 
- if (!artist) {
+  if (!artist) {
     return null;
   }
+
+  const isArtist = artist.role === "artist";
+  const isFan = artist.role === "fan" || !artist.role;
 
   const activeGoal = goals?.find((g) => !g.isCompleted);
   const progress = activeGoal
     ? (Number(activeGoal.currentAmount) / Number(activeGoal.targetAmount)) * 100
     : 0;
 
-  const isArtist = artist.role === "artist";
-  const isFan = artist.role === "fan" || !artist.role;
-
-  // Calcola le tab in base al ruolo
-  const tabs = [
-    { value: "posts", label: "Post" },
-    { value: "photos", label: "Foto" },
-    { value: "videos", label: "Video" },
-    ...(isArtist ? [{ value: "songs", label: "Canzoni" }] : []),
-    ...(isFan ? [{ value: "following", label: "Seguiti" }] : []),
-    { value: "messages", label: "Messaggi" },
-  ];
-
   return (
     <div className="flex flex-col gap-4">
-    
+
       {/* Card Profilo */}
       <Card>
         <CardContent className="pt-6">
@@ -358,10 +347,10 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
         </Card>
       )}
 
-      {/* Tabs dinamiche per ruolo */}
+      {/* Tabs */}
       <Tabs defaultValue="posts" className="w-full">
-      <TabsList className="w-full grid grid-cols-6 p-1">
-       <TabsTrigger value="posts" className="px-1 text-xs">
+        <TabsList className="w-full grid grid-cols-6 p-1">
+          <TabsTrigger value="posts" className="px-1 text-xs">
             <FileText className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Post</span>
           </TabsTrigger>
@@ -377,7 +366,7 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
             <MessageCircle className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Messaggi</span>
           </TabsTrigger>
-        {isFan && (
+          {isFan && (
             <TabsTrigger value="following" className="px-1 text-xs">
               <Users className="w-4 h-4 sm:mr-1" />
               <span className="hidden sm:inline">Seguiti</span>
@@ -440,39 +429,21 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
                             <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-red-500" : ""}`} />
                             {post.likesCount}
                           </button>
-                         <div className="flex flex-col items-end gap-2">
-                          {!isOwnProfile && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                try {
-                                  await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
-                                  toast({ title: "Partecipi all'evento! 🎉" });
-                                } catch {
-                                  toast({ title: "Errore", variant: "destructive" });
-                                }
-                              }}
-                            >
-                              <Calendar className="w-3 h-3 mr-1" />
-                              Partecipo
-                            </Button>
-                          )}
                           {isOwnProfile && (
                             <button
-                              className="text-xs text-red-400 hover:text-red-600"
+                              className="text-xs text-red-400 hover:text-red-600 ml-auto"
                               onClick={async () => {
                                 try {
-                                  await apiRequest("DELETE", `/api/events/${event.id}`);
-                                  queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
-                                  toast({ title: "Evento eliminato" });
+                                  await apiRequest("DELETE", `/api/posts/${post.id}`);
+                                  queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
+                                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                                  toast({ title: "Post eliminato" });
                                 } catch {
                                   toast({ title: "Errore", variant: "destructive" });
                                 }
                               }}
                             >🗑️</button>
                           )}
-                        </div>
                         </div>
                       </div>
                     </div>
@@ -570,13 +541,14 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
           </TabsContent>
         )}
 
-        {/* Tab Artisti Seguiti — solo Fan */}
+        {/* Tab Seguiti — solo Fan */}
         {isFan && (
           <TabsContent value="following" className="mt-4">
-            <p className="text-center text-muted-foreground py-8">Artisti seguiti da {artist.displayName}</p>
+            <p className="text-center text-muted-foreground py-8">Profili seguiti da {artist.displayName}</p>
           </TabsContent>
         )}
-{/* Tab Eventi — solo Artista */}
+
+        {/* Tab Eventi — solo Artista */}
         {isArtist && (
           <TabsContent value="events" className="mt-4">
             <div className="flex items-center justify-between mb-2">
@@ -643,20 +615,39 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
                             </a>
                           )}
                         </div>
-                        {isOwnProfile && (
-                          <button
-                            className="text-xs text-red-400 hover:text-red-600"
-                            onClick={async () => {
-                              try {
-                                await apiRequest("DELETE", `/api/events/${event.id}`);
-                                queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
-                                toast({ title: "Evento eliminato" });
-                              } catch {
-                                toast({ title: "Errore", variant: "destructive" });
-                              }
-                            }}
-                          >🗑️</button>
-                        )}
+                        <div className="flex flex-col items-end gap-2">
+                          {!isOwnProfile && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                try {
+                                  await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
+                                  toast({ title: "Partecipi all'evento! 🎉" });
+                                } catch {
+                                  toast({ title: "Errore", variant: "destructive" });
+                                }
+                              }}
+                            >
+                              <Calendar className="w-3 h-3 mr-1" />
+                              Partecipo
+                            </Button>
+                          )}
+                          {isOwnProfile && (
+                            <button
+                              className="text-xs text-red-400 hover:text-red-600"
+                              onClick={async () => {
+                                try {
+                                  await apiRequest("DELETE", `/api/events/${event.id}`);
+                                  queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
+                                  toast({ title: "Evento eliminato" });
+                                } catch {
+                                  toast({ title: "Errore", variant: "destructive" });
+                                }
+                              }}
+                            >🗑️</button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -667,6 +658,7 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
             )}
           </TabsContent>
         )}
+
         {/* Tab Messaggi */}
         <TabsContent value="messages" className="mt-4">
           <Card>
