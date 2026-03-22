@@ -10,7 +10,14 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { User, Message } from "@shared/schema";
 
-const CURRENT_USER_ID = 4;
+function getCurrentUserId(): number {
+  try {
+    const stored = localStorage.getItem("vibyng-user");
+    if (stored) return JSON.parse(stored).id || 1;
+  } catch {}
+  return 1;
+}
+const CURRENT_USER_ID = getCurrentUserId();
 
 type MessageWithSender = Message & { sender: User };
 
