@@ -201,7 +201,8 @@ function MessagesButton() {
       const res = await fetch(`/api/messages/unread/${userId}`);
       return res.json();
     },
-    refetchInterval: 10000,
+    refetchInrefetchInterval: 5000,
+    staleTime: 0,
   });
 
   return (
