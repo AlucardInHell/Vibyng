@@ -1,6 +1,6 @@
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,19 @@ export default function Chat() {
     refetchInterval: 5000,
   });
 
+  // Marca i messaggi come letti quando si apre la chat
+  const markReadMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/messages/read/${CURRENT_USER_ID}/${artistId}`);
+    },
+  });
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      markReadMutation.mutate();
+      queryClient.invalidateQueries({ queryKey: ["/api/messages/unread", CURRENT_USER_ID] });
+    }
+  }, [messages.length]);
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       return apiRequest("POST", "/api/messages", {
