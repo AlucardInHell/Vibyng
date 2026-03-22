@@ -313,10 +313,14 @@ async attendEvent(eventId: number, userId: number): Promise<void> {
   async deleteEvent(eventId: number): Promise<void> {
     await db.delete(events).where(eq(events.id, eventId));
   }
- async getUnreadMessagesCount(userId: number): Promise<number> {
-    const result = await db.select({ count: count() }).from(messages)
-      .where(and(eq(messages.receiverId, userId), eq(messages.isRead, false)));
-    return Number(result[0]?.count ?? 0);
+async getUnreadMessagesCount(userId: number): Promise<number> {
+    try {
+      const result = await db.select({ count: count() }).from(messages)
+        .where(and(eq(messages.receiverId, userId), eq(messages.isRead, false)));
+      return Number(result[0]?.count ?? 0);
+    } catch {
+      return 0;
+    }
   }
   async getConversations(userId: number) {
     const result = await db.selectDistinct({ user: users })
