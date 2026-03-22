@@ -315,22 +315,30 @@ async attendEvent(eventId: number, userId: number): Promise<void> {
   }
 async getUnreadMessagesCount(userId: number): Promise<number> {
     try {
-      const result = await db.select({ count: count() }).from(messages)
+      const result = await db.select().from(messages)
         .where(and(eq(messages.receiverId, userId), eq(messages.isRead, false)));
-      return Number(result[0]?.count ?? 0);
+      return result.length;
     } catch {
       return 0;
     }
   }
-  async getConversations(userId: number) {
-    const result = await db.selectDistinct({ user: users })
-      .from(messages)
-      .innerJoin(users, or(
-        and(eq(messages.senderId, userId), eq(users.id, messages.receiverId)),
-        and(eq(messages.receiverId, userId), eq(users.id, messages.senderId))
-      ))
-      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)));
-    return result.map(r => r.user);
+ async getConversations(userId: number) {
+    if (!userId || isNaN(userId)) return [];
+    try {
+      const sent = await db.selectDistinct({ user: users })
+        .from(messages)
+        .innerJoin(users, eq(users.id, messages.receiverId))
+        .where(eq(messages.senderId, userId));
+      const received = await db.selectDistinct({ user: users })
+        .from(messages)
+        .innerJoin(users, eq(users.id, messages.senderId))
+        .where(eq(messages.receiverId, userId));
+      const all = [...sent, ...received].map(r => r.user);
+      const unique = Array.from(new Map(all.map(u => [u.id, u])).values());
+      return unique;
+    } catch {
+      return [];
+    }
   }
   async getNotifications(userId: number) {
     return await db.select().from(notifications)
