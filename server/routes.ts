@@ -631,10 +631,11 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   app.get("/api/messages/unread/:userId", async (req, res) => {
     try {
       const userId = Number(req.params.userId);
+      if (isNaN(userId)) return res.json(0);
       const count = await storage.getUnreadMessagesCount(userId);
       res.json(count);
     } catch (err) {
-      res.status(400).json({ message: "Errore" });
+      res.json(0);
     }
   });
 // === NOTIFICATIONS ===
