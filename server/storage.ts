@@ -313,6 +313,16 @@ async attendEvent(eventId: number, userId: number): Promise<void> {
   async deleteEvent(eventId: number): Promise<void> {
     await db.delete(events).where(eq(events.id, eventId));
   }
+  async getConversations(userId: number) {
+    const result = await db.selectDistinct({ user: users })
+      .from(messages)
+      .innerJoin(users, or(
+        and(eq(messages.senderId, userId), eq(users.id, messages.receiverId)),
+        and(eq(messages.receiverId, userId), eq(users.id, messages.senderId))
+      ))
+      .where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)));
+    return result.map(r => r.user);
+  }
   async getNotifications(userId: number) {
     return await db.select().from(notifications)
       .where(eq(notifications.userId, userId))
