@@ -191,7 +191,40 @@ function Router() {
     </Switch>
   );
 }
+function NotificationBell() {
+  const [location] = useLocation();
+  const isActive = location === "/notifications";
+  const userId = getCurrentUserId();
+  const { data: notifications = [] } = useQuery<any[]>({
+    queryKey: ["/api/notifications", userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/notifications/${userId}`);
+      return res.json();
+    },
+    refetchInterval: 30000,
+  });
+  const unreadCount = notifications.filter((n: any) => !n.isRead).length;
 
+  return (
+    <Link href="/notifications">
+      <button
+        className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors relative ${
+          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <div className="relative">
+          <Bell className="w-5 h-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </div>
+        <span className="text-xs font-medium">Notifiche</span>
+      </button>
+    </Link>
+  );
+}
 function BottomNav() {
   const [location] = useLocation();
   const { toast } = useToast();
@@ -204,8 +237,7 @@ function BottomNav() {
     { path: "/artists", icon: Users, label: "Artisti" },
   ];
 
-  const navItemsRight = [
-    { path: "/notifications", icon: Bell, label: "Notifiche" },
+ const navItemsRight = [
     { path: "/messages", icon: MessageCircle, label: "Messaggi" },
     { path: "/me", icon: User, label: "Me" },
   ];
@@ -283,8 +315,8 @@ function BottomNav() {
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50" data-testid="nav-bottom">
         <div className="flex items-center justify-around h-16 max-w-md mx-auto">
           {navItemsLeft.map(renderNavItem)}
-
-        {navItemsRight.map(renderNavItem)}
+          <NotificationBell />
+          {navItemsRight.map(renderNavItem)}
         </div>
       </nav>
     </>
