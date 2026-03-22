@@ -628,6 +628,15 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore" });
     }
   });
+  app.get("/api/messages/unread/:userId", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const count = await storage.getUnreadMessagesCount(userId);
+      res.json(count);
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
