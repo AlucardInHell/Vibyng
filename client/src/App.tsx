@@ -201,7 +201,7 @@ function NotificationBell() {
       const res = await fetch(`/api/notifications/${userId}`);
       return res.json();
     },
-    refetchInterval: 30000,
+    refetchInterval: 10000,
   });
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
 
