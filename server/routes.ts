@@ -219,7 +219,25 @@ app.post("/api/uploads/avatar", async (req, res) => {
       throw err;
     }
   });
-
+app.get("/api/posts", async (req, res) => {
+    try {
+      const userId = req.query.userId ? Number(req.query.userId) : null;
+      let posts;
+      if (userId) {
+        const following = await storage.getFollowingByFan(userId);
+        if (following.length > 0) {
+          posts = await storage.getPostsByFollowing(following.map(f => f.id));
+        } else {
+          posts = await storage.getPosts();
+        }
+      } else {
+        posts = await storage.getPosts();
+      }
+      res.json(posts);
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel recupero post" });
+    }
+  });
   // === USER POSTS ===
   app.get("/api/users/:userId/posts", async (req, res) => {
     const userPosts = await storage.getPostsByUser(Number(req.params.userId));
