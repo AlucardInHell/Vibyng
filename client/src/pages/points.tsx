@@ -54,7 +54,9 @@ export default function Points() {
   const { data: followedArtists = [] } = useQuery<User[]>({
     queryKey: ["/api/users", CURRENT_USER_ID, "following"],
   });
-
+const { data: followersData } = useQuery<{ count: number }>({
+    queryKey: [`/api/artists/${CURRENT_USER_ID}/followers/count`],
+  });
   const { data: myPhotos = [] } = useQuery<ArtistPhoto[]>({
     queryKey: ["/api/users", CURRENT_USER_ID, "photos"],
   });
@@ -320,10 +322,10 @@ export default function Points() {
                currentUser?.role === "record_label" ? "Casa Discografica" : "Fan"}
             </Badge>
             <div className="flex items-center gap-4 mt-3">
-              <div className="flex items-center gap-1 text-muted-foreground">
+             <div className="flex items-center gap-1 text-muted-foreground">
                 <Users className="w-4 h-4" />
-                <span className="text-sm font-medium" data-testid="text-following">
-                  {followedArtists.length} seguiti
+                <span className="text-sm font-medium" data-testid="text-followers">
+                  {followersData?.count ?? 0} follower
                 </span>
               </div>
              <Link href="/vpoints">
