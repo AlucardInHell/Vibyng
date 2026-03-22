@@ -526,10 +526,17 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     res.json(messages);
   });
 
-  app.post("/api/messages", async (req, res) => {
+ app.post("/api/messages", async (req, res) => {
     try {
       const { senderId, receiverId, content } = req.body;
       const message = await storage.sendMessage({ senderId, receiverId, content });
+      const sender = await storage.getUser(senderId);
+      await storage.createNotification({
+        userId: receiverId,
+        type: "message",
+        message: `${sender?.displayName || "Qualcuno"} ti ha inviato un messaggio`,
+        relatedUserId: senderId,
+      });
       res.status(201).json(message);
     } catch (err) {
       res.status(400).json({ message: "Errore nell'invio del messaggio" });
