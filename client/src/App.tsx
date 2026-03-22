@@ -195,7 +195,8 @@ function Router() {
 function MessagesButton() {
   const [location] = useLocation();
   const isActive = location === "/messages";
-  const userId = getCurrentUserId();
+  const storedUser = localStorage.getItem("vibyng-user");
+  const userId = storedUser ? JSON.parse(storedUser).id : 0;
   const { data: unreadCount = 0 } = useQuery<number>({
     queryKey: ["/api/messages/unread", userId],
     queryFn: async () => {
@@ -229,7 +230,8 @@ function MessagesButton() {
 function NotificationBell() {
   const [location] = useLocation();
   const isActive = location === "/notifications";
-  const userId = getCurrentUserId();
+  const storedUser = localStorage.getItem("vibyng-user");
+  const userId = storedUser ? JSON.parse(storedUser).id : 0;
   const { data: notifications = [] } = useQuery<any[]>({
     queryKey: ["/api/notifications", userId],
     queryFn: async () => {
