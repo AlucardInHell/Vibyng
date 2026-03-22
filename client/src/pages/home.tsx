@@ -655,7 +655,11 @@ useEffect(() => {
   }, [searchOpen]);
 
   const { data: posts, isLoading } = useQuery<PostWithAuthor[]>({
-    queryKey: ["/api/posts"],
+    queryKey: ["/api/posts", CURRENT_USER_ID],
+    queryFn: async () => {
+      const res = await fetch(`/api/posts?userId=${CURRENT_USER_ID}`);
+      return res.json();
+    },
   });
 
   const likeMutation = useMutation({
