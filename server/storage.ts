@@ -322,6 +322,11 @@ async getUnreadMessagesCount(userId: number): Promise<number> {
       return 0;
     }
   }
+  async markMessagesRead(userId: number, senderId: number): Promise<void> {
+    await db.update(messages)
+      .set({ isRead: true })
+      .where(and(eq(messages.receiverId, userId), eq(messages.senderId, senderId)));
+  }
  async getConversations(userId: number) {
     if (!userId || isNaN(userId)) return [];
     try {
