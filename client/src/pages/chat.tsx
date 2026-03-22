@@ -30,8 +30,14 @@ export default function Chat() {
     queryKey: ["/api/users", artistId],
   });
 
-  const { data: messages, isLoading: messagesLoading } = useQuery<MessageWithSender[]>({
+ const { data: messages = [], isLoading: messagesLoading } = useQuery<MessageWithSender[]>({
     queryKey: ["/api/messages", CURRENT_USER_ID, artistId],
+    queryFn: async () => {
+      const res = await fetch(`/api/messages/${CURRENT_USER_ID}/${artistId}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    refetchInterval: 5000,
   });
 
   const sendMessageMutation = useMutation({
