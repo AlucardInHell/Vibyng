@@ -440,21 +440,39 @@ const { data: artistEvents = [] } = useQuery<Event[]>({
                             <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-red-500" : ""}`} />
                             {post.likesCount}
                           </button>
-                          {isOwnProfile && (
-                            <button
-                              className="text-xs text-red-400 hover:text-red-600 ml-auto"
+                         <div className="flex flex-col items-end gap-2">
+                          {!isOwnProfile && (
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={async () => {
                                 try {
-                                  await apiRequest("DELETE", `/api/posts/${post.id}`);
-                                  queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
-                                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-                                  toast({ title: "Post eliminato" });
+                                  await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
+                                  toast({ title: "Partecipi all'evento! 🎉" });
+                                } catch {
+                                  toast({ title: "Errore", variant: "destructive" });
+                                }
+                              }}
+                            >
+                              <Calendar className="w-3 h-3 mr-1" />
+                              Partecipo
+                            </Button>
+                          )}
+                          {isOwnProfile && (
+                            <button
+                              className="text-xs text-red-400 hover:text-red-600"
+                              onClick={async () => {
+                                try {
+                                  await apiRequest("DELETE", `/api/events/${event.id}`);
+                                  queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
+                                  toast({ title: "Evento eliminato" });
                                 } catch {
                                   toast({ title: "Errore", variant: "destructive" });
                                 }
                               }}
                             >🗑️</button>
                           )}
+                        </div>
                         </div>
                       </div>
                     </div>
