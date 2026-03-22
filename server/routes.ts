@@ -619,6 +619,15 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore" });
     }
   });
+  app.get("/api/users/:userId/conversations", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const conversations = await storage.getConversations(userId);
+      res.json(conversations);
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
