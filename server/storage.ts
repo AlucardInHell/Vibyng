@@ -316,8 +316,8 @@ async attendEvent(eventId: number, userId: number): Promise<void> {
 async getUnreadMessagesCount(userId: number): Promise<number> {
     try {
       const result = await db.select().from(messages)
-        .where(and(eq(messages.receiverId, userId), eq(messages.isRead, false)));
-      return result.length;
+        .where(eq(messages.receiverId, userId));
+      return result.filter(m => !m.isRead).length;
     } catch {
       return 0;
     }
