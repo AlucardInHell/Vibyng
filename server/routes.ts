@@ -530,6 +530,17 @@ app.get("/api/messages/:userId1/:userId2", async (req, res) => {
     }
   });
 
+  app.post("/api/messages/read/:userId/:otherUserId", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const otherUserId = Number(req.params.otherUserId);
+      await storage.markMessagesRead(userId, otherUserId);
+      res.json({ success: true });
+    } catch (err) {
+      res.json({ success: false });
+    }
+  });
+  
  app.post("/api/messages", async (req, res) => {
     try {
       const { senderId, receiverId, content } = req.body;
