@@ -24,6 +24,7 @@ type MessageWithSender = Message & { sender: User };
 export default function Chat() {
   const params = useParams<{ artistId: string }>();
   const artistId = Number(params.artistId);
+  const CURRENT_USER_ID = getCurrentUserId();
   const [newMessage, setNewMessage] = useState("");
 
   const { data: artist, isLoading: artistLoading } = useQuery<User>({
