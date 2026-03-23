@@ -28,10 +28,6 @@ export default function Chat() {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-  
   const { data: artist, isLoading: artistLoading } = useQuery<User>({
     queryKey: ["/api/users", artistId],
   });
@@ -54,6 +50,10 @@ export default function Chat() {
     refetchInterval: 5000,
   });
 
+useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       return apiRequest("POST", "/api/messages", {
