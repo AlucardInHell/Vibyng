@@ -19,7 +19,7 @@ interface AuthPageProps {
 }
 
 export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,6 +37,32 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
     setError("");
   };
 
+  const handleForgotPassword = async () => {
+    if (!form.email) {
+      setError("Inserisci la tua email");
+      return;
+    }
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || "Errore sconosciuto");
+        return;
+      }
+      setSuccess("✅ Email inviata! Controlla la tua casella di posta per reimpostare la password.");
+    } catch {
+      setError("Errore di connessione. Riprova.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const handleSubmit = async () => {
     setIsLoading(true);
     setError("");
@@ -109,6 +135,35 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
           boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
         }}>
 
+{/* Schermata recupero password */}
+          {mode === "forgot" && (
+            <div>
+              <h2 style={{ color: "white", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Recupera password</h2>
+              <p style={{ color: "#9c88cc", fontSize: 13, marginBottom: 20 }}>Inserisci la tua email e ti invieremo un link per reimpostare la password.</p>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ color: "#9c88cc", fontSize: 12, fontWeight: 600, display: "block", marginBottom: 6 }}>EMAIL</label>
+                <input
+                  type="email"
+                  placeholder="la-tua@email.com"
+                  value={form.email}
+                  onChange={e => update("email", e.target.value)}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, background: "#0f0a1e", border: "1px solid #2d1f50", color: "white", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              {error && <div style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", marginBottom: 16, color: "#f87171", fontSize: 13 }}>{error}</div>}
+              {success && <div style={{ background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 10, padding: "10px 14px", marginBottom: 16, color: "#4ade80", fontSize: 13 }}>{success}</div>}
+              <button onClick={handleForgotPassword} disabled={isLoading} style={{ width: "100%", padding: "13px 0", borderRadius: 12, border: "none", background: isLoading ? "#4b2d8a" : "linear-gradient(135deg, #7c3aed, #db2777)", color: "white", fontWeight: 700, fontSize: 16, cursor: isLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
+                {isLoading && <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />}
+                Invia email di recupero
+              </button>
+              <button onClick={() => { setMode("login"); setError(""); setSuccess(""); }} style={{ width: "100%", padding: "10px 0", borderRadius: 12, border: "1px solid #2d1f50", background: "transparent", color: "#9c88cc", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                Torna al login
+              </button>
+            </div>
+          )}
+
+          {mode !== "forgot" && (
+          
           {/* Tab login/registrazione */}
           <div style={{
             display: "flex", background: "#0f0a1e", borderRadius: 12,
@@ -218,6 +273,18 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
             </div>
           </div>
 
+          {/* Password dimenticata */}
+          {mode === "login" && (
+            <div style={{ textAlign: "right", marginTop: -16, marginBottom: 16 }}>
+              <button
+                onClick={() => { setMode("forgot"); setError(""); setSuccess(""); }}
+                style={{ background: "none", border: "none", color: "#9c88cc", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}
+              >
+                Password dimenticata?
+              </button>
+            </div>
+          )}
+          
           {/* Errore */}
           {error && (
             <div style={{
@@ -253,6 +320,7 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
             {isLoading && <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />}
             {mode === "login" ? "Accedi" : "Crea Account"}
           </button>
+          )}
         </div>
 
         <p style={{ color: "#5a4a7a", fontSize: 12, textAlign: "center", marginTop: 20 }}>
