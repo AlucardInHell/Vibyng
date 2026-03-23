@@ -49,14 +49,9 @@ export default function Chat() {
   });
 
   useEffect(() => {
-    if (messages.length > 0) {
-      const hasUnread = messages.some(m => m.senderId !== CURRENT_USER_ID && !m.isRead);
-      if (hasUnread) {
-        markReadMutation.mutate();
-        queryClient.invalidateQueries({ queryKey: ["/api/messages/unread", CURRENT_USER_ID] });
-      }
-    }
-  }, [messages.length]);
+    markReadMutation.mutate();
+    queryClient.invalidateQueries({ queryKey: ["/api/messages/unread", CURRENT_USER_ID] });
+  }, []);
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       return apiRequest("POST", "/api/messages", {
