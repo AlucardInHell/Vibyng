@@ -1,6 +1,6 @@
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,12 @@ export default function Chat() {
   const artistId = Number(params.artistId);
   const CURRENT_USER_ID = getCurrentUserId();
   const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+  
   const { data: artist, isLoading: artistLoading } = useQuery<User>({
     queryKey: ["/api/users", artistId],
   });
@@ -160,6 +165,7 @@ export default function Chat() {
               </p>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </CardContent>
 
         <div className="p-4 border-t">
