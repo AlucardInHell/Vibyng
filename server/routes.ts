@@ -167,6 +167,40 @@ app.post("/api/auth/login", async (req, res) => {
     res.status(500).send("Errore durante la verifica");
   }
 });
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.json({ success: true, message: "Se l'email esiste, riceverai un link di recupero" });
+      }
+      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      await storage.setPasswordResetToken(user.id, token);
+      const resetLink = `${process.env.APP_URL || "https://vibyng-production.up.railway.app"}/reset-password?token=${token}`;
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      await resend.emails.send({
+        from: "Vibyng <noreply@mail.vibyng.com>",
+        to: email,
+        subject: "Recupero password Vibyng",
+        html: `
+          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2 style="color: #7c3aed;">Recupero password</h2>
+            <p>Hai richiesto di reimpostare la tua password su Vibyng.</p>
+            <p>Clicca sul link qui sotto per creare una nuova password:</p>
+            <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #7c3aed, #db2777); color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">
+              Reimposta password
+            </a>
+            <p style="color: #999; font-size: 12px; margin-top: 20px;">Il link scade tra 1 ora. Se non hai richiesto il recupero, ignora questa email.</p>
+          </div>
+        `,
+      });
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'invio dell'email" });
+    }
+  });
+  
   // === IMAGE UPLOAD (base64) ===
 app.post("/api/uploads/image", async (req, res) => {
   try {
