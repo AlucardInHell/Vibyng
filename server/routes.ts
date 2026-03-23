@@ -419,6 +419,16 @@ app.post("/api/posts/:postId/like", async (req, res) => {
     res.json(following);
   });
 
+app.get("/api/users/:userId/followers", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const followersList = await storage.getFollowersByUser(userId);
+      res.json(followersList);
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel recupero follower" });
+    }
+  });
+  
  app.post("/api/users/:userId/follow/:artistId", async (req, res) => {
     try {
       const userId = Number(req.params.userId);
