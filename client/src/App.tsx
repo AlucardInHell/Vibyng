@@ -77,7 +77,6 @@ function getCurrentUserId(): number {
   } catch {}
   return 4;
 }
-const CURRENT_USER_ID = getCurrentUserId();
 function getStoredUser() {
   try {
     const stored = localStorage.getItem("vibyng-user");
