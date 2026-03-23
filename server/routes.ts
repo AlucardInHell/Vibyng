@@ -200,7 +200,12 @@ app.post("/api/auth/login", async (req, res) => {
       res.status(400).json({ message: "Errore nell'invio dell'email" });
     }
   });
-  
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      console.log(`[forgot-password] email=${email}`);
+      const user = await storage.getUserByEmail(email);
+      console.log(`[forgot-password] user=${user?.id}`);
   // === IMAGE UPLOAD (base64) ===
 app.post("/api/uploads/image", async (req, res) => {
   try {
