@@ -27,6 +27,23 @@ export default function Messages() {
     },
   });
 
+  const { data: unreadPerUser = {} } = useQuery<Record<number, number>>({
+    queryKey: ["/api/messages/unread-per-user", userId],
+    queryFn: async () => {
+      const counts: Record<number, number> = {};
+      await Promise.all(
+        conversations.map(async (user) => {
+          const res = await fetch(`/api/messages/unread-from/${user.id}/${userId}?t=${Date.now()}`);
+          const count = await res.json();
+          counts[user.id] = count;
+        })
+      );
+      return counts;
+    },
+    enabled: conversations.length > 0,
+    refetchInterval: 5000,
+  });
+
   const filtered = conversations.filter(u =>
     u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.username.toLowerCase().includes(searchQuery.toLowerCase())
@@ -75,23 +92,26 @@ export default function Messages() {
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           {filtered.length > 0 ? (
-            filtered.map((user) => (
-              <Link key={user.id} href={`/chat/${user.id}`}>
-                <div className="flex items-center gap-3 p-3 rounded-lg hover-elevate cursor-pointer">
-                  <Avatar className="w-10 h-10">
-                    {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {user.displayName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate">{user.displayName}</h3>
-                    <p className="text-xs text-muted-foreground truncate">Clicca per aprire la chat</p>
+            filtered.map((user) => {
+              const unread = unreadPerUser[user.id] ?? 0;
+              return (
+                <Link key={user.id} href={`/chat/${user.id}`}>
+                  <div className="flex items-center gap-3 p-3 rounded-lg hover-elevate cursor-pointer">
+                    <Avatar className="w-10 h-10">
+                      {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {user.displayName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`font-medium truncate ${unread > 0 ? "text-primary" : ""}`}>{user.displayName}</h3>
+                      <p className="text-xs text-muted-foreground truncate">Clicca per aprire la chat</p>
+                    </div>
+                <MessageCircle className={`w-5 h-5 ${unread > 0 ? "text-red-500" : "text-muted-foreground"}`} />
                   </div>
-                  <MessageCircle className="w-5 h-5 text-muted-foreground" />
-                </div>
-              </Link>
-            ))
+                </Link>
+              );
+            })
           ) : searchQuery ? (
             <p className="text-center text-muted-foreground py-4">Nessuna conversazione trovata per "{searchQuery}"</p>
           ) : (
