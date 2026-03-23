@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";useEffect(() => { 
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +61,14 @@ const { data: followersData } = useQuery<{ count: number }>({
   });
   const { data: myPhotos = [] } = useQuery<ArtistPhoto[]>({
     queryKey: ["/api/users", CURRENT_USER_ID, "photos"],
+  });
+
+  const { data: followersList = [] } = useQuery<User[]>({
+    queryKey: ["/api/users", CURRENT_USER_ID, "followers"],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${CURRENT_USER_ID}/followers`);
+      return res.json();
+    },
   });
 
   const { data: attendingEvents = [] } = useQuery<{ event: any }[]>({
@@ -684,42 +694,72 @@ const { data: followersData } = useQuery<{ count: number }>({
           )}
         </TabsContent>
         
-        <TabsContent value="connections" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-2">Profili che seguo ({followedArtists.length})</p>
-          {followedArtists.length > 0 ? (
-            <div className="flex flex-col gap-2">
-              {followedArtists.map((artist) => (
-                <div key={artist.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
-                  <Link href={`/artist/${artist.id}`}>
-                    <Avatar className="w-10 h-10 cursor-pointer hover-elevate">
-                      {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {artist.displayName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Link>
-                  <Link href={`/artist/${artist.id}`} className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm hover:text-primary cursor-pointer">{artist.displayName}</h4>
-                    <span className="text-xs text-muted-foreground">{artist.genre || "Fan"}</span>
-                  </Link>
-                  <Link href={`/chat/${artist.id}`}>
-                    <Button size="icon" variant="ghost">
-                      <MessageCircle className="w-4 h-4" />
-                    </Button>
-                  </Link>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleUnfollowArtist(artist.id, artist.displayName)}
-                  >
-                    <UserMinus className="w-4 h-4 text-red-500" />
-                  </Button>
+<TabsContent value="connections" className="mt-4">
+          <div className="flex flex-col gap-6">
+            <div>
+              <p className="text-sm font-medium mb-2">Follower ({followersList.length})</p>
+              {followersList.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {followersList.map((user) => (
+                    <div key={user.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
+                      <Link href={`/artist/${user.id}`}>
+                        <Avatar className="w-10 h-10 cursor-pointer hover-elevate">
+                          {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {user.displayName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
+                      <Link href={`/artist/${user.id}`} className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm hover:text-primary cursor-pointer">{user.displayName}</h4>
+                        <span className="text-xs text-muted-foreground">@{user.username}</span>
+                      </Link>
+                      <Link href={`/chat/${user.id}`}>
+                        <Button size="icon" variant="ghost">
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <p className="text-center text-muted-foreground py-4 text-sm">Nessun follower ancora</p>
+              )}
             </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-8 text-sm">Non segui ancora nessun profilo</p>
-          )}
+            <div>
+              <p className="text-sm font-medium mb-2">Profili che seguo ({followedArtists.length})</p>
+              {followedArtists.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {followedArtists.map((artist) => (
+                    <div key={artist.id} className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
+                      <Link href={`/artist/${artist.id}`}>
+                        <Avatar className="w-10 h-10 cursor-pointer hover-elevate">
+                          {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {artist.displayName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
+                      <Link href={`/artist/${artist.id}`} className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm hover:text-primary cursor-pointer">{artist.displayName}</h4>
+                        <span className="text-xs text-muted-foreground">{artist.genre || "@" + artist.username}</span>
+                      </Link>
+                      <Link href={`/chat/${artist.id}`}>
+                        <Button size="icon" variant="ghost">
+                          <MessageCircle className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Button size="icon" variant="ghost" onClick={() => handleUnfollowArtist(artist.id, artist.displayName)}>
+                        <UserMinus className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-4 text-sm">Non segui ancora nessun profilo</p>
+              )}
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="events" className="mt-4">
           <p className="text-center text-muted-foreground py-8">
