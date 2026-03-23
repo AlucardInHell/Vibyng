@@ -121,7 +121,7 @@ export default function Chat() {
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
+        <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide [&::-webkit-scrollbar]:hidden">
           {messages && messages.length > 0 ? (
             messages.map((msg) => {
               const isCurrentUser = msg.senderId === CURRENT_USER_ID;
