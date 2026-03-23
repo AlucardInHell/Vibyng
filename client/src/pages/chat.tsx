@@ -50,8 +50,11 @@ export default function Chat() {
 
   useEffect(() => {
     if (messages.length > 0) {
-      markReadMutation.mutate();
-      queryClient.invalidateQueries({ queryKey: ["/api/messages/unread", CURRENT_USER_ID] });
+      const hasUnread = messages.some(m => m.senderId !== CURRENT_USER_ID && !m.isRead);
+      if (hasUnread) {
+        markReadMutation.mutate();
+        queryClient.invalidateQueries({ queryKey: ["/api/messages/unread", CURRENT_USER_ID] });
+      }
     }
   }, [messages.length]);
   const sendMessageMutation = useMutation({
