@@ -317,8 +317,11 @@ async getUnreadMessagesCount(userId: number): Promise<number> {
     try {
       const result = await db.select().from(messages)
         .where(eq(messages.receiverId, userId));
-      return result.filter(m => !m.isRead).length;
-    } catch {
+      const unread = result.filter(m => !m.isRead).length;
+      console.log(`[unread] userId=${userId} total=${result.length} unread=${unread}`);
+      return unread;
+    } catch (err) {
+      console.error(`[unread] error:`, err);
       return 0;
     }
   }
