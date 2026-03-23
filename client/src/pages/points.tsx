@@ -370,13 +370,29 @@ const { data: followersData } = useQuery<{ count: number }>({
               />
               <div className="flex items-center justify-between">
                 <div className="flex gap-1">
-                  <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" data-testid="input-photo-upload" />
-                  <input ref={videoInputRef} type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" data-testid="input-video-upload" />
-                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => photoInputRef.current?.click()} disabled={uploadingType === "photo"} data-testid="button-add-photo">
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.type.startsWith("image/")) {
+                        handlePhotoUpload(e as any);
+                      } else {
+                        handleVideoUpload(e as any);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={uploadingType === "photo" || uploadingType === "video"}
+                  >
                     <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => videoInputRef.current?.click()} disabled={uploadingType === "video"} data-testid="button-add-video">
-                    <Video className="w-4 h-4 text-muted-foreground" />
                   </Button>
                 </div>
                 <Button 
