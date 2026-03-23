@@ -198,8 +198,8 @@ function MessagesButton() {
   const userId = storedUser ? JSON.parse(storedUser).id : 0;
   const { data: unreadCount = 0 } = useQuery<number>({
     queryKey: ["/api/messages/unread", userId],
-    queryFn: async () => {
-      const res = await fetch(`/api/messages/unread/${userId}`);
+   queryFn: async () => {
+      const res = await fetch(`/api/messages/unread/${userId}?t=${Date.now()}`);
       return res.json();
     },
     refetchInterval: 5000,
