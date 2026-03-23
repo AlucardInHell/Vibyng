@@ -203,7 +203,7 @@ function MessagesButton() {
       const res = await fetch(`/api/messages/unread/${userId}`);
       return res.json();
     },
-    refetchInrefetchInterval: 5000,
+    refetchInterval: 5000,
     staleTime: 0,
   });
 
