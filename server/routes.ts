@@ -198,7 +198,7 @@ app.post("/api/auth/login", async (req, res) => {
       res.json({ success: true });
    }  catch (err: any) {
       console.error(`[forgot-password] error:`, err?.message || err);
-      res.status(400).json({ message: "Errore nell'invio dell'email", detail: err?.message });
+    res.status(400).json({ message: "Errore nell'invio dell'email", detail: err?.message });
     }
   });
   // === IMAGE UPLOAD (base64) ===
