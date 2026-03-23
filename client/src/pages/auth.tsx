@@ -163,7 +163,8 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
           )}
 
           {mode !== "forgot" && (
-          
+          <div>
+            
           {/* Tab login/registrazione */}
           <div style={{
             display: "flex", background: "#0f0a1e", borderRadius: 12,
@@ -319,7 +320,8 @@ export default function AuthPage({ onLogin, onRegister }: AuthPageProps) {
           >
             {isLoading && <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />}
             {mode === "login" ? "Accedi" : "Crea Account"}
-          </button>
+         </button>
+          </div>
           )}
         </div>
 
