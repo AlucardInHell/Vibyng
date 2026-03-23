@@ -517,8 +517,19 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     }
   });
 
-  // === MESSAGES ===
-app.get("/api/messages/:userId1/:userId2", async (req, res) => {
+ // === MESSAGES ===
+  app.get("/api/messages/unread/:userId", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      if (isNaN(userId)) return res.json(0);
+      const count = await storage.getUnreadMessagesCount(userId);
+      res.json(count);
+    } catch (err) {
+      res.json(0);
+    }
+  });
+
+  app.get("/api/messages/:userId1/:userId2", async (req, res) => {
     try {
       const userId1 = Number(req.params.userId1);
       const userId2 = Number(req.params.userId2);
@@ -540,8 +551,8 @@ app.get("/api/messages/:userId1/:userId2", async (req, res) => {
       res.json({ success: false });
     }
   });
-  
- app.post("/api/messages", async (req, res) => {
+
+  app.post("/api/messages", async (req, res) => {
     try {
       const { senderId, receiverId, content } = req.body;
       const message = await storage.sendMessage({ senderId, receiverId, content });
@@ -550,7 +561,6 @@ app.get("/api/messages/:userId1/:userId2", async (req, res) => {
       res.status(400).json({ message: "Errore nell'invio del messaggio" });
     }
   });
-
   // === STORIES ===
   app.get("/api/stories", async (_req, res) => {
     const activeStories = await storage.getActiveStories();
