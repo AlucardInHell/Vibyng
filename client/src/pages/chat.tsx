@@ -30,7 +30,15 @@ export default function Chat() {
   const { data: artist, isLoading: artistLoading } = useQuery<User>({
     queryKey: ["/api/users", artistId],
   });
-
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      apiRequest("POST", `/api/messages/read/${CURRENT_USER_ID}/${artistId}`);
+      queryClient.invalidateQueries({ queryKey: ["/api/messages/unread", CURRENT_USER_ID] });
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+  
  const { data: messages = [], isLoading: messagesLoading } = useQuery<MessageWithSender[]>({
     queryKey: ["/api/messages", CURRENT_USER_ID, artistId],
     queryFn: async () => {
