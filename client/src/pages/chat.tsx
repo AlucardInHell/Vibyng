@@ -41,17 +41,6 @@ export default function Chat() {
     refetchInterval: 5000,
   });
 
-  // Marca i messaggi come letti quando si apre la chat
-  const markReadMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest("POST", `/api/messages/read/${CURRENT_USER_ID}/${artistId}`);
-    },
-  });
-
-  useEffect(() => {
-    markReadMutation.mutate();
-    queryClient.invalidateQueries({ queryKey: ["/api/messages/unread", CURRENT_USER_ID] });
-  }, []);
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       return apiRequest("POST", "/api/messages", {
