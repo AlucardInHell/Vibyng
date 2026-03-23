@@ -313,7 +313,16 @@ async attendEvent(eventId: number, userId: number): Promise<void> {
   async deleteEvent(eventId: number): Promise<void> {
     await db.delete(events).where(eq(events.id, eventId));
   }
-async getUnreadMessagesCount(userId: number): Promise<number> {
+async getUnreadFromSender(senderId: number, receiverId: number): Promise<number> {
+    try {
+      const result = await db.select().from(messages)
+        .where(and(eq(messages.senderId, senderId), eq(messages.receiverId, receiverId)));
+      return result.filter(m => !m.isRead).length;
+    } catch {
+      return 0;
+    }
+  }
+  async getUnreadMessagesCount(userId: number): Promise<number> {
     try {
       const result = await db.select().from(messages)
         .where(eq(messages.receiverId, userId));
