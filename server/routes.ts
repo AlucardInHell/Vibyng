@@ -561,6 +561,19 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nell'invio del messaggio" });
     }
   });
+  
+  app.get("/api/messages/unread-from/:senderId/:receiverId", async (req, res) => {
+    try {
+      const senderId = Number(req.params.senderId);
+      const receiverId = Number(req.params.receiverId);
+      if (isNaN(senderId) || isNaN(receiverId)) return res.json(0);
+      const result = await storage.getUnreadFromSender(senderId, receiverId);
+      res.json(result);
+    } catch (err) {
+      res.json(0);
+    }
+  });
+  
   // === STORIES ===
   app.get("/api/stories", async (_req, res) => {
     const activeStories = await storage.getActiveStories();
