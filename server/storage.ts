@@ -41,6 +41,13 @@ export interface IStorage {
   followArtist(fanId: number, artistId: number): Promise<void>;
   unfollowArtist(fanId: number, artistId: number): Promise<void>;
   isFollowing(fanId: number, artistId: number): Promise<boolean>;
+  async getFollowersByUser(userId: number): Promise<User[]> {
+    const result = await db.select({ user: users })
+      .from(followers)
+      .innerJoin(users, eq(followers.fanId, users.id))
+      .where(eq(followers.artistId, userId));
+    return result.map(r => r.user);
+  }
 
   // User Media (photos/videos for any user)
   getPhotosByUser(userId: number): Promise<ArtistPhoto[]>;
@@ -247,6 +254,14 @@ async likePost(postId: number): Promise<void> {
     return result[0]?.count ?? 0;
   }
 
+  async getFollowersByUser(userId: number): Promise<User[]> {
+    const result = await db.select({ user: users })
+      .from(followers)
+      .innerJoin(users, eq(followers.fanId, users.id))
+      .where(eq(followers.artistId, userId));
+    return result.map(r => r.user);
+  }
+  
   async getFollowingByFan(fanId: number): Promise<User[]> {
     const results = await db.select({ artist: users })
       .from(followers)
