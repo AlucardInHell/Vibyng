@@ -1,6 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";useEffect(() => { 
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -761,11 +759,7 @@ const { data: followersData } = useQuery<{ count: number }>({
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="events" className="mt-4">
-          <p className="text-center text-muted-foreground py-8">
-            Gestisci i tuoi eventi dal tuo profilo pubblico
-          </p>
-        </TabsContent>
+       
         <TabsContent value="vpoints" className="mt-4">
           <div className="space-y-4">
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20" data-testid="card-points-balance">
