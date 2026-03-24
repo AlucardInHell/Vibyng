@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,6 +82,25 @@ export default function ArtistProfile() {
   const { data: followersData } = useQuery<{ count: number }>({
     queryKey: [`/api/artists/${id}/followers/count`],
   });
+
+  const { data: followingData } = useQuery<User[]>({
+    queryKey: ["/api/users", artistId, "following"],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${artistId}/following`);
+      return res.json();
+    },
+  });
+
+  const { data: followersList = [] } = useQuery<User[]>({
+    queryKey: ["/api/users", artistId, "followers"],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${artistId}/followers`);
+      return res.json();
+    },
+  });
+
+  const [connectionsOpen, setConnectionsOpen] = useState(false);
+  const [connectionsTab, setConnectionsTab] = useState<"followers" | "following">("followers");
 
   const { data: isFollowingData } = useQuery<{ isFollowing: boolean }>({
     queryKey: ["/api/users", currentUserId, "following", artistId],
