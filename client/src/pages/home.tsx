@@ -379,38 +379,40 @@ function Stories() {
                 </p>
               </div>
 
-              <div className="absolute bottom-4 left-0 right-0 px-3 flex items-center gap-2">
-                <Input
-                  placeholder={`Rispondi a ${activeStory.displayName}...`}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  onFocus={() => setIsPaused(true)}
-                  onBlur={() => setIsPaused(false)}
-                  className="flex-1 bg-transparent border-white/30 text-white placeholder:text-white/50 rounded-full"
-                  data-testid="input-story-reply"
-                />
-                {replyText.trim() ? (
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    onClick={handleSendReply}
-                    className="text-white"
-                    data-testid="button-send-reply"
-                  >
-                    <Send className="w-5 h-5" />
-                  </Button>
-                ) : (
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
-                    onClick={() => handleLikeStory(activeStory.stories[activeStoryIndex]?.id)}
-                    className="text-white"
-                    data-testid="button-like-story"
-                  >
-                    <Heart className={`w-6 h-6 ${liked.has(activeStory.stories[activeStoryIndex]?.id) ? "fill-red-500 text-red-500" : ""}`} />
-                  </Button>
-                )}
-              </div>
+             {activeStory.userId !== CURRENT_USER_ID && (
+                <div className="absolute bottom-4 left-0 right-0 px-3 flex items-center gap-2">
+                  <Input
+                    placeholder={`Rispondi a ${activeStory.displayName}...`}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onFocus={() => setIsPaused(true)}
+                    onBlur={() => setIsPaused(false)}
+                    className="flex-1 bg-transparent border-white/30 text-white placeholder:text-white/50 rounded-full"
+                    data-testid="input-story-reply"
+                  />
+                  {replyText.trim() ? (
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={handleSendReply}
+                      className="text-white"
+                      data-testid="button-send-reply"
+                    >
+                      <Send className="w-5 h-5" />
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      onClick={() => handleLikeStory(activeStory.stories[activeStoryIndex]?.id)}
+                      className="text-white"
+                      data-testid="button-like-story"
+                    >
+                      <Heart className={`w-6 h-6 ${liked.has(activeStory.stories[activeStoryIndex]?.id) ? "fill-red-500 text-red-500" : ""}`} />
+                    </Button>
+                  )}
+                </div>
+              )}
 
               <button
                 onClick={prevStory}
