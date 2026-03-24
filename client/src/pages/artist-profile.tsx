@@ -296,10 +296,20 @@ export default function ArtistProfile() {
               <Badge variant="secondary" className="mt-1">{artist.genre}</Badge>
             )}
             <div className="flex items-center gap-4 mt-3">
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <button
+                className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => { setConnectionsTab("followers"); setConnectionsOpen(true); }}
+              >
                 <Users className="w-4 h-4" />
                 <span className="text-sm font-medium">{followersData?.count ?? 0} follower</span>
-              </div>
+              </button>
+              <button
+                className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => { setConnectionsTab("following"); setConnectionsOpen(true); }}
+              >
+                <Users className="w-4 h-4" />
+                <span className="text-sm font-medium">{followingData?.length ?? 0} seguiti</span>
+              </button>
               <div className="flex items-center gap-1 text-primary">
                 <Zap className="w-4 h-4" />
                 <span className="text-sm font-medium">{artist.vibyngPoints} VibyngPoints</span>
@@ -770,6 +780,60 @@ export default function ArtistProfile() {
           </CardContent>
         </Card>
       )}
+   <Dialog open={connectionsOpen} onOpenChange={setConnectionsOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Connessioni</DialogTitle>
+          </DialogHeader>
+          <div className="flex gap-2 mb-4">
+            <button
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${connectionsTab === "followers" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+              onClick={() => setConnectionsTab("followers")}
+            >
+              Follower ({followersList.length})
+            </button>
+            <button
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${connectionsTab === "following" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+              onClick={() => setConnectionsTab("following")}
+            >
+              Seguiti ({followingData?.length ?? 0})
+            </button>
+          </div>
+          <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
+            {connectionsTab === "followers" ? (
+              followersList.length > 0 ? followersList.map(user => (
+                <Link key={user.id} href={`/artist/${user.id}`} onClick={() => setConnectionsOpen(false)}>
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer">
+                    <Avatar className="w-10 h-10">
+                      {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                      <AvatarFallback className="bg-primary/10 text-primary">{user.displayName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{user.displayName}</p>
+                      <p className="text-xs text-muted-foreground">@{user.username}</p>
+                    </div>
+                  </div>
+                </Link>
+              )) : <p className="text-center text-muted-foreground py-4 text-sm">Nessun follower ancora</p>
+            ) : (
+              followingData && followingData.length > 0 ? followingData.map(user => (
+                <Link key={user.id} href={`/artist/${user.id}`} onClick={() => setConnectionsOpen(false)}>
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer">
+                    <Avatar className="w-10 h-10">
+                      {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                      <AvatarFallback className="bg-primary/10 text-primary">{user.displayName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{user.displayName}</p>
+                      <p className="text-xs text-muted-foreground">@{user.username}</p>
+                    </div>
+                  </div>
+                </Link>
+              )) : <p className="text-center text-muted-foreground py-4 text-sm">Non segue ancora nessuno</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
