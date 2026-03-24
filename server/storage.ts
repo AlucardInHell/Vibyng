@@ -84,6 +84,20 @@ async getUserByEmail(email: string): Promise<User | undefined> {
       sql`UPDATE users SET password_reset_token = ${token}, password_reset_expires = ${expires} WHERE id = ${userId}`
     );
   }
+
+async getUserByResetToken(token: string): Promise<User | undefined> {
+    const now = new Date();
+    const result = await db.execute(
+      sql`SELECT * FROM users WHERE password_reset_token = ${token} AND password_reset_expires > ${now} LIMIT 1`
+    );
+    return (result.rows[0] as User) || undefined;
+  }
+
+  async resetPassword(userId: number, hashedPassword: string): Promise<void> {
+    await db.execute(
+      sql`UPDATE users SET password = ${hashedPassword}, password_reset_token = NULL, password_reset_expires = NULL WHERE id = ${userId}`
+    );
+  }
   
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
