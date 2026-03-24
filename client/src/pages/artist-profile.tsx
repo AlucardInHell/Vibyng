@@ -295,20 +295,13 @@ export default function ArtistProfile() {
             {artist.genre && (
               <Badge variant="secondary" className="mt-1">{artist.genre}</Badge>
             )}
-            <div className="flex items-center gap-4 mt-3">
+           <div className="flex items-center gap-4 mt-3">
               <button
                 className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => { setConnectionsTab("followers"); setConnectionsOpen(true); }}
               >
                 <Users className="w-4 h-4" />
-                <span className="text-sm font-medium">{followersData?.count ?? 0} follower</span>
-              </button>
-              <button
-                className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
-                onClick={() => { setConnectionsTab("following"); setConnectionsOpen(true); }}
-              >
-                <Users className="w-4 h-4" />
-                <span className="text-sm font-medium">{followingData?.length ?? 0} seguiti</span>
+                <span className="text-sm font-medium">{(followersData?.count ?? 0) + (followingData?.length ?? 0)} connessioni</span>
               </button>
               <div className="flex items-center gap-1 text-primary">
                 <Zap className="w-4 h-4" />
