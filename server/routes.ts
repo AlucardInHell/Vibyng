@@ -116,7 +116,9 @@ app.post("/api/auth/register", async (req, res) => {
           <h2 style="color: white;">Benvenuto, ${displayName}! 🎵</h2>
           <p style="color: #9c88cc;">Grazie per esserti registrato. Clicca il pulsante qui sotto per confermare il tuo account:</p>
           <div style="text-align: center; margin: 32px 0;">
-            <a href="${verifyUrl}" style="background: linear-gradient(135deg, #7c3aed, #db2777); color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px;">
+            <a href="${verifyUrl}" style="background: linear-gradient(135deg, #7c3aed, #db2777); color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; max-width: 80%; word-break: break-word; box-sizing: border-box;">
+              Conferma Account
+            </a>
               Conferma Account
             </a>
           </div>
