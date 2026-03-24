@@ -933,6 +933,10 @@ const handleLogin = (user: any) => {
   };
 
   if (!currentUser) {
+    const isResetPassword = window.location.pathname === "/reset-password";
+    if (isResetPassword) {
+      return <ResetPassword />;
+    }
     return <AuthPage onLogin={handleLogin} onRegister={handleRegister} />;
   }
 
