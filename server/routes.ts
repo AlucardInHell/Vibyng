@@ -201,6 +201,21 @@ app.post("/api/auth/login", async (req, res) => {
     res.status(400).json({ message: "Errore nell'invio dell'email", detail: err?.message });
     }
   });
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      const user = await storage.getUserByResetToken(token);
+      if (!user) {
+        return res.status(400).json({ message: "Token non valido o scaduto" });
+      }
+      const crypto = await import("crypto");
+      const hashedPassword = crypto.createHash("sha256").update(password).digest("hex");
+      await storage.resetPassword(user.id, hashedPassword);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(400).json({ message: "Errore nel reset della password" });
+    }
+  });
   // === IMAGE UPLOAD (base64) ===
 app.post("/api/uploads/image", async (req, res) => {
   try {
