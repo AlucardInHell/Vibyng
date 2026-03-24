@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications, events, eventAttendees } from "@shared/schema";
 import type { User, InsertUser, Post, InsertPost, ArtistGoal, InsertArtistGoal, Support, InsertSupport, ArtistPhoto, InsertArtistPhoto, ArtistVideo, InsertArtistVideo, ArtistSong, InsertArtistSong, Message, InsertMessage, Comment, InsertComment, Story, InsertStory } from "@shared/schema";
-import { eq, desc, count, or, and, asc, ilike, gt } from "drizzle-orm";
+import { eq, desc, count, or, and, asc, ilike, gt, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -80,9 +80,9 @@ async getUserByEmail(email: string): Promise<User | undefined> {
 
   async setPasswordResetToken(userId: number, token: string): Promise<void> {
     const expires = new Date(Date.now() + 3600000);
-    await db.update(users)
-      .set({ passwordResetToken: token, passwordResetExpires: expires } as any)
-      .where(eq(users.id, userId));
+    await db.execute(
+      sql`UPDATE users SET password_reset_token = ${token}, password_reset_expires = ${expires} WHERE id = ${userId}`
+    );
   }
   
   async createUser(insertUser: InsertUser): Promise<User> {
