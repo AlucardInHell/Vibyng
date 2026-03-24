@@ -17,6 +17,7 @@ import AuthPage from "@/pages/auth";
 import Onboarding from "@/pages/onboarding";
 import Notifications from "@/pages/notifications";
 import VPoints from "@/pages/vpoints";
+import ResetPassword from "@/pages/reset-password";
 import { useState, createContext, useContext, useEffect, useRef, useCallback } from "react";
 import type { User as UserType } from "@shared/schema";
 import { Home as HomeIcon, Users, Zap, Music, MessageCircle, Settings, User, Shield, Bell, Globe, Moon, Sun, HelpCircle, FileText, LogOut, Check, X, Plus, Camera, Video, Upload, Search } from "lucide-react";
@@ -187,6 +188,7 @@ function Router() {
       <Route path="/me" component={Points} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/vpoints" component={VPoints} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route component={NotFound} />
     </Switch>
   );
