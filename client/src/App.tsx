@@ -108,10 +108,11 @@ export function useProfile() {
 }
 
 function ProfileProvider({ children }: { children: React.ReactNode }) {
- const storedUser = localStorage.getItem("vibyng-user");
+  const storedUser = localStorage.getItem("vibyng-user");
   const userId = storedUser ? JSON.parse(storedUser).id : 0;
   const { data: user, isLoading } = useQuery<UserType>({
     queryKey: ["/api/users", userId],
+    enabled: userId > 0,
   });
 
   const updateMutation = useMutation({
