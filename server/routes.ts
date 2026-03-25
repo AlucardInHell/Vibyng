@@ -680,13 +680,14 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     }
   });
 
-  app.delete("/api/events/:eventId", async (req, res) => {
+ app.delete("/api/events/:eventId", async (req, res) => {
     try {
       const eventId = Number(req.params.eventId);
       await storage.deleteEvent(eventId);
       res.json({ success: true });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nell'eliminazione evento" });
+    } catch (err: any) {
+      console.error(`[delete-event] error:`, err?.message);
+      res.status(400).json({ message: "Errore nell'eliminazione evento", detail: err?.message });
     }
   });
   // === EVENT ATTENDEES ===
