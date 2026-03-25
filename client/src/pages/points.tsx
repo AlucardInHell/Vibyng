@@ -380,14 +380,16 @@ const { data: followersData } = useQuery<{ count: number }>({
                   <input
                     ref={photoInputRef}
                     type="file"
-                    accept="image/*,video/*"
+                    accept={currentUser?.role === "artist" ? "image/*,video/*,audio/*" : "image/*,video/*"}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
                       if (file.type.startsWith("image/")) {
                         handlePhotoUpload(e as any);
-                      } else {
+                      } else if (file.type.startsWith("video/")) {
                         handleVideoUpload(e as any);
+                      } else if (file.type.startsWith("audio/")) {
+                        handleMusicUpload(e as any);
                       }
                     }}
                     className="hidden"
