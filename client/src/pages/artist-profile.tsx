@@ -401,12 +401,10 @@ export default function ArtistProfile() {
               <span className="hidden sm:inline">Canzoni</span>
             </TabsTrigger>
           )}
-          {isArtist && (
-            <TabsTrigger value="events" className="px-1 text-xs">
-              <Calendar className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Eventi</span>
-            </TabsTrigger>
-          )}
+         <TabsTrigger value="events" className="px-1 text-xs">
+            <Calendar className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Eventi</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab Post */}
@@ -572,7 +570,6 @@ export default function ArtistProfile() {
         )}
 
         {/* Tab Eventi — solo Artista */}
-        {isArtist && (
           <TabsContent value="events" className="mt-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-muted-foreground">Eventi ({artistEvents.length})</p>
@@ -681,7 +678,6 @@ export default function ArtistProfile() {
               <p className="text-center text-muted-foreground py-8">Nessun evento in programma</p>
             )}
           </TabsContent>
-        )}
 
         {/* Tab Messaggi */}
         <TabsContent value="messages" className="mt-4">
