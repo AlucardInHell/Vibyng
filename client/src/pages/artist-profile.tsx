@@ -651,8 +651,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                               variant="outline"
                               onClick={async () => {
                                 try {
-                                 await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
+                               await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
                                   queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
+                                  queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "events/attending"] });
                                   toast({ title: "Partecipi all'evento! 🎉" });
                                 } catch {
                                   toast({ title: "Errore", variant: "destructive" });
