@@ -126,7 +126,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       const res = await fetch(`/api/users/${artistId}/events/attending`);
       return res.json();
     },
-    enabled: !!artist && !isArtist,
+    enabled: !!artist && artist.role !== "artist",
   });
   
   const followMutation = useMutation({
