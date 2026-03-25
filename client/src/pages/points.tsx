@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar } from "lucide-react";
+import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
@@ -46,6 +47,8 @@ export default function Points() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   
   const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/users", CURRENT_USER_ID],
@@ -683,7 +686,50 @@ const { data: followersData } = useQuery<{ count: number }>({
           )}
         </TabsContent>
 
-        <TabsContent value="events" className="mt-4">
+       <TabsContent value="events" className="mt-4">
+          {currentUser?.role === "artist" ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">I tuoi eventi ({attendingEvents.length})</p>
+                <Button size="sm" variant="outline" onClick={() => setShowEventForm(!showEventForm)}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Aggiungi
+                </Button>
+              </div>
+              {showEventForm && (
+                <Card>
+                  <CardContent className="p-4 space-y-3">
+                    <Input placeholder="Nome evento *" value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} />
+                    <Input type="datetime-local" value={eventForm.eventDate} onChange={e => setEventForm(p => ({ ...p, eventDate: e.target.value }))} />
+                    <Input placeholder="Città" value={eventForm.city} onChange={e => setEventForm(p => ({ ...p, city: e.target.value }))} />
+                    <Input placeholder="Venue / Locale" value={eventForm.venue} onChange={e => setEventForm(p => ({ ...p, venue: e.target.value }))} />
+                    <Textarea placeholder="Descrizione (opzionale)" value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} rows={2} />
+                    <Input placeholder="Link biglietti (opzionale)" value={eventForm.ticketUrl} onChange={e => setEventForm(p => ({ ...p, ticketUrl: e.target.value }))} />
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1" onClick={() => setShowEventForm(false)}>Annulla</Button>
+                      <Button className="flex-1" onClick={async () => {
+                        if (!eventForm.name || !eventForm.eventDate) {
+                          toast({ title: "Compila nome e data", variant: "destructive" });
+                          return;
+                        }
+                        try {
+                          await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/events`, { ...eventForm, eventDate: new Date(eventForm.eventDate).toISOString() });
+                          queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"] });
+                          setShowEventForm(false);
+                          setEventForm({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
+                          toast({ title: "Evento aggiunto!" });
+                        } catch {
+                          toast({ title: "Errore", variant: "destructive" });
+                        }
+                      }}>Salva</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground mb-2">Eventi a cui partecipi ({attendingEvents.length})</p>
+          )}
           <p className="text-sm text-muted-foreground mb-2">Eventi a cui partecipi ({attendingEvents.length})</p>
           {attendingEvents.length > 0 ? (
             <div className="flex flex-col gap-3">
