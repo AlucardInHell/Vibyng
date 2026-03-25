@@ -671,7 +671,8 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     try {
       const artistId = Number(req.params.artistId);
       console.log(`[create-event] body:`, JSON.stringify(req.body));
-      const event = await storage.createEvent({ ...req.body, artistId });
+      const eventData = { ...req.body, artistId, eventDate: new Date(req.body.eventDate) };
+      const event = await storage.createEvent(eventData);
       res.status(201).json(event);
     } catch (err: any) {
       console.error(`[create-event] error:`, err?.message);
