@@ -645,7 +645,8 @@ export default function ArtistProfile() {
                               variant="outline"
                               onClick={async () => {
                                 try {
-                                  await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
+                                 await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
+                                  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
                                   toast({ title: "Partecipi all'evento! 🎉" });
                                 } catch {
                                   toast({ title: "Errore", variant: "destructive" });
