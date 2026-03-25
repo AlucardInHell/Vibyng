@@ -772,7 +772,6 @@ const { data: followersData } = useQuery<{ count: number }>({
           ) : (
             <p className="text-sm text-muted-foreground mb-2">Eventi a cui partecipi ({attendingEvents.length})</p>
           )}
-          <p className="text-sm text-muted-foreground mb-2">Eventi a cui partecipi ({attendingEvents.length})</p>
           {attendingEvents.length > 0 ? (
             <div className="flex flex-col gap-3">
               {attendingEvents.map(({ event }) => (
