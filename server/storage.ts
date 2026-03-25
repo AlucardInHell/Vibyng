@@ -353,7 +353,8 @@ async attendEvent(eventId: number, userId: number): Promise<void> {
     return event;
   }
 
-  async deleteEvent(eventId: number): Promise<void> {
+ async deleteEvent(eventId: number): Promise<void> {
+    await db.delete(eventAttendees).where(eq(eventAttendees.eventId, eventId));
     await db.delete(events).where(eq(events.id, eventId));
   }
 async getUnreadFromSender(senderId: number, receiverId: number): Promise<number> {
