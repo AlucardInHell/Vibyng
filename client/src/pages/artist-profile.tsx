@@ -120,6 +120,15 @@ export default function ArtistProfile() {
     enabled: !!artist && artist.role === "artist",
   });
 
+const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
+    queryKey: ["/api/users", artistId, "events/attending"],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${artistId}/events/attending`);
+      return res.json();
+    },
+    enabled: !!artist && !isArtist,
+  });
+  
   const followMutation = useMutation({
     mutationFn: async () => {
       if (isFollowingData?.isFollowing) {
@@ -675,7 +684,28 @@ export default function ArtistProfile() {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">Nessun evento in programma</p>
+              {!isArtist && profileAttendingEvents.length > 0 ? (
+                <div className="flex flex-col gap-3 mt-2">
+                  <p className="text-sm text-muted-foreground">Eventi a cui partecipa</p>
+                  {profileAttendingEvents.map(({ event }) => (
+                    <Card key={event.id} className="hover-elevate">
+                      <CardContent className="p-4">
+                        <h4 className="font-medium">{event.name}</h4>
+                        <p className="text-sm text-primary mt-1">
+                          {new Date(event.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                        {(event.city || event.venue) && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            📍 {[event.venue, event.city].filter(Boolean).join(" — ")}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">Nessun evento in programma</p>
+              )}
             )}
           </TabsContent>
 
