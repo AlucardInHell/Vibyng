@@ -72,6 +72,10 @@ const { data: followersData } = useQuery<{ count: number }>({
     },
   });
 
+  const { data: myArtistEvents = [] } = useQuery<any[]>({
+    queryKey: [`/api/artists/${CURRENT_USER_ID}/events`],
+    enabled: true,
+  });
   const { data: attendingEvents = [] } = useQuery<{ event: any }[]>({
     queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"],
     queryFn: async () => {
@@ -690,7 +694,7 @@ const { data: followersData } = useQuery<{ count: number }>({
           {currentUser?.role === "artist" ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">I tuoi eventi ({attendingEvents.length})</p>
+               <p className="text-sm text-muted-foreground">I tuoi eventi ({myArtistEvents.length})</p>
                 <Button size="sm" variant="outline" onClick={() => setShowEventForm(!showEventForm)}>
                   <Plus className="w-4 h-4 mr-1" />
                   Aggiungi
@@ -713,7 +717,8 @@ const { data: followersData } = useQuery<{ count: number }>({
                           return;
                         }
                         try {
-                          await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/events`, { ...eventForm, eventDate: new Date(eventForm.eventDate).toISOString() });
+                         await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/events`, { ...eventForm, eventDate: new Date(eventForm.eventDate).toISOString() });
+                          queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/events`] });
                           queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"] });
                           setShowEventForm(false);
                           setEventForm({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
@@ -725,6 +730,43 @@ const { data: followersData } = useQuery<{ count: number }>({
                     </div>
                   </CardContent>
                 </Card>
+              )}
+              {myArtistEvents.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {myArtistEvents.map((event: any) => (
+                    <Card key={event.id} className="hover-elevate">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{event.name}</h4>
+                            <p className="text-sm text-primary mt-1">
+                              {new Date(event.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                            {(event.city || event.venue) && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                📍 {[event.venue, event.city].filter(Boolean).join(" — ")}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            className="text-xs text-red-400 hover:text-red-600"
+                            onClick={async () => {
+                              try {
+                                await apiRequest("DELETE", `/api/events/${event.id}`);
+                                queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/events`] });
+                                toast({ title: "Evento eliminato" });
+                              } catch {
+                                toast({ title: "Errore", variant: "destructive" });
+                              }
+                            }}
+                          >🗑️</button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">Nessun evento creato ancora</p>
               )}
             </div>
           ) : (
