@@ -581,7 +581,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         {/* Tab Eventi — solo Artista */}
           <TabsContent value="events" className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-muted-foreground">Eventi</p>
               {isOwnProfile && (
                 <Button size="sm" variant="outline" onClick={() => setShowEventForm(!showEventForm)}>
                   <Plus className="w-4 h-4 mr-1" />
