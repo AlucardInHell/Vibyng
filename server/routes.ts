@@ -670,10 +670,12 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   app.post("/api/artists/:artistId/events", async (req, res) => {
     try {
       const artistId = Number(req.params.artistId);
+      console.log(`[create-event] body:`, JSON.stringify(req.body));
       const event = await storage.createEvent({ ...req.body, artistId });
       res.status(201).json(event);
-    } catch (err) {
-      res.status(400).json({ message: "Errore nella creazione evento" });
+    } catch (err: any) {
+      console.error(`[create-event] error:`, err?.message);
+      res.status(400).json({ message: "Errore nella creazione evento", detail: err?.message });
     }
   });
 
