@@ -567,7 +567,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         <h4 className="font-medium truncate">{song.title}</h4>
                         {song.duration && <span className="text-xs text-muted-foreground">{formatDuration(song.duration)}</span>}
                       </div>
-                      <Button size="icon" variant="ghost" onClick={() => handleAddToPlaylist(song)}>
+                     {!isOwnProfile && (
+                        <Button size="icon" variant="ghost" onClick={() => handleAddToPlaylist(song)}>
+                          {addedSongs.has(song.id) ? <Check className="w-5 h-5 text-green-500" /> : <Plus className="w-5 h-5" />}
+                        </Button>
+                      )}
+                      <Button size="icon" variant="ghost" onClick={() => handlePlaySong(song)}>
                         {currentSong?.id === song.id && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                       </Button>
                     </CardContent>
