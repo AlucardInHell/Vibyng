@@ -467,50 +467,56 @@ const { data: mySongs = [] } = useQuery<any[]>({
         </TabsList>
 
         <TabsContent value="songs" className="mt-4">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-             <p className="text-sm text-muted-foreground">Le tue canzoni ({mySongs.length})</p>
-             {mySongs.length > 0 ? (
-                mySongs.map((song) => (
-                  <Card key={song.id} className="hover-elevate" data-testid={`card-song-${song.id}`}>
-                    <CardContent className="p-3 flex items-center gap-3">
-                      <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
-                        <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                          <Music className="w-6 h-6 text-primary" />
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate" data-testid={`text-song-title-${song.id}`}>{song.title}</h4>
-                        <span className="text-xs text-muted-foreground">{song.artist} {song.duration ? `- ${formatDuration(song.duration)}` : ""}</span>
-                      </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted-foreground">Le tue canzoni ({mySongs.length})</p>
+            {mySongs.length > 0 ? (
+              mySongs.map((song: any) => (
+                <Card key={song.id} className="hover-elevate">
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0 bg-primary/10 flex items-center justify-center">
+                      {song.coverUrl ? (
+                        <img src={song.coverUrl} alt={song.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <Music className="w-6 h-6 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium truncate">{song.title}</h4>
+                      {song.duration && <span className="text-xs text-muted-foreground">{formatDuration(song.duration)}</span>}
+                    </div>
+                    {currentUser?.role === "artist" && (
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => handleRemoveFromPlaylist(song.id, song.title)}
-                        data-testid={`button-remove-${song.id}`}
+                        onClick={async () => {
+                          try {
+                            await apiRequest("DELETE", `/api/songs/${song.id}`);
+                            queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
+                            toast({ title: "Canzone eliminata" });
+                          } catch {
+                            toast({ title: "Errore", variant: "destructive" });
+                          }
+                        }}
                       >
                         <Minus className="w-5 h-5 text-red-500" />
                       </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handlePlaySong(song)}
-                        data-testid={`button-play-${song.id}`}
-                      >
-                        {currentSong?.id === song.id && isPlaying ? (
-                          <Pause className="w-5 h-5" />
-                        ) : (
-                          <Play className="w-5 h-5" />
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-               <p className="text-center text-muted-foreground py-8">Nessuna canzone caricata ancora.</p>
-              )}
-            </div>
-
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        const s = { id: song.id, title: song.title, artist: profileData.displayName, audioUrl: song.audioUrl, coverUrl: song.coverUrl, duration: song.duration };
+                        if (currentSong?.id === song.id) { togglePlay(); } else { playSong(s, mySongs.map((x: any) => ({ id: x.id, title: x.title, artist: profileData.displayName, audioUrl: x.audioUrl }))); }
+                      }}
+                    >
+                      {currentSong?.id === song.id && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <p className="text-center text-muted-foreground py-8">Nessuna canzone ancora.</p>
+            )}
           </div>
         </TabsContent>
 
