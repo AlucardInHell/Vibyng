@@ -22,13 +22,7 @@ export default function VPoints() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Link href="/me">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Indietro
-          </Button>
-        </Link>
+     <div className="flex items-center gap-2 mb-2">
         <h1 className="text-xl font-semibold">VibyngPoints</h1>
       </div>
 
