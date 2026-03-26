@@ -681,8 +681,8 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                                 }
                               }}
                             >
-                              <Calendar className="w-3 h-3 mr-1" />
-                              Partecipo
+                             <Calendar className="w-3 h-3 mr-1" />
+                              {myAttendingEvents.some(({ event: e }: any) => e.id === event.id) ? "Non partecipo più" : "Partecipo"}
                             </Button>
                           )}
                           {isOwnProfile && (
