@@ -258,9 +258,12 @@ const { data: followersData } = useQuery<{ count: number }>({
       await fetch(uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
       const newSong: Song = { id: Date.now(), title: file.name.replace(/\.[^/.]+$/, ""), artist: profileData.displayName, audioUrl: objectPath };
       setMyPlaylist(prev => [newSong, ...prev]);
-      await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: "Ho condiviso una nuova canzone!", mediaUrl: objectPath });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/songs`, {
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        audioUrl: objectPath,
+        artistId: CURRENT_USER_ID,
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
       toast({ title: "Canzone caricata!", description: "La tua canzone è stata aggiunta alla playlist e al feed" });
     } catch {
       toast({ title: "Errore", description: "Non è stato possibile caricare la canzone", variant: "destructive" });
