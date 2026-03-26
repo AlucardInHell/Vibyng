@@ -120,14 +120,6 @@ export default function ArtistProfile() {
     enabled: !!artist && artist.role === "artist",
   });
 
-const { data: myAttendingEvents = [] } = useQuery<{ event: any }[]>({
-    queryKey: ["/api/users", currentUserId, "events/attending"],
-    queryFn: async () => {
-      const res = await fetch(`/api/users/${currentUserId}/events/attending`);
-      return res.json();
-    },
-  });
-  
 const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     queryKey: ["/api/users", artistId, "events/attending"],
     queryFn: async () => {
@@ -685,32 +677,25 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                               Partecipo
                             </Button>
                           )}
-                         {!isOwnProfile && (() => {
-                            const isAttending = myAttendingEvents.some(({ event: e }: any) => e.id === event.id);
-                            return (
-                              <Button
-                                size="sm"
-                                variant={isAttending ? "default" : "outline"}
-                                onClick={async () => {
-                                  try {
-                                    if (isAttending) {
-                                      await apiRequest("DELETE", `/api/events/${event.id}/attend`, { userId: currentUserId });
-                                    } else {
-                                      await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
-                                    }
-                                    queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
-                                    queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "events/attending"] });
-                                    toast({ title: isAttending ? "Non partecipi più" : "Partecipi all'evento! 🎉" });
-                                  } catch {
-                                    toast({ title: "Errore", variant: "destructive" });
-                                  }
-                                }}
-                              >
-                                <Calendar className="w-3 h-3 mr-1" />
-                                {isAttending ? "Non partecipo più" : "Partecipo"}
-                              </Button>
-                            );
-                          })()}
+                          {isOwnProfile && (
+                            <button
+                              className="text-xs text-red-400 hover:text-red-600"
+                              onClick={async () => {
+                                try {
+                                  await apiRequest("DELETE", `/api/events/${event.id}`);
+                                  queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
+                                  toast({ title: "Evento eliminato" });
+                                } catch {
+                                  toast({ title: "Errore", variant: "destructive" });
+                                }
+                              }}
+                            >🗑️</button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : !isArtist && profileAttendingEvents.length > 0 ? (
                 <div className="flex flex-col gap-3 mt-2">
