@@ -236,13 +236,25 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     }
   };
 
-  const handleAddToPlaylist = (songId: number, songTitle: string) => {
-    if (addedSongs.has(songId)) {
-      toast({ title: "Già nella playlist", description: `"${songTitle}" è già nella tua playlist` });
+ const handleAddToPlaylist = async (song: ArtistSong) => {
+    if (addedSongs.has(song.id)) {
+      toast({ title: "Già nella playlist", description: `"${song.title}" è già nella tua playlist` });
       return;
     }
-    setAddedSongs(prev => new Set(prev).add(songId));
-    toast({ title: "Aggiunto alla playlist", description: `"${songTitle}" è stato aggiunto` });
+    try {
+      await apiRequest("POST", `/api/artists/${currentUserId}/songs`, {
+        artistId: currentUserId,
+        title: song.title,
+        audioUrl: song.audioUrl,
+        coverUrl: song.coverUrl,
+        duration: song.duration,
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/songs`] });
+      setAddedSongs(prev => new Set(prev).add(song.id));
+      toast({ title: "Aggiunto alla playlist!", description: `"${song.title}" è stato aggiunto` });
+    } catch {
+      toast({ title: "Errore", variant: "destructive" });
+    }
   };
 
   if (artistLoading) {
@@ -555,10 +567,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         <h4 className="font-medium truncate">{song.title}</h4>
                         {song.duration && <span className="text-xs text-muted-foreground">{formatDuration(song.duration)}</span>}
                       </div>
-                      <Button size="icon" variant="ghost" onClick={() => handleAddToPlaylist(song.id, song.title)}>
-                        {addedSongs.has(song.id) ? <Check className="w-5 h-5 text-green-500" /> : <Plus className="w-5 h-5" />}
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => handlePlaySong(song)}>
+                      <Button size="icon" variant="ghost" onClick={() => handleAddToPlaylist(song)}>
                         {currentSong?.id === song.id && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                       </Button>
                     </CardContent>
