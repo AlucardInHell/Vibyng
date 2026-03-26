@@ -501,6 +501,17 @@ app.delete("/api/songs/:songId", async (req, res) => {
       res.status(400).json({ message: "Errore nell'eliminazione della canzone" });
     }
   });
+
+  app.delete("/api/users/:userId/playlist/:songId", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const songId = Number(req.params.songId);
+      await storage.removeFromPlaylist(userId, songId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nella rimozione dalla playlist" });
+    }
+  });
   
   // === FOLLOWERS ===
   app.get("/api/artists/:artistId/followers/count", async (req, res) => {
