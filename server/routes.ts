@@ -458,6 +458,18 @@ app.post("/api/posts/:postId/like", async (req, res) => {
     }
   });
 
+app.post("/api/artists/:artistId/songs", async (req, res) => {
+    try {
+      const artistId = Number(req.params.artistId);
+      const { title, audioUrl, coverUrl, duration } = req.body;
+      const song = await storage.createSong({ artistId, title, audioUrl, coverUrl, duration });
+      res.status(201).json(song);
+    } catch (err: any) {
+      console.error("[create-song] error:", err?.message);
+      res.status(400).json({ message: "Errore nel salvare la canzone" });
+    }
+  });
+  
   // === SONGS ===
   app.get(api.songs.listByArtist.path, async (req, res) => {
     const songs = await storage.getSongsByArtist(Number(req.params.artistId));
