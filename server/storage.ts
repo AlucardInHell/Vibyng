@@ -267,6 +267,10 @@ async likePost(postId: number): Promise<void> {
     return song;
   }
 
+async deleteSong(songId: number): Promise<void> {
+    await db.delete(artistSongs).where(eq(artistSongs.id, songId));
+  }
+  
   async getFollowersCount(artistId: number): Promise<number> {
     const result = await db.select({ count: count() })
       .from(followers)
