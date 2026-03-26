@@ -126,6 +126,7 @@ export default function ArtistProfile() {
       const res = await fetch(`/api/users/${currentUserId}/events/attending`);
       return res.json();
     },
+    staleTime: 0,
   });
 
 const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
