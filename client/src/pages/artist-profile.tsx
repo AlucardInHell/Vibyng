@@ -576,13 +576,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           </TabsContent>
         )}
 
-        {/* Tab Seguiti — solo Fan */}
-        {isFan && (
-          <TabsContent value="following" className="mt-4">
-            <p className="text-center text-muted-foreground py-8">Profili seguiti da {artist.displayName}</p>
-          </TabsContent>
-        )}
-
         {/* Tab Eventi — solo Artista */}
           <TabsContent value="events" className="mt-4">
             <div className="flex items-center justify-between mb-2">
