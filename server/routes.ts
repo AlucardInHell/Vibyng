@@ -492,6 +492,16 @@ app.post("/api/artists/:artistId/songs", async (req, res) => {
     }
   });
 
+app.delete("/api/songs/:songId", async (req, res) => {
+    try {
+      const songId = Number(req.params.songId);
+      await storage.deleteSong(songId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'eliminazione della canzone" });
+    }
+  });
+  
   // === FOLLOWERS ===
   app.get("/api/artists/:artistId/followers/count", async (req, res) => {
     const count = await storage.getFollowersCount(Number(req.params.artistId));
