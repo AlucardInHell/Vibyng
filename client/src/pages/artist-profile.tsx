@@ -417,6 +417,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <Calendar className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Eventi</span>
           </TabsTrigger>
+          {isFan && (
+            <TabsTrigger value="connections" className="px-1 text-xs">
+              <Users className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline">Connessioni</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* Tab Post */}
@@ -704,6 +710,20 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               <p className="text-center text-muted-foreground py-8">Nessun evento in programma</p>
             )}
           </TabsContent>
+
+        {/* Tab Connessioni — solo Fan */}
+        {isFan && (
+          <TabsContent value="connections" className="mt-4">
+            <p className="text-center text-muted-foreground py-8">
+              <button
+                className="text-primary underline"
+                onClick={() => { setConnectionsTab("followers"); setConnectionsOpen(true); }}
+              >
+                Vedi follower e seguiti
+              </button>
+            </p>
+          </TabsContent>
+        )}
         
         {/* Tab Messaggi */}
         <TabsContent value="messages" className="mt-4">
