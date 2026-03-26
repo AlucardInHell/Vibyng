@@ -745,6 +745,17 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     }
   });
   // === EVENT ATTENDEES ===
+  app.delete("/api/events/:eventId/attend", async (req, res) => {
+    try {
+      const eventId = Number(req.params.eventId);
+      const { userId } = req.body;
+      await storage.unattendEvent(eventId, Number(userId));
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
+    }
+  });
+  
   app.post("/api/events/:eventId/attend", async (req, res) => {
     try {
       const eventId = Number(req.params.eventId);
