@@ -92,6 +92,11 @@ const { data: followersData } = useQuery<{ count: number }>({
     queryKey: ["/api/users", CURRENT_USER_ID, "posts"],
   });
 
+const { data: mySongs = [] } = useQuery<any[]>({
+    queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`],
+    enabled: true,
+  });
+  
   const unfollowMutation = useMutation({
     mutationFn: async (artistId: number) => {
       return apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/follow/${artistId}`);
@@ -464,9 +469,9 @@ const { data: followersData } = useQuery<{ count: number }>({
         <TabsContent value="songs" className="mt-4">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <p className="text-sm text-muted-foreground">Le tue canzoni preferite ({myPlaylist.length})</p>
-              {myPlaylist.length > 0 ? (
-                myPlaylist.map((song) => (
+             <p className="text-sm text-muted-foreground">Le tue canzoni ({mySongs.length})</p>
+             {mySongs.length > 0 ? (
+                mySongs.map((song) => (
                   <Card key={song.id} className="hover-elevate" data-testid={`card-song-${song.id}`}>
                     <CardContent className="p-3 flex items-center gap-3">
                       <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0">
@@ -502,7 +507,7 @@ const { data: followersData } = useQuery<{ count: number }>({
                   </Card>
                 ))
               ) : (
-                <p className="text-center text-muted-foreground py-8">La tua playlist è vuota. Aggiungi canzoni dai profili degli artisti!</p>
+               <p className="text-center text-muted-foreground py-8">Nessuna canzone caricata ancora.</p>
               )}
             </div>
 
