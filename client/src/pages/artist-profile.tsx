@@ -685,30 +685,25 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                               Partecipo
                             </Button>
                           )}
-                         {!isOwnProfile && (
-                            <Button
-                              size="sm"
-                              variant={myAttendingEvents.some(({ event: e }: any) => e.id === event.id) ? "default" : "outline"}
+                          {isOwnProfile && (
+                            <button
+                              className="text-xs text-red-400 hover:text-red-600"
                               onClick={async () => {
                                 try {
-                                  const isAttending = myAttendingEvents.some(({ event: e }: any) => e.id === event.id);
-                                  if (isAttending) {
-                                    await apiRequest("DELETE", `/api/events/${event.id}/attend`, { userId: currentUserId });
-                                  } else {
-                                    await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
-                                  }
-                                  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
-                                  queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "events/attending"] });
-                                  toast({ title: isAttending ? "Non partecipi più" : "Partecipi all'evento! 🎉" });
+                                  await apiRequest("DELETE", `/api/events/${event.id}`);
+                                  queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
+                                  toast({ title: "Evento eliminato" });
                                 } catch {
                                   toast({ title: "Errore", variant: "destructive" });
                                 }
                               }}
-                            >
-                              <Calendar className="w-3 h-3 mr-1" />
-                              {myAttendingEvents.some(({ event: e }: any) => e.id === event.id) ? "Non partecipo più" : "Partecipo"}
-                            </Button>
+                            >🗑️</button>
                           )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             ) : (!isArtist && profileAttendingEvents.length > 0) ? (
                 <div className="flex flex-col gap-3 mt-2">
