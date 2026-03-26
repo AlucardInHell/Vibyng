@@ -705,7 +705,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   </Card>
                 ))}
               </div>
-            ) : !isArtist && profileAttendingEvents.length > 0 ? (
+            ) : (!isArtist && profileAttendingEvents.length > 0) ? (
                 <div className="flex flex-col gap-3 mt-2">
                   <p className="text-sm text-muted-foreground">Eventi a cui partecipa</p>
                   {profileAttendingEvents.map(({ event }) => (
