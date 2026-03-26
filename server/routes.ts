@@ -218,6 +218,27 @@ app.post("/api/auth/login", async (req, res) => {
       res.status(400).json({ message: "Errore nel reset della password" });
     }
   });
+  // === AUDIO UPLOAD (Cloudinary) ===
+  app.post("/api/uploads/audio", async (req, res) => {
+    try {
+      const { audioData, title, artistId } = req.body;
+      const { v2: cloudinary } = await import("cloudinary");
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
+      const result = await cloudinary.uploader.upload(audioData, {
+        resource_type: "video",
+        folder: "vibyng/songs",
+        public_id: `song_${artistId}_${Date.now()}`,
+      });
+      res.json({ url: result.secure_url });
+    } catch (err: any) {
+      console.error("[upload-audio] error:", err?.message);
+      res.status(400).json({ message: "Errore nel caricamento audio", detail: err?.message });
+    }
+  });
   // === IMAGE UPLOAD (base64) ===
 app.post("/api/uploads/image", async (req, res) => {
   try {
