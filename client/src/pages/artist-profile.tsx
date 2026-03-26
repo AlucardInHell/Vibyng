@@ -120,6 +120,14 @@ export default function ArtistProfile() {
     enabled: !!artist && artist.role === "artist",
   });
 
+  const { data: myAttendingEvents = [] } = useQuery<{ event: any }[]>({
+    queryKey: ["/api/users", currentUserId, "events/attending"],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${currentUserId}/events/attending`);
+      return res.json();
+    },
+  });
+
 const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     queryKey: ["/api/users", artistId, "events/attending"],
     queryFn: async () => {
