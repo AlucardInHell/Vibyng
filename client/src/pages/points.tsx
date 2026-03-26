@@ -484,23 +484,27 @@ const { data: mySongs = [] } = useQuery<any[]>({
                       <h4 className="font-medium truncate">{song.title}</h4>
                       {song.duration && <span className="text-xs text-muted-foreground">{formatDuration(song.duration)}</span>}
                     </div>
-                    {currentUser?.role === "artist" && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={async () => {
-                          try {
+                 <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={async () => {
+                        try {
+                          if (currentUser?.role === "artist") {
                             await apiRequest("DELETE", `/api/songs/${song.id}`);
                             queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
                             toast({ title: "Canzone eliminata" });
-                          } catch {
-                            toast({ title: "Errore", variant: "destructive" });
+                          } else {
+                            await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/playlist/${song.id}`);
+                            queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
+                            toast({ title: "Rimossa dalla playlist" });
                           }
-                        }}
-                      >
-                        <Minus className="w-5 h-5 text-red-500" />
-                      </Button>
-                    )}
+                        } catch {
+                          toast({ title: "Errore", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      <Minus className="w-5 h-5 text-red-500" />
+                    </Button>
                     <Button
                       size="icon"
                       variant="ghost"
