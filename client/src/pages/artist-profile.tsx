@@ -54,6 +54,7 @@ export default function ArtistProfile() {
   const [postText, setPostText] = useState("");
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [showEventForm, setShowEventForm] = useState(false);
+  const [attendingEventIds, setAttendingEventIds] = useState<Set<number>>(new Set());
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -667,23 +668,23 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          {!isOwnProfile && (
+                         {!isOwnProfile && !attendingEventIds.has(event.id) && !myAttendingEvents.some(({ event: e }: any) => e.id === event.id) && (
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={async () => {
                                 try {
-                               await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
+                                  await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
+                                  setAttendingEventIds(prev => new Set(prev).add(event.id));
                                   await queryClient.refetchQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
-                                  await queryClient.refetchQueries({ queryKey: ["/api/users", artistId, "events/attending"] });
                                   toast({ title: "Partecipi all'evento! 🎉" });
                                 } catch {
                                   toast({ title: "Errore", variant: "destructive" });
                                 }
                               }}
                             >
-                             <Calendar className="w-3 h-3 mr-1" />
-                              {myAttendingEvents.some(({ event: e }: any) => e.id === event.id) ? "Non partecipo più" : "Partecipo"}
+                              <Calendar className="w-3 h-3 mr-1" />
+                              Partecipo
                             </Button>
                           )}
                           {isOwnProfile && (
