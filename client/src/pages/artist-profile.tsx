@@ -711,17 +711,57 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             )}
           </TabsContent>
 
-        {/* Tab Connessioni — solo Fan */}
+       {/* Tab Connessioni — solo Fan */}
         {isFan && (
           <TabsContent value="connections" className="mt-4">
-            <p className="text-center text-muted-foreground py-8">
-              <button
-                className="text-primary underline"
-                onClick={() => { setConnectionsTab("followers"); setConnectionsOpen(true); }}
-              >
-                Vedi follower e seguiti
-              </button>
-            </p>
+            <div className="flex flex-col gap-6">
+              <div>
+                <p className="text-sm font-medium mb-2">Follower ({followersList.length})</p>
+                {followersList.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {followersList.map(user => (
+                      <Link key={user.id} href={`/artist/${user.id}`}>
+                        <div className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer">
+                          <Avatar className="w-10 h-10">
+                            {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                            <AvatarFallback className="bg-primary/10 text-primary">{user.displayName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{user.displayName}</p>
+                            <p className="text-xs text-muted-foreground">@{user.username}</p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4 text-sm">Nessun follower ancora</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-2">Seguiti ({followingData?.length ?? 0})</p>
+                {followingData && followingData.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {followingData.map(user => (
+                      <Link key={user.id} href={`/artist/${user.id}`}>
+                        <div className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer">
+                          <Avatar className="w-10 h-10">
+                            {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                            <AvatarFallback className="bg-primary/10 text-primary">{user.displayName.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{user.displayName}</p>
+                            <p className="text-xs text-muted-foreground">@{user.username}</p>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4 text-sm">Non segue ancora nessuno</p>
+                )}
+              </div>
+            </div>
           </TabsContent>
         )}
         
