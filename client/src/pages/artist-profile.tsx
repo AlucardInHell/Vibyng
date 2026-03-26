@@ -317,7 +317,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               <Badge variant="secondary" className="mt-1">{artist.genre}</Badge>
             )}
            <div className="flex items-center gap-4 mt-3">
-              <button
                 <div className="flex items-center gap-1 text-muted-foreground">
                 <Users className="w-4 h-4" />
                 <span className="text-sm font-medium">{followersData?.count ?? 0} follower</span>
