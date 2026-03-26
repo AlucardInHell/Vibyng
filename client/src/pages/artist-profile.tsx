@@ -318,12 +318,10 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             )}
            <div className="flex items-center gap-4 mt-3">
               <button
-                className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
-                onClick={() => { setConnectionsTab("followers"); setConnectionsOpen(true); }}
-              >
+                <div className="flex items-center gap-1 text-muted-foreground">
                 <Users className="w-4 h-4" />
-                <span className="text-sm font-medium">{(followersData?.count ?? 0) + (followingData?.length ?? 0)} connessioni</span>
-              </button>
+                <span className="text-sm font-medium">{followersData?.count ?? 0} follower</span>
+              </div>
               <div className="flex items-center gap-1 text-primary">
                 <Zap className="w-4 h-4" />
                 <span className="text-sm font-medium">{artist.vibyngPoints} VibyngPoints</span>
@@ -410,12 +408,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <MessageCircle className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Messaggi</span>
           </TabsTrigger>
-          {isFan && (
-            <TabsTrigger value="following" className="px-1 text-xs">
-              <Users className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Seguiti</span>
-            </TabsTrigger>
-          )}
           {isArtist && (
             <TabsTrigger value="songs" className="px-1 text-xs">
               <Music className="w-4 h-4 sm:mr-1" />
