@@ -244,32 +244,43 @@ const { data: followersData } = useQuery<{ count: number }>({
     }
   };
 
-  const handleMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+ const handleMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: "File troppo grande", description: "Il file MP3 deve essere inferiore a 10MB", variant: "destructive" });
+      return;
+    }
     setUploadingType("music");
     try {
-      const presignRes = await fetch("/api/uploads/request-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
-      });
-      const { uploadURL, objectPath } = await presignRes.json();
-      await fetch(uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-      const newSong: Song = { id: Date.now(), title: file.name.replace(/\.[^/.]+$/, ""), artist: profileData.displayName, audioUrl: objectPath };
-      setMyPlaylist(prev => [newSong, ...prev]);
-      await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/songs`, {
-        title: file.name.replace(/\.[^/.]+$/, ""),
-        audioUrl: objectPath,
-        artistId: CURRENT_USER_ID,
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
-      toast({ title: "Canzone caricata!", description: "La tua canzone è stata aggiunta alla playlist e al feed" });
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const audioData = reader.result as string;
+          const uploadRes = await fetch("/api/uploads/audio", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ audioData, title: file.name.replace(/\.[^/.]+$/, ""), artistId: CURRENT_USER_ID }),
+          });
+          const { url } = await uploadRes.json();
+          await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/songs`, {
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            audioUrl: url,
+            artistId: CURRENT_USER_ID,
+          });
+          queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
+          toast({ title: "Canzone caricata!", description: "La tua canzone è ora visibile nel tuo profilo" });
+        } catch {
+          toast({ title: "Errore", description: "Non è stato possibile salvare la canzone", variant: "destructive" });
+        } finally {
+          setUploadingType(null);
+          if (musicInputRef.current) musicInputRef.current.value = "";
+        }
+      };
+      reader.readAsDataURL(file);
     } catch {
-      toast({ title: "Errore", description: "Non è stato possibile caricare la canzone", variant: "destructive" });
-    } finally {
+      toast({ title: "Errore", variant: "destructive" });
       setUploadingType(null);
-      if (musicInputRef.current) musicInputRef.current.value = "";
     }
   };
 
