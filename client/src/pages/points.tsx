@@ -204,7 +204,9 @@ const { data: mySongs = [] } = useQuery<any[]>({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      setPendingPhoto({ imageData, title: file.name.replace(/\.[^/.]+$/, "") });
+      if (!pendingPhoto) {
+        setPendingPhoto({ imageData, title: file.name.replace(/\.[^/.]+$/, "") });
+      }
     } catch {
       toast({ title: "Errore", description: "Non è stato possibile caricare la foto", variant: "destructive" });
     } finally {
