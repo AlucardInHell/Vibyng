@@ -47,6 +47,8 @@ export default function Points() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
+  const [pendingPhoto, setPendingPhoto] = useState<{ imageData: string; title: string } | null>(null);
+  const [pendingPostText, setPendingPostText] = useState("");
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   
@@ -207,7 +209,8 @@ const { data: mySongs = [] } = useQuery<any[]>({
         imageUrl: imageData,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-      toast({ title: "Foto caricata!", description: "La tua foto è stata aggiunta alla galleria e al feed" });
+      setPendingPhoto({ imageData, title: file.name.replace(/\.[^/.]+$/, "") });
+      toast({ title: "Foto caricata!", description: "Vuoi condividerla nel feed?" });
     } catch {
       toast({ title: "Errore", description: "Non è stato possibile caricare la foto", variant: "destructive" });
     } finally {
@@ -1002,7 +1005,42 @@ const { data: mySongs = [] } = useQuery<any[]>({
             </Card>
           </div>
         </TabsContent>
-      </Tabs>
+     </Tabs>
+      {pendingPhoto && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
+            <h3 className="font-semibold">Condividi nel feed</h3>
+            <img src={pendingPhoto.imageData} alt="preview" className="w-full h-48 object-cover rounded-lg" />
+            <textarea
+              className="w-full p-3 rounded-lg bg-muted border-0 text-sm outline-none resize-none"
+              placeholder="Scrivi qualcosa..."
+              rows={3}
+              value={pendingPostText}
+              onChange={e => setPendingPostText(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => { setPendingPhoto(null); setPendingPostText(""); }}>
+                Non condividere
+              </Button>
+              <Button className="flex-1" onClick={async () => {
+                try {
+                  await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: pendingPostText || "📷", mediaUrl: pendingPhoto.imageData });
+                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                  toast({ title: "Post pubblicato!" });
+                } catch {
+                  toast({ title: "Errore", variant: "destructive" });
+                } finally {
+                  setPendingPhoto(null);
+                  setPendingPostText("");
+                }
+              }}>
+                Pubblica
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
