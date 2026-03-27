@@ -853,6 +853,7 @@ useEffect(() => {
                   try {
                     await apiRequest("DELETE", `/api/posts/${post.id}`);
                     queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
                     toast({ title: "Post eliminato" });
                   } catch {
                     toast({ title: "Errore", variant: "destructive" });
