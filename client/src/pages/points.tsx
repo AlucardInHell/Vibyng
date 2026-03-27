@@ -586,9 +586,9 @@ const { data: mySongs = [] } = useQuery<any[]>({
                         <p key={i} className="text-sm bg-muted rounded-lg px-3 py-1">{c}</p>
                       ))}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-2">
                       <input
-                        className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
+                        className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background min-w-0"
                         placeholder="Scrivi un commento..."
                         value={commentInput}
                         onChange={e => setCommentInput(e.target.value)}
@@ -1019,7 +1019,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
               <Button className="flex-1" onClick={async () => {
                 try {
                   await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
-                    title: pendingPhoto.title,
+                    title: pendingPostText || pendingPhoto.title,
                     imageUrl: pendingPhoto.imageData,
                   });
                   queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
