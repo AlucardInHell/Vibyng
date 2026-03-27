@@ -204,13 +204,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
-        title: file.name.replace(/\.[^/.]+$/, ""),
-        imageUrl: imageData,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
       setPendingPhoto({ imageData, title: file.name.replace(/\.[^/.]+$/, "") });
-      toast({ title: "Foto caricata!", description: "Vuoi condividerla nel feed?" });
     } catch {
       toast({ title: "Errore", description: "Non è stato possibile caricare la foto", variant: "destructive" });
     } finally {
@@ -1024,6 +1018,11 @@ const { data: mySongs = [] } = useQuery<any[]>({
               </Button>
               <Button className="flex-1" onClick={async () => {
                 try {
+                  await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
+                    title: pendingPhoto.title,
+                    imageUrl: pendingPhoto.imageData,
+                  });
+                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
                   await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: pendingPostText || "📷", mediaUrl: pendingPhoto.imageData });
                   queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
                   queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
