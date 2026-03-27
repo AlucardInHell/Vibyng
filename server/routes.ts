@@ -598,7 +598,11 @@ app.get("/api/users/:userId/followers", async (req, res) => {
 app.delete("/api/posts/:postId", async (req, res) => {
     try {
       const postId = Number(req.params.postId);
+      const post = await storage.getPost(postId);
       await storage.deletePost(postId);
+      if (post?.mediaUrl) {
+        await storage.deletePhotoByUrl(post.mediaUrl);
+      }
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ message: "Errore nell'eliminazione del post" });
