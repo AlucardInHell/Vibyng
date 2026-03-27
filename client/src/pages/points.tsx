@@ -207,9 +207,6 @@ const { data: mySongs = [] } = useQuery<any[]>({
         imageUrl: imageData,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-      await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: "Ho condiviso una nuova foto!", mediaUrl: imageData });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       toast({ title: "Foto caricata!", description: "La tua foto è stata aggiunta alla galleria e al feed" });
     } catch {
       toast({ title: "Errore", description: "Non è stato possibile caricare la foto", variant: "destructive" });
