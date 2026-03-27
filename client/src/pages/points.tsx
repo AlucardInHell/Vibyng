@@ -1019,8 +1019,8 @@ const { data: mySongs = [] } = useQuery<any[]>({
               </Button>
               <Button className="flex-1" onClick={async () => {
                 try {
-                  await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
-                    title: pendingPostText || pendingPhoto.title,
+                 await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
+                    title: pendingPostText || "Foto",
                     imageUrl: pendingPhoto.imageData,
                   });
                   queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
