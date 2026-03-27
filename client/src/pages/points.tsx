@@ -808,15 +808,31 @@ const { data: mySongs = [] } = useQuery<any[]>({
               {attendingEvents.map(({ event }) => (
                 <Card key={event.id} className="hover-elevate">
                   <CardContent className="p-4">
-                    <h4 className="font-medium">{event.name}</h4>
-                    <p className="text-sm text-primary mt-1">
-                      {new Date(event.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                    </p>
-                    {(event.city || event.venue) && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        📍 {[event.venue, event.city].filter(Boolean).join(" — ")}
-                      </p>
-                    )}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{event.name}</h4>
+                        <p className="text-sm text-primary mt-1">
+                          {new Date(event.eventDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                        {(event.city || event.venue) && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            📍 {[event.venue, event.city].filter(Boolean).join(" — ")}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        className="text-xs text-red-400 hover:text-red-600"
+                        onClick={async () => {
+                          try {
+                            await apiRequest("DELETE", `/api/events/${event.id}/attend`, { userId: CURRENT_USER_ID });
+                            queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"] });
+                            toast({ title: "Evento rimosso" });
+                          } catch {
+                            toast({ title: "Errore", variant: "destructive" });
+                          }
+                        }}
+                      >🗑️</button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
