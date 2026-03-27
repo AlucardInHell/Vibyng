@@ -14,8 +14,9 @@ export interface IStorage {
   searchUsers(query: string, role?: string): Promise<User[]>;
   updateUserPoints(id: number, points: number): Promise<void>;
 
-  // Posts
+ // Posts
   getPosts(): Promise<(Post & { author: User })[]>;
+  getPost(postId: number): Promise<Post | undefined>;
   getPostsByUser(userId: number): Promise<(Post & { author: User })[]>;
   createPost(post: InsertPost): Promise<Post>;
   likePost(postId: number): Promise<void>;
