@@ -438,8 +438,13 @@ async getUnreadFromSender(senderId: number, receiverId: number): Promise<number>
     await db.delete(artistPhotos).where(eq(artistPhotos.id, photoId));
   }
 
-  async deletePhotoByUrl(imageUrl: string): Promise<void> {
-    await db.delete(artistPhotos).where(eq(artistPhotos.imageUrl, imageUrl));
+ async deletePhotoByUrl(imageUrl: string): Promise<void> {
+    const prefix = imageUrl.substring(0, 100);
+    const allPhotos = await db.select().from(artistPhotos);
+    const match = allPhotos.find(p => p.imageUrl?.startsWith(prefix));
+    if (match) {
+      await db.delete(artistPhotos).where(eq(artistPhotos.id, match.id));
+    }
   }
 
   async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
