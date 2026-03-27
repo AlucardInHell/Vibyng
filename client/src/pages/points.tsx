@@ -570,6 +570,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                           try {
                             await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${selectedPhoto.id}`);
                             queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                             setSelectedPhoto(null);
                             toast({ title: "Foto eliminata" });
                           } catch {
