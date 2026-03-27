@@ -162,6 +162,11 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     return results.map(r => ({ ...r.post, author: r.author }));
   }
 
+ async getPost(postId: number): Promise<Post | undefined> {
+    const [post] = await db.select().from(posts).where(eq(posts.id, postId));
+    return post;
+  }
+  
   async getPostsByUser(userId: number): Promise<(Post & { author: User })[]> {
     const results = await db.select({
       post: posts,
@@ -282,14 +287,6 @@ async deleteSong(songId: number): Promise<void> {
     return result[0]?.count ?? 0;
   }
 
-  async getFollowersByUser(userId: number): Promise<User[]> {
-    const result = await db.select({ user: users })
-      .from(followers)
-      .innerJoin(users, eq(followers.fanId, users.id))
-      .where(eq(followers.artistId, userId));
-    return result.map(r => r.user);
-  }
-  
   async getFollowersByUser(userId: number): Promise<User[]> {
     const result = await db.select({ user: users })
       .from(followers)
