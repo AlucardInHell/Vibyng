@@ -538,9 +538,9 @@ const { data: mySongs = [] } = useQuery<any[]>({
           {selectedPhoto && (
             <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
               <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
-                <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
+                <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden" onClick={e => e.stopPropagation()}>
                   <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[60vh] object-contain bg-black" />
-                  <div className="p-4">
+                  <div className="p-4 overflow-hidden">
                     <p className="font-medium mb-3">{selectedPhoto.title}</p>
                     <div className="flex items-center gap-4 mb-4 border-b pb-3">
                       <button
@@ -586,7 +586,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                         <p key={i} className="text-sm bg-muted rounded-lg px-3 py-1">{c}</p>
                       ))}
                     </div>
-                    <div className="flex gap-2 mt-2">
+                   <div className="flex gap-2 mt-2 w-full overflow-hidden">
                       <input
                         className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background min-w-0"
                         placeholder="Scrivi un commento..."
