@@ -440,6 +440,10 @@ async getUnreadFromSender(senderId: number, receiverId: number): Promise<number>
     await db.delete(artistPhotos).where(eq(artistPhotos.id, photoId));
   }
 
+  async deletePhotoByUrl(imageUrl: string): Promise<void> {
+    await db.delete(artistPhotos).where(eq(artistPhotos.imageUrl, imageUrl));
+  }
+
   async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
     return await db.select().from(artistVideos)
       .where(eq(artistVideos.artistId, userId))
