@@ -448,12 +448,15 @@ async getUnreadFromSender(senderId: number, receiverId: number): Promise<number>
   }
 
 async getPhotoComments(photoId: number) {
-    const results = await db.execute(
-      sql`SELECT pc.*, u.display_name, u.avatar_url, u.username FROM photo_comments pc JOIN users u ON pc.author_id = u.id WHERE pc.photo_id = ${photoId} ORDER BY pc.created_at ASC`
-    );
-    return results.rows;
+    try {
+      const results = await db.execute(
+        sql`SELECT pc.*, u.display_name, u.avatar_url, u.username FROM photo_comments pc JOIN users u ON pc.author_id = u.id WHERE pc.photo_id = ${photoId} ORDER BY pc.created_at ASC`
+      );
+      return Array.isArray(results.rows) ? results.rows : [];
+    } catch {
+      return [];
+    }
   }
-
   async createPhotoComment(data: { photoId: number; authorId: number; content: string }) {
     const result = await db.execute(
       sql`INSERT INTO photo_comments (photo_id, author_id, content) VALUES (${data.photoId}, ${data.authorId}, ${data.content}) RETURNING *`
