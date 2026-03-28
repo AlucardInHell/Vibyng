@@ -138,7 +138,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
     try {
       await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: postText });
       queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
       toast({
         title: "Post pubblicato!",
         description: "Il tuo post è stato condiviso con la community",
@@ -235,7 +235,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
       queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
       await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: "Ho condiviso un nuovo video!", mediaUrl: objectPath });
       queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
       toast({ title: "Video caricato!", description: "Il tuo video è stato aggiunto e condiviso nel feed" });
     } catch {
       toast({ title: "Errore", description: "Non è stato possibile caricare il video", variant: "destructive" });
@@ -572,7 +572,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                           try {
                             await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${selectedPhoto.id}`);
                             queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-                            queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
                             setSelectedPhoto(null);
                             toast({ title: "Foto eliminata" });
                           } catch {
@@ -685,7 +685,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                               }
                              setLikedPosts(new Set(newLiked));
                               queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-                              queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                              queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
                             }}
                           >
                             <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
@@ -701,7 +701,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                           try {
                             await apiRequest("DELETE", `/api/posts/${post.id}`);
                             queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-                            queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
                             queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
                             toast({ title: "Post eliminato" });
                           } catch {
@@ -1028,7 +1028,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                     description: pendingPostText,
                   });
                   queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
                   toast({ title: "Post pubblicato!" });
                 } catch {
                   toast({ title: "Errore", variant: "destructive" });
