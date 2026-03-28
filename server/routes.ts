@@ -306,8 +306,9 @@ app.get("/api/posts", async (req, res) => {
         posts = await storage.getPosts();
       }
 
-      // Aggiungi le foto come elementi del feed
+    // Aggiungi le foto come elementi del feed
       const photos = await storage.getAllPhotosForFeed();
+      console.log(`[feed] posts=${posts.length} photos=${photos.length}`);
       const photoItems = photos.map((p: any) => ({
         id: `photo_${p.id}`,
         type: "photo",
