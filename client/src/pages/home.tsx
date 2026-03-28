@@ -851,7 +851,12 @@ useEffect(() => {
               <button className="text-xs text-red-400 hover:text-red-600 ml-auto self-start pt-1"
                 onClick={async () => {
                   try {
-                    await apiRequest("DELETE", `/api/posts/${post.id}`);
+                   if (String(post.id).startsWith("photo_")) {
+                      const photoId = String(post.id).replace("photo_", "");
+                      await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${photoId}`);
+                    } else {
+                      await apiRequest("DELETE", `/api/posts/${post.id}`);
+                    }
                     queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                     queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
                     toast({ title: "Post eliminato" });
