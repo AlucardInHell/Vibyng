@@ -583,10 +583,10 @@ app.get("/api/users/:userId/followers", async (req, res) => {
     res.json(photos);
   });
 
-  app.post("/api/users/:userId/photos", async (req, res) => {
+ app.post("/api/users/:userId/photos", async (req, res) => {
     try {
-      const input = photoInputSchema.parse(req.body);
-      const photo = await storage.createPhoto({ artistId: Number(req.params.userId), title: input.title || null, imageUrl: input.imageUrl });
+      const { title, imageUrl, description } = req.body;
+      const photo = await storage.createPhoto({ artistId: Number(req.params.userId), title: title || null, imageUrl, description: description || null });
       res.status(201).json(photo);
     } catch (err) {
       if (err instanceof z.ZodError) {
