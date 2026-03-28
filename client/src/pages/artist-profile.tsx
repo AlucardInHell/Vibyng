@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music2, Target, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar } from "lucide-react";
+import { Music2, Target, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar, Share2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
@@ -54,6 +54,10 @@ export default function ArtistProfile() {
   const [postText, setPostText] = useState("");
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [showEventForm, setShowEventForm] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
+  const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
+  const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
+  const [commentInput, setCommentInput] = useState("");
   const [attendingEventIds, setAttendingEventIds] = useState<Set<number>>(new Set());
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -520,7 +524,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           <div className="grid grid-cols-2 gap-2">
             {photos && photos.length > 0 ? (
               photos.map((photo) => (
-                <Card key={photo.id} className="overflow-hidden hover-elevate">
+                <Card key={photo.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedPhoto(photo)}>
                   <img src={photo.imageUrl ?? undefined} alt={photo.title || "Foto"} className="w-full h-32 object-cover" />
                   {photo.title && (
                     <CardContent className="p-2">
@@ -875,6 +879,72 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             </p>
           </CardContent>
         </Card>
+      )}
+      {selectedPhoto && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
+          <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+            <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
+              <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[60vh] object-contain bg-black" />
+              <div className="p-4">
+                <p className="font-medium mb-3">{selectedPhoto.title}</p>
+                <div className="flex items-center gap-4 mb-4 border-b pb-3">
+                  <button
+                    className={`flex items-center gap-1 text-sm ${photoLikes[selectedPhoto.id] ? "text-red-500" : "text-muted-foreground"}`}
+                    onClick={() => setPhotoLikes(prev => ({ ...prev, [selectedPhoto.id]: !prev[selectedPhoto.id] }))}
+                  >
+                    <Heart className={`w-5 h-5 ${photoLikes[selectedPhoto.id] ? "fill-red-500" : ""}`} />
+                    {photoLikes[selectedPhoto.id] ? "Mi piace" : "Like"}
+                  </button>
+                  <button
+                    className="flex items-center gap-1 text-sm text-muted-foreground"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({ title: selectedPhoto.title, text: "Guarda questa foto su Vibyng!" });
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast({ title: "Link copiato!" });
+                      }
+                    }}
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Condividi
+                  </button>
+                  <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
+                </div>
+                <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
+                  {(photoComments[selectedPhoto.id] || []).map((c, i) => (
+                    <p key={i} className="text-sm bg-muted rounded-lg px-3 py-1">{c}</p>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
+                    placeholder="Scrivi un commento..."
+                    value={commentInput}
+                    onChange={e => setCommentInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && commentInput.trim()) {
+                        setPhotoComments(prev => ({ ...prev, [selectedPhoto.id]: [...(prev[selectedPhoto.id] || []), commentInput.trim()] }));
+                        setCommentInput("");
+                      }
+                    }}
+                  />
+                  <button
+                    className="text-sm text-primary font-medium px-2"
+                    onClick={() => {
+                      if (commentInput.trim()) {
+                        setPhotoComments(prev => ({ ...prev, [selectedPhoto.id]: [...(prev[selectedPhoto.id] || []), commentInput.trim()] }));
+                        setCommentInput("");
+                      }
+                    }}
+                  >
+                    Invia
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
    <Dialog open={connectionsOpen} onOpenChange={setConnectionsOpen}>
         <DialogContent className="max-w-sm">
