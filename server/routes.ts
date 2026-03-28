@@ -271,6 +271,32 @@ app.post("/api/uploads/avatar", async (req, res) => {
 });;
 
   // === POSTS ===
+  app.get(api.posts.list.path, async (_req, res) => {
+    const posts = await storage.getPosts();
+    const photos = await storage.getAllPhotosForFeed();
+    const photoItems = photos.map((p: any) => ({
+      id: `photo_${p.id}`,
+      type: "photo",
+      authorId: p.artist_id,
+      content: p.description || p.title || "📷",
+      mediaUrl: p.image_url,
+      createdAt: p.created_at,
+      likesCount: 0,
+      author: {
+        id: p.artist_id,
+        displayName: p.display_name,
+        username: p.username,
+        avatarUrl: p.avatar_url,
+        role: p.role,
+      },
+      photoId: p.id,
+    }));
+    const combined = [...posts, ...photoItems].sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    res.json(combined);
+  });
+  
   app.post(api.posts.create.path, async (req, res) => {
     try {
       const input = api.posts.create.input.parse(req.body);
