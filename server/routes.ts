@@ -810,6 +810,27 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.json(0);
     }
   });
+  // === PHOTO COMMENTS ===
+  app.get("/api/photos/:photoId/comments", async (req, res) => {
+    try {
+      const photoId = Number(req.params.photoId);
+      const comments = await storage.getPhotoComments(photoId);
+      res.json(comments);
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel recupero commenti" });
+    }
+  });
+
+  app.post("/api/photos/:photoId/comments", async (req, res) => {
+    try {
+      const photoId = Number(req.params.photoId);
+      const { authorId, content } = req.body;
+      const comment = await storage.createPhotoComment({ photoId, authorId, content });
+      res.status(201).json(comment);
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel creare il commento" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
