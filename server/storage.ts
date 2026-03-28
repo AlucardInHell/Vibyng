@@ -323,6 +323,17 @@ async deleteSong(songId: number): Promise<void> {
     return result.length > 0;
   }
 
+async getAllPhotosForFeed() {
+    try {
+      const result = await db.execute(
+        sql`SELECT ap.*, u.display_name, u.username, u.avatar_url, u.role FROM artist_photos ap JOIN users u ON ap.artist_id = u.id ORDER BY ap.created_at DESC`
+      );
+      return Array.isArray(result.rows) ? result.rows : [];
+    } catch {
+      return [];
+    }
+  }
+  
   async getPhotosByUser(userId: number): Promise<ArtistPhoto[]> {
     return await db.select().from(artistPhotos)
       .where(eq(artistPhotos.artistId, userId))
