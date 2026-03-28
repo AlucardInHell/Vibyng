@@ -326,33 +326,7 @@ app.get("/api/posts", async (req, res) => {
       } else {
         posts = await storage.getPosts();
       }
-
-    // Aggiungi le foto come elementi del feed
-      const photos = await storage.getAllPhotosForFeed();
-      console.log(`[feed] posts=${posts.length} photos=${photos.length}`);
-      const photoItems = photos.map((p: any) => ({
-        id: `photo_${p.id}`,
-        type: "photo",
-        authorId: p.artist_id,
-        content: p.description || p.title || "📷",
-        mediaUrl: p.image_url,
-        createdAt: p.created_at,
-        likesCount: 0,
-        author: {
-          id: p.artist_id,
-          displayName: p.display_name,
-          username: p.username,
-          avatarUrl: p.avatar_url,
-          role: p.role,
-        },
-        photoId: p.id,
-      }));
-
-      const combined = [...posts, ...photoItems].sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      res.json(combined);
+   res.json(posts);
     } catch (err) {
       res.status(400).json({ message: "Errore nel recupero post" });
     }
