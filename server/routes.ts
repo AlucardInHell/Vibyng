@@ -846,10 +846,12 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     try {
       const photoId = Number(req.params.photoId);
       const { authorId, content } = req.body;
+      console.log(`[photo-comment] photoId=${photoId} authorId=${authorId} content=${content}`);
       const comment = await storage.createPhotoComment({ photoId, authorId, content });
       res.status(201).json(comment);
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel creare il commento" });
+    } catch (err: any) {
+      console.error(`[photo-comment] error:`, err?.message);
+      res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
     }
   });
 // === NOTIFICATIONS ===
