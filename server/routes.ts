@@ -271,11 +271,6 @@ app.post("/api/uploads/avatar", async (req, res) => {
 });;
 
   // === POSTS ===
-  app.get(api.posts.list.path, async (_req, res) => {
-    const posts = await storage.getPosts();
-    res.json(posts);
-  });
-
   app.post(api.posts.create.path, async (req, res) => {
     try {
       const input = api.posts.create.input.parse(req.body);
