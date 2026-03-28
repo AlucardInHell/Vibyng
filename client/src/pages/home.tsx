@@ -522,6 +522,64 @@ function Stories() {
   );
 }
 
+function PhotoComments({ photoId }: { photoId: number }) {
+  const [newComment, setNewComment] = useState("");
+  const CURRENT_USER_ID_LOCAL = getCurrentUserId();
+
+  const { data: comments = [], refetch } = useQuery<any[]>({
+    queryKey: ["/api/photos", photoId, "comments"],
+    queryFn: async () => {
+      const res = await fetch(`/api/photos/${photoId}/comments`);
+      return res.json();
+    },
+  });
+
+  const handleSubmit = async () => {
+    if (!newComment.trim()) return;
+    await apiRequest("POST", `/api/photos/${photoId}/comments`, {
+      authorId: CURRENT_USER_ID_LOCAL,
+      content: newComment.trim(),
+    });
+    setNewComment("");
+    refetch();
+  };
+
+  return (
+    <div className="border-t pt-3 mt-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Scrivi un commento..."
+          value={newComment}
+          onChange={e => setNewComment(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
+          className="flex-1"
+        />
+        <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}>
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+      {comments.map((c: any) => (
+        <div key={c.id} className="flex gap-2">
+          <Link href={`/artist/${c.author_id}`}>
+            <Avatar className="w-8 h-8 cursor-pointer">
+              {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
+              <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </Link>
+          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{c.display_name}</span>
+              <span className="text-xs text-muted-foreground">
+                {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+            <p className="text-sm">{c.content}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 function PostComments({ postId }: { postId: number }) {
   const [newComment, setNewComment] = useState("");
 
@@ -917,8 +975,12 @@ useEffect(() => {
                 </Button>
               </div>
 
-              {openComments.has(post.id) && (
-                <PostComments postId={post.id} />
+             {openComments.has(post.id) && (
+                String(post.id).startsWith("photo_") ? (
+                  <PhotoComments photoId={Number(String(post.id).replace("photo_", ""))} />
+                ) : (
+                  <PostComments postId={post.id as number} />
+                )
               )}
             </CardContent>
          </Card>
