@@ -58,6 +58,15 @@ export default function ArtistProfile() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
+  const { data: photoCommentsList = [], refetch: refetchPhotoComments } = useQuery<any[]>({
+    queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
+    queryFn: async () => {
+      if (!selectedPhoto?.id) return [];
+      const res = await fetch(`/api/photos/${selectedPhoto.id}/comments`);
+      return res.json();
+    },
+    enabled: !!selectedPhoto,
+  });
   const [attendingEventIds, setAttendingEventIds] = useState<Set<number>>(new Set());
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -912,8 +921,20 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
                 </div>
                 <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
-                  {(photoComments[selectedPhoto.id] || []).map((c, i) => (
-                    <p key={i} className="text-sm bg-muted rounded-lg px-3 py-1">{c}</p>
+                  {photoCommentsList.map((c: any) => (
+                    <div key={c.id} className="flex items-start gap-2">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {c.avatar_url ? (
+                          <img src={c.avatar_url} alt={c.display_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 bg-muted rounded-lg px-3 py-1">
+                        <span className="text-xs font-medium">{c.display_name} </span>
+                        <span className="text-sm">{c.content}</span>
+                      </div>
+                    </div>
                   ))}
                 </div>
                 <div className="flex gap-2">
@@ -922,19 +943,21 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     placeholder="Scrivi un commento..."
                     value={commentInput}
                     onChange={e => setCommentInput(e.target.value)}
-                    onKeyDown={e => {
+                    onKeyDown={async e => {
                       if (e.key === "Enter" && commentInput.trim()) {
-                        setPhotoComments(prev => ({ ...prev, [selectedPhoto.id]: [...(prev[selectedPhoto.id] || []), commentInput.trim()] }));
+                        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: currentUserId, content: commentInput.trim() });
                         setCommentInput("");
+                        refetchPhotoComments();
                       }
                     }}
                   />
                   <button
                     className="text-sm text-primary font-medium px-2"
-                    onClick={() => {
+                    onClick={async () => {
                       if (commentInput.trim()) {
-                        setPhotoComments(prev => ({ ...prev, [selectedPhoto.id]: [...(prev[selectedPhoto.id] || []), commentInput.trim()] }));
+                        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: currentUserId, content: commentInput.trim() });
                         setCommentInput("");
+                        refetchPhotoComments();
                       }
                     }}
                   >
