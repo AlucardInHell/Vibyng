@@ -1020,7 +1020,8 @@ const { data: mySongs = [] } = useQuery<any[]>({
               <Button variant="outline" className="flex-1" onClick={() => { setPendingPhoto(null); setPendingPostText(""); }}>
                 Non condividere
               </Button>
-              <Button className="flex-1" onClick={async () => {
+              <Button className="flex-1" disabled={uploadingType === "publishing"} onClick={async () => {
+                setUploadingType("publishing");
                 try {
                  await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
                     title: pendingPostText || "Foto",
@@ -1033,6 +1034,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                 } catch {
                   toast({ title: "Errore", variant: "destructive" });
                 } finally {
+                  setUploadingType(null);
                   setPendingPhoto(null);
                   setPendingPostText("");
                 }
