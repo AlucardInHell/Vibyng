@@ -554,7 +554,7 @@ function PhotoComments({ photoId }: { photoId: number }) {
           onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
           className="flex-1"
         />
-        <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}>
+        <Button size="icon" onClick={handleSubmit} disabled={newComment.length === 0}>
           <Send className="w-4 h-4" />
         </Button>
       </div>
