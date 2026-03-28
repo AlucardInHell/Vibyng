@@ -1028,6 +1028,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                     description: pendingPostText,
                   });
                   queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                   toast({ title: "Post pubblicato!" });
                 } catch {
                   toast({ title: "Errore", variant: "destructive" });
