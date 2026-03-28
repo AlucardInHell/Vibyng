@@ -66,6 +66,7 @@ export const artistPhotos = pgTable("artist_photos", {
   artistId: integer("artist_id").notNull().references(() => users.id),
   title: text("title"),
   imageUrl: text("image_url").notNull(),
+  description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
