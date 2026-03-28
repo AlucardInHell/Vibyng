@@ -1027,9 +1027,6 @@ const { data: mySongs = [] } = useQuery<any[]>({
                     imageUrl: pendingPhoto.imageData,
                   });
                   queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-                  await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: pendingPostText || "📷", mediaUrl: pendingPhoto.imageData });
-                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                   toast({ title: "Post pubblicato!" });
                 } catch {
                   toast({ title: "Errore", variant: "destructive" });
