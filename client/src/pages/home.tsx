@@ -574,6 +574,18 @@ function PhotoComments({ photoId }: { photoId: number }) {
               </span>
             </div>
             <p className="text-sm">{c.content}</p>
+            <div className="flex items-center gap-1 mt-1">
+              <button
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                onClick={async () => {
+                  await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/like`);
+                  refetch();
+                }}
+              >
+                <Heart className="w-3 h-3" />
+                <span>{c.likes_count ?? 0}</span>
+              </button>
+            </div>
           </div>
         </div>
       ))}
