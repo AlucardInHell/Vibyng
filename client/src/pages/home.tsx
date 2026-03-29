@@ -567,25 +567,23 @@ function PhotoComments({ photoId }: { photoId: number }) {
             </Avatar>
           </Link>
          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium truncate max-w-[120px]">{c.display_name}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">
+              <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{c.display_name}</span>
+                  <button
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                    onClick={async () => {
+                      await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/like`);
+                      refetch();
+                    }}
+                  >
+                    <Heart className="w-3 h-3" />
+                    <span>{c.likes_count ?? 0}</span>
+                  </button>
+                  <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">
                     {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
                 <p className="text-sm">{c.content}</p>
-            <div className="flex items-center gap-1 mt-1">
-              <button
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
-                onClick={async () => {
-                  await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/like`);
-                  refetch();
-                }}
-              >
-                <Heart className="w-3 h-3" />
-                <span>{c.likes_count ?? 0}</span>
-              </button>
-            </div>
           </div>
         </div>
       ))}
