@@ -481,6 +481,12 @@ async getPhotoComments(photoId: number) {
     );
   }
 
+  async deletePhotoComment(commentId: number): Promise<void> {
+    await db.execute(
+      sql`DELETE FROM photo_comments WHERE id = ${commentId}`
+    );
+  }
+
   async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
     return await db.select().from(artistVideos)
       .where(eq(artistVideos.artistId, userId))
