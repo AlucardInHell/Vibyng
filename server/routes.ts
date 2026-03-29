@@ -884,6 +884,16 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nel like" });
     }
   });
+
+  app.delete("/api/photos/:photoId/comments/:commentId", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      await storage.deletePhotoComment(commentId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'eliminazione" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
