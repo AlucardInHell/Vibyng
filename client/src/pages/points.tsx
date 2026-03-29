@@ -47,6 +47,15 @@ export default function Points() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
+  const { data: photoCommentsList = [], refetch: refetchPhotoComments } = useQuery<any[]>({
+    queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
+    queryFn: async () => {
+      if (!selectedPhoto?.id) return [];
+      const res = await fetch(`/api/photos/${selectedPhoto.id}/comments`);
+      return res.json();
+    },
+    enabled: !!selectedPhoto,
+  });
   const [pendingPhoto, setPendingPhoto] = useState<{ imageData: string; title: string } | null>(null);
   const [pendingPostText, setPendingPostText] = useState("");
   const [showEventForm, setShowEventForm] = useState(false);
@@ -584,30 +593,67 @@ const { data: mySongs = [] } = useQuery<any[]>({
                       </button>
                       <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
                     </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
-                      {(photoComments[selectedPhoto.id] || []).map((c, i) => (
-                        <p key={i} className="text-sm bg-muted rounded-lg px-3 py-1">{c}</p>
+                <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
+                      {photoCommentsList.map((c: any) => (
+                        <div key={c.id} className="flex gap-2">
+                          <Avatar className="w-8 h-8 flex-shrink-0">
+                            {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
+                            <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+                            <p className="text-sm font-semibold">{c.display_name}</p>
+                            <p className="text-sm">{c.content}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-xs text-muted-foreground">
+                                {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                {(c.author_id === CURRENT_USER_ID || selectedPhoto.artistId === CURRENT_USER_ID) && (
+                                  <button
+                                    className="text-xs text-red-400 hover:text-red-600"
+                                    onClick={async () => {
+                                      await apiRequest("DELETE", `/api/photos/${selectedPhoto.id}/comments/${c.id}`);
+                                      refetchPhotoComments();
+                                    }}
+                                  >🗑️</button>
+                                )}
+                                <button
+                                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                                  onClick={async () => {
+                                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like`);
+                                    refetchPhotoComments();
+                                  }}
+                                >
+                                  <Heart className="w-3 h-3" />
+                                  <span>{c.likes_count ?? 0}</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
-                   <div className="flex gap-2 mt-2 w-full overflow-hidden">
+                    <div className="flex gap-2">
                       <input
-                        className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background min-w-0"
+                        className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
                         placeholder="Scrivi un commento..."
                         value={commentInput}
                         onChange={e => setCommentInput(e.target.value)}
-                        onKeyDown={e => {
+                        onKeyDown={async e => {
                           if (e.key === "Enter" && commentInput.trim()) {
-                            setPhotoComments(prev => ({ ...prev, [selectedPhoto.id]: [...(prev[selectedPhoto.id] || []), commentInput.trim()] }));
+                            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: CURRENT_USER_ID, content: commentInput.trim() });
                             setCommentInput("");
+                            refetchPhotoComments();
                           }
                         }}
                       />
                       <button
                         className="text-sm text-primary font-medium px-2"
-                        onClick={() => {
+                        onClick={async () => {
                           if (commentInput.trim()) {
-                            setPhotoComments(prev => ({ ...prev, [selectedPhoto.id]: [...(prev[selectedPhoto.id] || []), commentInput.trim()] }));
+                            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: CURRENT_USER_ID, content: commentInput.trim() });
                             setCommentInput("");
+                            refetchPhotoComments();
                           }
                         }}
                       >
