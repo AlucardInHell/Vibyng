@@ -586,7 +586,10 @@ function PhotoComments({ photoId }: { photoId: number }) {
                 </div>
               </div>
             </div>
-  );
+ ))}
+        </div>
+      </div>
+    );
 }
 function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
   const [newComment, setNewComment] = useState("");
