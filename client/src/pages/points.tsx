@@ -54,7 +54,8 @@ export default function Points() {
       const res = await fetch(`/api/photos/${selectedPhoto.id}/comments`);
       return res.json();
     },
-    enabled: !!selectedPhoto,
+    enabled: !!selectedPhoto?.id,
+    staleTime: 0,
   });
   const [pendingPhoto, setPendingPhoto] = useState<{ imageData: string; title: string } | null>(null);
   const [pendingPostText, setPendingPostText] = useState("");
