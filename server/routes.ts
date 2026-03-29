@@ -874,6 +874,16 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
     }
   });
+
+  app.post("/api/photos/:photoId/comments/:commentId/like", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      await storage.likePhotoComment(commentId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel like" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
