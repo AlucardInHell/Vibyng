@@ -937,16 +937,27 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                           <span className="text-xs text-muted-foreground">
                             {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                           </span>
-                          <button
-                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
-                            onClick={async () => {
-                              await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like`);
-                              refetchPhotoComments();
-                            }}
-                          >
-                            <Heart className="w-3 h-3" />
-                            <span>{c.likes_count ?? 0}</span>
-                          </button>
+                         <div className="flex items-center gap-2">
+                            {(Number(c.author_id) === Number(currentUserId) || Number(artistId) === Number(currentUserId)) && (
+                              <button
+                                className="text-xs text-red-400 hover:text-red-600"
+                                onClick={async () => {
+                                  await apiRequest("DELETE", `/api/photos/${selectedPhoto.id}/comments/${c.id}`);
+                                  refetchPhotoComments();
+                                }}
+                              >🗑️</button>
+                            )}
+                            <button
+                              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                              onClick={async () => {
+                                await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like`);
+                                refetchPhotoComments();
+                              }}
+                            >
+                              <Heart className="w-3 h-3" />
+                              <span>{c.likes_count ?? 0}</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
