@@ -560,15 +560,19 @@ function PhotoComments({ photoId }: { photoId: number }) {
       </div>
       {comments.map((c: any) => (
         <div key={c.id} className="flex gap-2">
-          <Link href={`/artist/${c.author_id}`}>
-            <Avatar className="w-8 h-8 cursor-pointer">
-              {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
-              <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
-            </Avatar>
-          </Link>
-         <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-              <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{c.display_name}</span>
+              <Link href={`/artist/${c.author_id}`}>
+                <Avatar className="w-8 h-8 cursor-pointer flex-shrink-0">
+                  {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </Link>
+              <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+                <p className="text-sm font-semibold">{c.display_name}</p>
+                <p className="text-sm">{c.content}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">
+                    {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </span>
                   <button
                     className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
                     onClick={async () => {
@@ -579,15 +583,9 @@ function PhotoComments({ photoId }: { photoId: number }) {
                     <Heart className="w-3 h-3" />
                     <span>{c.likes_count ?? 0}</span>
                   </button>
-                  <span className="text-xs text-muted-foreground ml-auto flex-shrink-0">
-                    {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                  </span>
                 </div>
-                <p className="text-sm">{c.content}</p>
-          </div>
-        </div>
-      ))}
-    </div>
+              </div>
+            </div>
   );
 }
 function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
