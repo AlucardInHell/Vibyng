@@ -594,7 +594,8 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
                       <span>{c.likes_count ?? 0}</span>
                     </button>
                   </div>
-                </div>
+       </div>
+              </div>
             </div>
           ))}
         </div>
