@@ -522,6 +522,19 @@ async getPhotoComments(photoId: number) {
     return comment;
   }
 
+  async likeComment(commentId: number): Promise<void> {
+    const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
+    if (comment) {
+      await db.update(comments)
+        .set({ likesCount: (comment.likesCount ?? 0) + 1 })
+        .where(eq(comments.id, commentId));
+    }
+  }
+
+  async deleteComment(commentId: number): Promise<void> {
+    await db.delete(comments).where(eq(comments.id, commentId));
+  }
+
   async getCommentsCount(postId: number): Promise<number> {
     const result = await db.select({ count: count() })
       .from(comments)
