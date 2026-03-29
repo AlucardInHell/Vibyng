@@ -609,7 +609,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                                 {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                               </span>
                               <div className="flex items-center gap-2">
-                                {(c.author_id === CURRENT_USER_ID || selectedPhoto.artistId === CURRENT_USER_ID) && (
+                               {(Number(c.author_id) === Number(CURRENT_USER_ID) || Number(selectedPhoto.artistId) === Number(CURRENT_USER_ID)) && (
                                   <button
                                     className="text-xs text-red-400 hover:text-red-600"
                                     onClick={async () => {
