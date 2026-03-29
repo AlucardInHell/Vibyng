@@ -365,3 +365,11 @@ export const eventAttendees = pgTable("event_attendees", {
 export const insertEventAttendeeSchema = createInsertSchema(eventAttendees);
 export type EventAttendee = typeof eventAttendees.$inferSelect;
 export type InsertEventAttendee = z.infer<typeof insertEventAttendeeSchema>;
+// === PHOTO COMMENTS ===
+export const photoComments = pgTable("photo_comments", {
+  id: serial("id").primaryKey(),
+  photoId: integer("photo_id").notNull().references(() => artistPhotos.id),
+  authorId: integer("author_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
