@@ -920,19 +920,34 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   </button>
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
                 </div>
-                <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
+               <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
                   {photoCommentsList.map((c: any) => (
-                    <div key={c.id} className="flex items-start gap-2">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    <div key={c.id} className="flex gap-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {c.avatar_url ? (
                           <img src={c.avatar_url} alt={c.display_name} className="w-full h-full object-cover" />
                         ) : (
                           <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
                         )}
                       </div>
-                      <div className="flex-1 bg-muted rounded-lg px-3 py-1">
-                        <span className="text-xs font-medium">{c.display_name} </span>
-                        <span className="text-sm">{c.content}</span>
+                      <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+                        <p className="text-sm font-semibold">{c.display_name}</p>
+                        <p className="text-sm">{c.content}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          <button
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                            onClick={async () => {
+                              await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like`);
+                              refetchPhotoComments();
+                            }}
+                          >
+                            <Heart className="w-3 h-3" />
+                            <span>{c.likes_count ?? 0}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
