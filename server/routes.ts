@@ -396,6 +396,26 @@ app.post("/api/posts/:postId/like", async (req, res) => {
     res.json({ count });
   });
 
+  app.post("/api/comments/:commentId/like", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      await storage.likeComment(commentId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel like" });
+    }
+  });
+
+  app.delete("/api/comments/:commentId", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      await storage.deleteComment(commentId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'eliminazione" });
+    }
+  });
+
   // === GOALS ===
   app.get(api.goals.listByArtist.path, async (req, res) => {
     const goals = await storage.getGoalsByArtist(Number(req.params.artistId));
