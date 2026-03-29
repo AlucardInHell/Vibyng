@@ -522,7 +522,7 @@ function Stories() {
   );
 }
 
-function PhotoComments({ photoId }: { photoId: number }) {
+function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAuthorId: number }) {
   const [newComment, setNewComment] = useState("");
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
 
@@ -569,22 +569,32 @@ function PhotoComments({ photoId }: { photoId: number }) {
               <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                 <p className="text-sm font-semibold">{c.display_name}</p>
                 <p className="text-sm">{c.content}</p>
-                <div className="flex items-center justify-between mt-1">
+        <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-muted-foreground">
                     {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </span>
-                  <button
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
-                    onClick={async () => {
-                      await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/like`);
-                      refetch();
-                    }}
-                  >
-                    <Heart className="w-3 h-3" />
-                    <span>{c.likes_count ?? 0}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {(c.author_id === CURRENT_USER_ID || photoAuthorId === CURRENT_USER_ID) && (
+                      <button
+                        className="text-xs text-red-400 hover:text-red-600"
+                        onClick={async () => {
+                          await apiRequest("DELETE", `/api/photos/${photoId}/comments/${c.id}`);
+                          refetch();
+                        }}
+                      >🗑️</button>
+                    )}
+                    <button
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                      onClick={async () => {
+                        await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/like`);
+                        refetch();
+                      }}
+                    >
+                      <Heart className="w-3 h-3" />
+                      <span>{c.likes_count ?? 0}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
             </div>
           ))}
         </div>
@@ -1008,7 +1018,7 @@ useEffect(() => {
 
              {openComments.has(post.id) && (
                 String(post.id).startsWith("photo_") ? (
-                  <PhotoComments photoId={Number(String(post.id).replace("photo_", ""))} />
+                  <PhotoComments photoId={Number(String(post.id).replace("photo_", ""))} photoAuthorId={post.authorId} />
                 ) : (
                   <PostComments postId={post.id as number} postAuthorId={post.authorId} />
                 )
