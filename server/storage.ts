@@ -475,6 +475,12 @@ async getPhotoComments(photoId: number) {
     return result.rows[0];
   }
   
+  async likePhotoComment(commentId: number): Promise<void> {
+    await db.execute(
+      sql`UPDATE photo_comments SET likes_count = COALESCE(likes_count, 0) + 1 WHERE id = ${commentId}`
+    );
+  }
+
   async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
     return await db.select().from(artistVideos)
       .where(eq(artistVideos.artistId, userId))
