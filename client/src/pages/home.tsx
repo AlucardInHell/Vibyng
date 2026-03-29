@@ -580,7 +580,7 @@ function PhotoComments({ photoId }: { photoId: number }) {
     </div>
   );
 }
-function PostComments({ postId }: { postId: number }) {
+function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
   const [newComment, setNewComment] = useState("");
 
   const { data: comments, isLoading } = useQuery<CommentWithAuthor[]>({
@@ -667,8 +667,29 @@ function PostComments({ postId }: { postId: number }) {
                       minute: "2-digit",
                     })}
                   </span>
+                  {(comment.authorId === CURRENT_USER_ID || postAuthorId === CURRENT_USER_ID) && (
+                    <button
+                      className="ml-auto text-xs text-red-400 hover:text-red-600"
+                      onClick={async () => {
+                        await apiRequest("DELETE", `/api/comments/${comment.id}`);
+                        queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
+                      }}
+                    >🗑️</button>
+                  )}
                 </div>
                 <p className="text-sm">{comment.content}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <button
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                    onClick={async () => {
+                      await apiRequest("POST", `/api/comments/${comment.id}/like`);
+                      queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
+                    }}
+                  >
+                    <Heart className="w-3 h-3" />
+                    <span>{comment.likesCount ?? 0}</span>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -979,7 +1000,7 @@ useEffect(() => {
                 String(post.id).startsWith("photo_") ? (
                   <PhotoComments photoId={Number(String(post.id).replace("photo_", ""))} />
                 ) : (
-                  <PostComments postId={post.id as number} />
+                  <PostComments postId={post.id as number} postAuthorId={post.authorId} />
                 )
               )}
             </CardContent>
