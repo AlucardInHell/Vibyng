@@ -956,6 +956,16 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nell'eliminazione" });
     }
   });
+
+  app.delete("/api/videos/:videoId", async (req, res) => {
+    try {
+      const videoId = Number(req.params.videoId);
+      await storage.deleteVideo(videoId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'eliminazione video" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
