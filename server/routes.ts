@@ -915,6 +915,47 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nell'eliminazione" });
     }
   });
+  // === VIDEO COMMENTS ===
+  app.get("/api/videos/:videoId/comments", async (req, res) => {
+    try {
+      const videoId = Number(req.params.videoId);
+      const result = await storage.getVideoComments(videoId);
+      res.json(result);
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel recupero commenti" });
+    }
+  });
+
+  app.post("/api/videos/:videoId/comments", async (req, res) => {
+    try {
+      const videoId = Number(req.params.videoId);
+      const { authorId, content } = req.body;
+      const comment = await storage.createVideoComment({ videoId, authorId, content });
+      res.status(201).json(comment);
+    } catch (err: any) {
+      res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
+    }
+  });
+
+  app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      await storage.likeVideoComment(commentId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel like" });
+    }
+  });
+
+  app.delete("/api/videos/:videoId/comments/:commentId", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      await storage.deleteVideoComment(commentId);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nell'eliminazione" });
+    }
+  });
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
