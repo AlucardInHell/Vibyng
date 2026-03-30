@@ -895,7 +895,10 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
               <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[60vh] object-contain bg-black" />
               <div className="p-4">
-                <p className="font-medium mb-3">{selectedPhoto.title}</p>
+                <p className="font-medium">{selectedPhoto.title}</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {selectedPhoto.createdAt && new Date(selectedPhoto.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </p>
                 <div className="flex items-center gap-4 mb-4 border-b pb-3">
                   <button
                     className={`flex items-center gap-1 text-sm ${photoLikes[selectedPhoto.id] ? "text-red-500" : "text-muted-foreground"}`}
