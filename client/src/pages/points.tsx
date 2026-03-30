@@ -101,6 +101,16 @@ export default function Points() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
+  const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
+    queryKey: ["/api/videos", selectedVideo?.id, "comments"],
+    queryFn: async () => {
+      if (!selectedVideo?.id) return [];
+      const res = await fetch(`/api/videos/${selectedVideo.id}/comments`);
+      return res.json();
+    },
+    enabled: !!selectedVideo?.id,
+    staleTime: 0,
+  });
   const { data: photoCommentsList = [], refetch: refetchPhotoComments } = useQuery<any[]>({
     queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
     queryFn: async () => {
@@ -115,6 +125,9 @@ export default function Points() {
   const [pendingPostText, setPendingPostText] = useState("");
   const [pendingVideo, setPendingVideo] = useState<{ videoData: string; title: string; url?: string } | null>(null);
   const [pendingVideoText, setPendingVideoText] = useState("");
+  const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
+  const [videoCommentInput, setVideoCommentInput] = useState("");
+  const [videoLikes, setVideoLikes] = useState<Record<number, boolean>>({});
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   
@@ -729,7 +742,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
           {myVideos.length > 0 ? (
             <div className="flex flex-col gap-3">
               {myVideos.map((video) => (
-                <Card key={video.id} className="overflow-hidden hover-elevate" data-testid={`card-video-${video.id}`}>
+                <Card key={video.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedVideo(video)} data-testid={`card-video-${video.id}`}>
                   <div className="relative">
                     {video.videoUrl ? (
                       <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
@@ -1165,6 +1178,114 @@ const { data: mySongs = [] } = useQuery<any[]>({
               }}>
                 Pubblica
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {selectedVideo && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
+          <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+            <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
+              <video src={selectedVideo.videoUrl} controls className="w-full max-h-[60vh] object-contain bg-black" />
+              <div className="p-4">
+                <p className="font-medium">{selectedVideo.title}</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </p>
+                <div className="flex items-center gap-4 mb-4 border-b pb-3">
+                  <button
+                    className={`flex items-center gap-1 text-sm ${videoLikes[selectedVideo.id] ? "text-red-500" : "text-muted-foreground"}`}
+                    onClick={() => setVideoLikes(prev => ({ ...prev, [selectedVideo.id]: !prev[selectedVideo.id] }))}
+                  >
+                    <Heart className={`w-5 h-5 ${videoLikes[selectedVideo.id] ? "fill-red-500" : ""}`} />
+                    {videoLikes[selectedVideo.id] ? "Mi piace" : "Like"}
+                  </button>
+                  <button
+                    className="flex items-center gap-1 text-sm text-muted-foreground"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({ title: selectedVideo.title, text: "Guarda questo video su Vibyng!" });
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast({ title: "Link copiato!" });
+                      }
+                    }}
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Condividi
+                  </button>
+                  <button
+                    className="flex items-center gap-1 text-sm text-red-500"
+                    onClick={async () => {
+                      try {
+                        await apiRequest("DELETE", `/api/videos/${selectedVideo.id}`);
+                        queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
+                        setSelectedVideo(null);
+                        toast({ title: "Video eliminato" });
+                      } catch {
+                        toast({ title: "Errore", variant: "destructive" });
+                      }
+                    }}
+                  >
+                    🗑️ Elimina
+                  </button>
+                  <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
+                </div>
+                <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
+                  {videoCommentsList.map((c: any) => (
+                    <div key={c.id} className="flex gap-2">
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+                        <p className="text-sm font-semibold">{c.display_name}</p>
+                        <p className="text-sm">{c.content}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {(Number(c.author_id) === Number(CURRENT_USER_ID) || Number(selectedVideo.artistId) === Number(CURRENT_USER_ID)) && (
+                              <button className="text-xs text-red-400 hover:text-red-600" onClick={async () => { await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`); refetchVideoComments(); }}>🗑️</button>
+                            )}
+                            <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500" onClick={async () => { await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like`); refetchVideoComments(); }}>
+                              <Heart className="w-3 h-3" /><span>{c.likes_count ?? 0}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
+                    placeholder="Scrivi un commento..."
+                    value={videoCommentInput}
+                    onChange={e => setVideoCommentInput(e.target.value)}
+                    onKeyDown={async e => {
+                      if (e.key === "Enter" && videoCommentInput.trim()) {
+                        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, { authorId: CURRENT_USER_ID, content: videoCommentInput.trim() });
+                        setVideoCommentInput("");
+                        refetchVideoComments();
+                      }
+                    }}
+                  />
+                  <button
+                    className="text-sm text-primary font-medium px-2"
+                    onClick={async () => {
+                      if (videoCommentInput.trim()) {
+                        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, { authorId: CURRENT_USER_ID, content: videoCommentInput.trim() });
+                        setVideoCommentInput("");
+                        refetchVideoComments();
+                      }
+                    }}
+                  >
+                    Invia
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
