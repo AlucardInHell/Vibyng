@@ -47,7 +47,8 @@ export default function Chat() {
       if (!res.ok) return [];
       return res.json();
     },
-    refetchInterval: 5000,
+   refetchInterval: 2000,
+    staleTime: 0,
   });
 
 useEffect(() => {
