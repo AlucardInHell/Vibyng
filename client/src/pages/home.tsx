@@ -945,8 +945,8 @@ useEffect(() => {
                     </Badge>
                   )}
                 </div>
-             <span className="text-xs text-muted-foreground">@{post.author.username}</span>
-                  <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground">@{post.author.username}</span>
+                  <span className="text-xs text-muted-foreground block">
                     {post.createdAt && new Date(post.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>
             </div>
