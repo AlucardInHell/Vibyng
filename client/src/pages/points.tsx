@@ -1149,7 +1149,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                   });
                   const { url } = await uploadRes.json();
                   await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
-                    title: pendingVideoText || pendingVideo.title,
+                    title: pendingVideoText || "Video",
                     videoUrl: url,
                     thumbnailUrl: url,
                   });
