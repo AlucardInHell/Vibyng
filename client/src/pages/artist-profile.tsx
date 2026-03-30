@@ -96,7 +96,6 @@ function ArtistPostComments({ postId, postAuthorId }: { postId: number; postAuth
     </div>
   );
 }
-
 export default function ArtistProfile() {
   const { id } = useParams<{ id: string }>();
   const artistId = Number(id);
