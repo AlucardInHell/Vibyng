@@ -660,7 +660,7 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
           Caricamento commenti...
         </div>
       ) : comments && comments.length > 0 ? (
-        <div className="space-y-3 max-h-60 overflow-y-auto">
+       <div className="space-y-3 max-h-60 overflow-y-auto">
           {comments.map((comment) => (
             <div key={comment.id} className="flex gap-2" data-testid={`comment-${comment.id}`}>
               <Link href={`/artist/${comment.authorId}`}>
@@ -674,12 +674,9 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
                 </Avatar>
               </Link>
               <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <Link href={`/artist/${comment.authorId}`}>
-                    <span className="text-sm font-medium cursor-pointer hover:text-primary">
-                      {comment.author.displayName}
-                    </span>
-                  </Link>
+                <p className="text-sm font-semibold">{comment.author.displayName}</p>
+                <p className="text-sm">{comment.content}</p>
+                <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-muted-foreground">
                     {comment.createdAt && new Date(comment.createdAt).toLocaleDateString("it-IT", {
                       day: "numeric",
@@ -688,28 +685,27 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
                       minute: "2-digit",
                     })}
                   </span>
-                  {(comment.authorId === CURRENT_USER_ID || postAuthorId === CURRENT_USER_ID) && (
+                  <div className="flex items-center gap-2">
+                    {(comment.authorId === CURRENT_USER_ID || postAuthorId === CURRENT_USER_ID) && (
+                      <button
+                        className="text-xs text-red-400 hover:text-red-600"
+                        onClick={async () => {
+                          await apiRequest("DELETE", `/api/comments/${comment.id}`);
+                          queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
+                        }}
+                      >🗑️</button>
+                    )}
                     <button
-                      className="ml-auto text-xs text-red-400 hover:text-red-600"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
                       onClick={async () => {
-                        await apiRequest("DELETE", `/api/comments/${comment.id}`);
+                        await apiRequest("POST", `/api/comments/${comment.id}/like`);
                         queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
                       }}
-                    >🗑️</button>
-                  )}
-                </div>
-                <p className="text-sm">{comment.content}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <button
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
-                    onClick={async () => {
-                      await apiRequest("POST", `/api/comments/${comment.id}/like`);
-                      queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
-                    }}
-                  >
-                    <Heart className="w-3 h-3" />
-                    <span>{comment.likesCount ?? 0}</span>
-                  </button>
+                    >
+                      <Heart className="w-3 h-3" />
+                      <span>{comment.likesCount ?? 0}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
