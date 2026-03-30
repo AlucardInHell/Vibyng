@@ -279,33 +279,43 @@ const { data: mySongs = [] } = useQuery<any[]>({
     }
   };
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+ const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 50 * 1024 * 1024) {
+      toast({ title: "File troppo grande", description: "Il video deve essere inferiore a 50MB", variant: "destructive" });
+      return;
+    }
     setUploadingType("video");
     try {
-      const presignRes = await fetch("/api/uploads/request-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
-      });
-      const { uploadURL, objectPath } = await presignRes.json();
-      await fetch(uploadURL, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-      await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
-        title: file.name.replace(/\.[^/.]+$/, ""),
-        videoUrl: objectPath,
-        thumbnailUrl: objectPath,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
-      await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: "Ho condiviso un nuovo video!", mediaUrl: objectPath });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
-      toast({ title: "Video caricato!", description: "Il tuo video è stato aggiunto e condiviso nel feed" });
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const videoData = reader.result as string;
+          const uploadRes = await fetch("/api/uploads/video", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ videoData, userId: CURRENT_USER_ID }),
+          });
+          const { url } = await uploadRes.json();
+          await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            videoUrl: url,
+            thumbnailUrl: url,
+          });
+          queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
+          toast({ title: "Video caricato!", description: "Il tuo video è ora visibile nel tuo profilo" });
+        } catch {
+          toast({ title: "Errore", description: "Non è stato possibile caricare il video", variant: "destructive" });
+        } finally {
+          setUploadingType(null);
+          if (videoInputRef.current) videoInputRef.current.value = "";
+        }
+      };
+      reader.readAsDataURL(file);
     } catch {
-      toast({ title: "Errore", description: "Non è stato possibile caricare il video", variant: "destructive" });
-    } finally {
+      toast({ title: "Errore", variant: "destructive" });
       setUploadingType(null);
-      if (videoInputRef.current) videoInputRef.current.value = "";
     }
   };
 
