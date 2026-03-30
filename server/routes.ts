@@ -239,6 +239,27 @@ app.post("/api/auth/login", async (req, res) => {
       res.status(400).json({ message: "Errore nel caricamento audio", detail: err?.message });
     }
   });
+  // === VIDEO UPLOAD (Cloudinary) ===
+  app.post("/api/uploads/video", async (req, res) => {
+    try {
+      const { videoData, userId } = req.body;
+      const { v2: cloudinary } = await import("cloudinary");
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+      });
+      const result = await cloudinary.uploader.upload(videoData, {
+        resource_type: "video",
+        folder: "vibyng/videos",
+        public_id: `video_${userId}_${Date.now()}`,
+      });
+      res.json({ url: result.secure_url });
+    } catch (err: any) {
+      console.error("[upload-video] error:", err?.message);
+      res.status(400).json({ message: "Errore nel caricamento video", detail: err?.message });
+    }
+  });
   // === IMAGE UPLOAD (base64) ===
 app.post("/api/uploads/image", async (req, res) => {
   try {
