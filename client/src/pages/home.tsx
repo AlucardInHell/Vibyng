@@ -945,10 +945,12 @@ useEffect(() => {
                     </Badge>
                   )}
                 </div>
-              <span className="text-xs text-muted-foreground">@{post.author.username}</span>
-                <span className="text-xs text-muted-foreground">
-                    {post.createdAt && new Date(post.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                  </span>
+             <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">@{post.author.username}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {post.createdAt && new Date(post.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
             </div>
             {post.authorId === CURRENT_USER_ID && (
               <button className="text-xs text-red-400 hover:text-red-600 ml-auto self-start pt-1"
