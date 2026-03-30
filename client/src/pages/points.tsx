@@ -113,6 +113,8 @@ export default function Points() {
   });
   const [pendingPhoto, setPendingPhoto] = useState<{ imageData: string; title: string } | null>(null);
   const [pendingPostText, setPendingPostText] = useState("");
+  const [pendingVideo, setPendingVideo] = useState<{ videoData: string; title: string; url?: string } | null>(null);
+  const [pendingVideoText, setPendingVideoText] = useState("");
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   
@@ -291,20 +293,8 @@ const { data: mySongs = [] } = useQuery<any[]>({
       const reader = new FileReader();
       reader.onload = async () => {
         try {
-          const videoData = reader.result as string;
-          const uploadRes = await fetch("/api/uploads/video", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ videoData, userId: CURRENT_USER_ID }),
-          });
-          const { url } = await uploadRes.json();
-          await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
-            title: file.name.replace(/\.[^/.]+$/, ""),
-            videoUrl: url,
-            thumbnailUrl: url,
-          });
-          queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
-          toast({ title: "Video caricato!", description: "Il tuo video è ora visibile nel tuo profilo" });
+    const videoData = reader.result as string;
+          setPendingVideo({ videoData, title: file.name.replace(/\.[^/.]+$/, "") });
         } catch {
           toast({ title: "Errore", description: "Non è stato possibile caricare il video", variant: "destructive" });
         } finally {
@@ -1133,6 +1123,52 @@ const { data: mySongs = [] } = useQuery<any[]>({
           </div>
         </TabsContent>
      </Tabs>
+      {pendingVideo && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
+            <h3 className="font-semibold">Condividi nel feed</h3>
+            <video src={pendingVideo.videoData} controls className="w-full rounded-lg max-h-48 object-cover" />
+            <textarea
+              className="w-full p-3 rounded-lg bg-muted border-0 text-sm outline-none resize-none"
+              placeholder="Scrivi qualcosa..."
+              rows={3}
+              value={pendingVideoText}
+              onChange={e => setPendingVideoText(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => { setPendingVideo(null); setPendingPostText(""); }}>
+                Non condividere
+              </Button>
+              <Button className="flex-1" disabled={uploadingType === "uploading-video"} onClick={async () => {
+                setUploadingType("uploading-video");
+                try {
+                  const uploadRes = await fetch("/api/uploads/video", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ videoData: pendingVideo.videoData, userId: CURRENT_USER_ID }),
+                  });
+                  const { url } = await uploadRes.json();
+                  await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
+                    title: pendingVideoText || pendingVideo.title,
+                    videoUrl: url,
+                    thumbnailUrl: url,
+                  });
+                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
+                  toast({ title: "Video caricato!" });
+                } catch {
+                  toast({ title: "Errore", variant: "destructive" });
+                } finally {
+                  setUploadingType(null);
+                  setPendingVideo(null);
+                  setPendingVideoText("");
+                }
+              }}>
+                Pubblica
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {pendingPhoto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
