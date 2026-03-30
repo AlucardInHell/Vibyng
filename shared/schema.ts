@@ -373,3 +373,12 @@ export const photoComments = pgTable("photo_comments", {
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+// === VIDEO COMMENTS ===
+export const videoComments = pgTable("video_comments", {
+  id: serial("id").primaryKey(),
+  videoId: integer("video_id").notNull().references(() => artistVideos.id),
+  authorId: integer("author_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  likesCount: integer("likes_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
