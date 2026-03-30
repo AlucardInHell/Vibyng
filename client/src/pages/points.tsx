@@ -31,12 +31,66 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
+  const [newComment, setNewComment] = useState("");
+
+  const { data: comments = [], refetch } = useQuery<any[]>({
+    queryKey: ["/api/posts", postId, "comments"],
+    queryFn: async () => {
+      const res = await fetch(`/api/posts/${postId}/comments`);
+      return res.json();
+    },
+  });
+
+  const handleSubmit = async () => {
+    if (!newComment.trim()) return;
+    await apiRequest("POST", `/api/posts/${postId}/comments`, { authorId: CURRENT_USER_ID, content: newComment.trim() });
+    setNewComment("");
+    refetch();
+  };
+
+  return (
+    <div className="border-t pt-3 mt-2 space-y-3">
+      <div className="flex items-center gap-2">
+        <Input placeholder="Scrivi un commento..." value={newComment} onChange={e => setNewComment(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} className="flex-1" />
+        <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}><Send className="w-4 h-4" /></Button>
+      </div>
+      {comments.map((comment: any) => (
+        <div key={comment.id} className="flex gap-2">
+          <Avatar className="w-8 h-8">
+            {comment.author?.avatarUrl && <AvatarImage src={comment.author.avatarUrl} alt={comment.author.displayName} />}
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">{comment.author?.displayName?.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+            <p className="text-sm font-semibold">{comment.author?.displayName}</p>
+            <p className="text-sm">{comment.content}</p>
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs text-muted-foreground">
+                {comment.createdAt && new Date(comment.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <div className="flex items-center gap-2">
+                {(Number(comment.authorId) === Number(CURRENT_USER_ID) || Number(postAuthorId) === Number(CURRENT_USER_ID)) && (
+                  <button className="text-xs text-red-400 hover:text-red-600" onClick={async () => { await apiRequest("DELETE", `/api/comments/${comment.id}`); refetch(); }}>🗑️</button>
+                )}
+                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500" onClick={async () => { await apiRequest("POST", `/api/comments/${comment.id}/like`); refetch(); }}>
+                  <Heart className="w-3 h-3" /><span>{comment.likesCount ?? 0}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Points() {
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const { toast } = useToast();
   const { profileData, updateProfile } = useProfile();
   const [myPlaylist, setMyPlaylist] = useState<Song[]>([]);
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+  const [openCommentsPosts, setOpenCommentsPosts] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -741,6 +795,16 @@ const { data: mySongs = [] } = useQuery<any[]>({
                             <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
                             {post.likesCount}
                           </button>
+                        <button
+                            className={`flex items-center gap-1 text-xs ${openCommentsPosts.has(post.id) ? "text-primary" : "text-muted-foreground"}`}
+                            onClick={() => {
+                              const newOpen = new Set(openCommentsPosts);
+                              if (newOpen.has(post.id)) { newOpen.delete(post.id); } else { newOpen.add(post.id); }
+                              setOpenCommentsPosts(newOpen);
+                            }}
+                          >
+                            <MessageCircle className={`w-3 h-3 ${openCommentsPosts.has(post.id) ? "fill-current" : ""}`} />
+                          </button>
                          {post.isExclusive && (
                             <Badge variant="secondary" className="text-xs">Esclusivo</Badge>
                           )}
@@ -759,8 +823,13 @@ const { data: mySongs = [] } = useQuery<any[]>({
                           }
                         }}
                       >🗑️</button>
-                    </div>
+                   </div>
                   </CardContent>
+                  {openCommentsPosts.has(post.id) && (
+                    <CardContent className="pt-0">
+                      <MePostComments postId={post.id} postAuthorId={CURRENT_USER_ID} />
+                    </CardContent>
+                  )}
                 </Card>
               ))}
             </div>
