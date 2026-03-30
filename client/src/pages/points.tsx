@@ -101,16 +101,6 @@ export default function Points() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
-  const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
-    queryKey: ["/api/videos", selectedVideo?.id, "comments"],
-    queryFn: async () => {
-      if (!selectedVideo?.id) return [];
-      const res = await fetch(`/api/videos/${selectedVideo.id}/comments`);
-      return res.json();
-    },
-    enabled: !!selectedVideo?.id,
-    staleTime: 0,
-  });
   const { data: photoCommentsList = [], refetch: refetchPhotoComments } = useQuery<any[]>({
     queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
     queryFn: async () => {
@@ -128,6 +118,16 @@ export default function Points() {
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [videoCommentInput, setVideoCommentInput] = useState("");
   const [videoLikes, setVideoLikes] = useState<Record<number, boolean>>({});
+  const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
+    queryKey: ["/api/videos", selectedVideo?.id, "comments"],
+    queryFn: async () => {
+      if (!selectedVideo?.id) return [];
+      const res = await fetch(`/api/videos/${selectedVideo.id}/comments`);
+      return res.json();
+    },
+    enabled: !!selectedVideo?.id,
+    staleTime: 0,
+  });
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   
