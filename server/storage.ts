@@ -516,6 +516,10 @@ async getVideoComments(videoId: number) {
       sql`DELETE FROM video_comments WHERE id = ${commentId}`
     );
   }
+
+async deleteVideo(videoId: number): Promise<void> {
+    await db.delete(artistVideos).where(eq(artistVideos.id, videoId));
+  }
   
   async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
     return await db.select().from(artistVideos)
