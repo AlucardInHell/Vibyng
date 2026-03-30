@@ -63,7 +63,7 @@ useEffect(() => {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/messages", CURRENT_USER_ID, artistId] });
+      queryClient.refetchQueries({ queryKey: ["/api/messages", CURRENT_USER_ID, artistId] });
       setNewMessage("");
     },
   });
