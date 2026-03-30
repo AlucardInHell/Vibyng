@@ -487,6 +487,36 @@ async getPhotoComments(photoId: number) {
     );
   }
 
+async getVideoComments(videoId: number) {
+    try {
+      const result = await db.execute(
+        sql`SELECT vc.*, u.display_name, u.avatar_url, u.username FROM video_comments vc JOIN users u ON vc.author_id = u.id WHERE vc.video_id = ${videoId} ORDER BY vc.created_at ASC`
+      );
+      return Array.isArray(result.rows) ? result.rows : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async createVideoComment(data: { videoId: number; authorId: number; content: string }) {
+    const result = await db.execute(
+      sql`INSERT INTO video_comments (video_id, author_id, content) VALUES (${data.videoId}, ${data.authorId}, ${data.content}) RETURNING *`
+    );
+    return result.rows[0];
+  }
+
+  async likeVideoComment(commentId: number): Promise<void> {
+    await db.execute(
+      sql`UPDATE video_comments SET likes_count = COALESCE(likes_count, 0) + 1 WHERE id = ${commentId}`
+    );
+  }
+
+  async deleteVideoComment(commentId: number): Promise<void> {
+    await db.execute(
+      sql`DELETE FROM video_comments WHERE id = ${commentId}`
+    );
+  }
+  
   async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
     return await db.select().from(artistVideos)
       .where(eq(artistVideos.artistId, userId))
