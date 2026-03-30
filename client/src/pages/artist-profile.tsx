@@ -584,11 +584,13 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                           )}
                         </div>
                       </div>
-                      {openComments.has(post.id) && (
-                      <ArtistPostComments postId={post.id} postAuthorId={post.author.id} />
-                    )}
-                    </div>
+                      </div>
                   </CardContent>
+                  {openComments.has(post.id) && (
+                    <CardContent className="pt-0">
+                      <ArtistPostComments postId={post.id} postAuthorId={post.author.id} />
+                    </CardContent>
+                  )}
                 </Card>
               ))}
             </div>
