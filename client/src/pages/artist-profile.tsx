@@ -558,6 +558,15 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                             {post.likesCount}
                           </button>
                           <button
+                            className={`flex items-center gap-1 text-xs ${openComments.has(post.id) ? "text-primary" : "text-muted-foreground"}`}
+                            onClick={() => {
+                              const newOpen = new Set(openComments);
+                              if (newOpen.has(post.id)) { newOpen.delete(post.id); } else { newOpen.add(post.id); }
+                              setOpenComments(newOpen);
+                            }}
+                          >
+                            <MessageCircle className={`w-3 h-3 ${openComments.has(post.id) ? "fill-current" : ""}`} />
+                          </button>
                           {isOwnProfile && (
                             <button
                               className="text-xs text-red-400 hover:text-red-600 ml-auto"
