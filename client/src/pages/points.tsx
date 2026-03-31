@@ -1322,13 +1322,16 @@ const { data: mySongs = [] } = useQuery<any[]>({
           <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
             <h3 className="font-semibold">Condividi nel feed</h3>
             <img src={pendingPhoto.imageData} alt="preview" className="w-full h-48 object-cover rounded-lg" />
-            <textarea
-              className="w-full p-3 rounded-lg bg-muted border-0 text-sm outline-none resize-none"
-              placeholder="Scrivi qualcosa..."
-              rows={3}
-              value={pendingPostText}
-              onChange={e => setPendingPostText(e.target.value)}
-            />
+           <div className="relative">
+              <textarea
+                className="w-full p-3 rounded-lg bg-muted border-0 text-sm outline-none resize-none"
+                placeholder="Scrivi qualcosa..."
+                rows={3}
+                value={pendingPostText}
+                onChange={e => { setPendingPostText(e.target.value); handlePhotoTextChange(e.target.value, e.target.selectionStart || 0); }}
+              />
+              <MentionDropdown query={photoMentionQuery} visible={showPhotoMentions} onSelect={(username) => { setPendingPostText(insertPhotoMention(pendingPostText, username)); closePhotoMentions(); }} />
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => { setPendingPhoto(null); setPendingPostText(""); }}>
                 Non condividere
