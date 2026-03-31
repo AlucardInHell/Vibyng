@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUpload } from "@/hooks/use-upload";
+import { useMention } from "@/hooks/use-mention";
+import { MentionDropdown } from "@/components/mention-dropdown";
 
 const studioImage = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80";
 const djImage = "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&q=80";
@@ -602,6 +604,7 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
     );
 }
 function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
+  const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const [newComment, setNewComment] = useState("");
 
   const { data: comments, isLoading } = useQuery<CommentWithAuthor[]>({
@@ -637,14 +640,27 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
   return (
     <div className="border-t pt-3 mt-3 space-y-3">
       <div className="flex items-center gap-2">
-        <Input
-          placeholder="Scrivi un commento..."
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          onKeyDown={handleKeyPress}
-          className="flex-1"
-          data-testid={`input-comment-${postId}`}
-        />
+        <div className="relative flex-1">
+          <Input
+            placeholder="Scrivi un commento..."
+            value={newComment}
+            onChange={(e) => {
+              setNewComment(e.target.value);
+              handleTextChange(e.target.value, e.target.selectionStart || 0);
+            }}
+            onKeyDown={handleKeyPress}
+            className="w-full"
+            data-testid={`input-comment-${postId}`}
+          />
+          <MentionDropdown
+            query={mentionQuery}
+            visible={showMentions}
+            onSelect={(username) => {
+              setNewComment(insertMention(newComment, username));
+              closeMentions();
+            }}
+          />
+        </div>
         <Button
           size="icon"
           onClick={handleSubmit}
