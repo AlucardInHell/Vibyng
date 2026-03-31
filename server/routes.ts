@@ -13,6 +13,26 @@ function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
+async function sendMentionNotifications(content: string, authorId: number) {
+  try {
+    const mentions = content.match(/@(\w+)/g);
+    if (!mentions) return;
+    for (const mention of mentions) {
+      const username = mention.substring(1);
+      const mentionedUser = await storage.getUserByUsername(username);
+      if (mentionedUser && mentionedUser.id !== authorId) {
+        const author = await storage.getUser(authorId);
+        await storage.createNotification({
+          userId: mentionedUser.id,
+          type: "mention",
+          message: `${author?.displayName || "Qualcuno"} ti ha taggato`,
+          relatedUserId: authorId,
+        });
+      }
+    }
+  } catch {}
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -323,6 +343,9 @@ app.post("/api/uploads/avatar", async (req, res) => {
       const input = api.posts.create.input.parse(req.body);
       const post = await storage.createPost(input);
       res.status(201).json(post);
+      res.status(201).json(post);:
+await sendMentionNotifications(post.content, post.authorId);
+      
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({
@@ -409,6 +432,8 @@ app.post("/api/posts/:postId/like", async (req, res) => {
       res.status(201).json(comment);
     } catch (err) {
       res.status(400).json({ message: "Errore nel creare il commento" });
+      res.status(201).json(comment);:
+await sendMentionNotifications(content, authorId);
     }
   });
 
