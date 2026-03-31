@@ -54,7 +54,9 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
   return (
     <div className="border-t pt-3 mt-2 space-y-3">
       <div className="flex items-center gap-2">
-        <Input placeholder="Scrivi un commento..." value={newComment} onChange={e => setNewComment(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} className="flex-1" />
+       <div className="relative flex-1">
+          <Input placeholder="Scrivi un commento..." value={newComment} onChange={e => { setNewComment(e.target.value); }} className="flex-1 w-full" onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} />
+        </div>
         <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}><Send className="w-4 h-4" /></Button>
       </div>
       {comments.map((comment: any) => (
@@ -95,6 +97,9 @@ export default function Points() {
   const [openCommentsPosts, setOpenCommentsPosts] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
+  const { mentionQuery: commentMentionQuery, showMentions: showCommentMentions, handleTextChange: handleCommentTextChange, insertMention: insertCommentMention, closeMentions: closeCommentMentions } = useMention();
+  const { mentionQuery: photoMentionQuery, showMentions: showPhotoMentions, handleTextChange: handlePhotoTextChange, insertMention: insertPhotoMention, closeMentions: closePhotoMentions } = useMention();
+  const { mentionQuery: videoMentionQuery, showMentions: showVideoMentions, handleTextChange: handleVideoTextChange, insertMention: insertVideoMention, closeMentions: closeVideoMentions } = useMention();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -1157,13 +1162,19 @@ const { data: mySongs = [] } = useQuery<any[]>({
           <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
             <h3 className="font-semibold">Condividi nel feed</h3>
             <video src={pendingVideo.videoData} controls className="w-full rounded-lg max-h-48 object-cover" />
-            <textarea
-              className="w-full p-3 rounded-lg bg-muted border-0 text-sm outline-none resize-none"
-              placeholder="Scrivi qualcosa..."
-              rows={3}
-              value={pendingVideoText}
-              onChange={e => setPendingVideoText(e.target.value)}
-            />
+            <div className="relative">
+             <div className="relative">
+              <textarea
+                className="w-full p-3 rounded-lg bg-muted border-0 text-sm outline-none resize-none"
+                placeholder="Scrivi qualcosa..."
+                rows={3}
+                value={pendingVideoText}
+                onChange={e => { setPendingVideoText(e.target.value); handleVideoTextChange(e.target.value, e.target.selectionStart || 0); }}
+              />
+              <MentionDropdown query={videoMentionQuery} visible={showVideoMentions} onSelect={(username) => { setPendingVideoText(insertVideoMention(pendingVideoText, username)); closeVideoMentions(); }} />
+            </div>
+              <MentionDropdown query={photoMentionQuery} visible={showPhotoMentions} onSelect={(username) => { setPendingPostText(insertPhotoMention(pendingPostText, username)); closePhotoMentions(); }} />
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => { setPendingVideo(null); setPendingPostText(""); }}>
                 Non condividere
