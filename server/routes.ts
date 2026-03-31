@@ -432,7 +432,7 @@ app.post("/api/posts/:postId/like", async (req, res) => {
       res.status(201).json(comment);
     } catch (err) {
       res.status(400).json({ message: "Errore nel creare il commento" });
-      res.status(201).json(comment);:
+      res.status(201).json(comment);
 await sendMentionNotifications(content, authorId);
     }
   });
