@@ -343,18 +343,18 @@ const { data: mySongs = [] } = useQuery<any[]>({
       reader.onload = async () => {
         try {
           const audioData = reader.result as string;
+          const audioDuration = await new Promise<number>((resolve) => {
+            const audio = new Audio();
+            audio.src = audioData;
+            audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
+            audio.onerror = () => resolve(0);
+          });
           const uploadRes = await fetch("/api/uploads/audio", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ audioData, title: file.name.replace(/\.[^/.]+$/, ""), artistId: CURRENT_USER_ID }),
           });
-          const { url } = await uploadRes.json();
-          const audioDuration = await new Promise<number>((resolve) => {
-            const audio = new Audio();
-            audio.src = url;
-            audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
-            audio.onerror = () => resolve(0);
-          });
+         const { url } = await uploadRes.json();
           await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/songs`, {
             title: file.name.replace(/\.[^/.]+$/, ""),
             audioUrl: url,
