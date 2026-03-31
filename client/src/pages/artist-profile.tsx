@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMention } from "@/hooks/use-mention";
+import { MentionDropdown } from "@/components/mention-dropdown";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
 import type { User, ArtistGoal, ArtistPhoto, ArtistVideo, ArtistSong, Post, Event } from "@shared/schema";
@@ -43,6 +45,7 @@ function formatDuration(seconds: number): string {
 
 function ArtistPostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
   const [newComment, setNewComment] = useState("");
+  const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const currentUserId = getCurrentUserId();
 
   const { data: comments = [], isLoading, refetch } = useQuery<any[]>({
@@ -63,7 +66,10 @@ function ArtistPostComments({ postId, postAuthorId }: { postId: number; postAuth
   return (
     <div className="border-t pt-3 mt-2 space-y-3">
       <div className="flex items-center gap-2">
-        <Input placeholder="Scrivi un commento..." value={newComment} onChange={e => setNewComment(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} className="flex-1" />
+        <div className="relative flex-1">
+          <Input placeholder="Scrivi un commento..." value={newComment} onChange={e => { setNewComment(e.target.value); handleTextChange(e.target.value, e.target.selectionStart || 0); }} onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} className="w-full" />
+          <MentionDropdown query={mentionQuery} visible={showMentions} onSelect={(username) => { setNewComment(insertMention(newComment, username)); closeMentions(); }} />
+        </div>
         <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}><Send className="w-4 h-4" /></Button>
       </div>
       {comments.map((comment: any) => (
@@ -1037,12 +1043,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     </div>
                   ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="relative flex-1">
                   <input
-                    className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
+                    className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
                     placeholder="Scrivi un commento..."
                     value={commentInput}
-                    onChange={e => setCommentInput(e.target.value)}
+                    onChange={e => { setCommentInput(e.target.value); handleTextChange(e.target.value, e.target.selectionStart || 0); }}
                     onKeyDown={async e => {
                       if (e.key === "Enter" && commentInput.trim()) {
                         await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: currentUserId, content: commentInput.trim() });
@@ -1051,6 +1057,8 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                       }
                     }}
                   />
+                  <MentionDropdown query={mentionQuery} visible={showMentions} onSelect={(username) => { setCommentInput(insertMention(commentInput, username)); closeMentions(); }} />
+                  </div>
                   <button
                     className="text-sm text-primary font-medium px-2"
                     onClick={async () => {
