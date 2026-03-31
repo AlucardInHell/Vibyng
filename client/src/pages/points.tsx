@@ -349,10 +349,17 @@ const { data: mySongs = [] } = useQuery<any[]>({
             body: JSON.stringify({ audioData, title: file.name.replace(/\.[^/.]+$/, ""), artistId: CURRENT_USER_ID }),
           });
           const { url } = await uploadRes.json();
+          const audioDuration = await new Promise<number>((resolve) => {
+            const audio = new Audio();
+            audio.src = url;
+            audio.onloadedmetadata = () => resolve(Math.round(audio.duration));
+            audio.onerror = () => resolve(0);
+          });
           await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/songs`, {
             title: file.name.replace(/\.[^/.]+$/, ""),
             audioUrl: url,
             artistId: CURRENT_USER_ID,
+            duration: audioDuration,
           });
           queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
           toast({ title: "Canzone caricata!", description: "La tua canzone è ora visibile nel tuo profilo" });
