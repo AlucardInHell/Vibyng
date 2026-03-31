@@ -44,12 +44,17 @@ export function AudioPlayerProvider({ children }: { children: React.ReactNode })
   const [playlist, setPlaylist] = useState<Song[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const playSong = (song: Song, newPlaylist?: Song[]) => {
+ const playSong = (song: Song, newPlaylist?: Song[]) => {
     if (audioRef.current) {
       audioRef.current.pause();
+      const old = document.getElementById("vibyng-audio-player");
+      if (old) old.remove();
     }
     
-    audioRef.current = new Audio(song.audioUrl);
+    const audioEl = new Audio(song.audioUrl);
+    audioEl.id = "vibyng-audio-player";
+    document.body.appendChild(audioEl);
+    audioRef.current = audioEl;
     audioRef.current.play();
     audioRef.current.onended = () => {
       playNext();
@@ -131,16 +136,23 @@ export function MiniPlayer() {
   const [isMuted, setIsMuted] = useState(false);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = document.getElementById('vibyng-audio-player') as HTMLAudioElement;
+    if (audio) audioRef.current = audio;
+  }, [currentSong]);
+
   useEffect(() => {
     if (isPlaying) {
       progressInterval.current = setInterval(() => {
-        const audio = document.querySelector('audio');
+        const audio = audioRef.current || document.getElementById('vibyng-audio-player') as HTMLAudioElement;
         if (audio) {
           setCurrentTime(audio.currentTime);
           setDuration(audio.duration || 0);
           setProgress((audio.currentTime / (audio.duration || 1)) * 100);
         }
-      }, 500);
+      }, 300);
     } else {
       if (progressInterval.current) {
         clearInterval(progressInterval.current);
