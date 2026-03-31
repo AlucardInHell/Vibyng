@@ -1071,7 +1071,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   >
                     Invia
                   </button>
-                </div>
               </div>
             </div>
           </div>
