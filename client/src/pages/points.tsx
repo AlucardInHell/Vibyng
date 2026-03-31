@@ -14,6 +14,8 @@ import { useProfile } from "@/App";
 import { useUpload } from "@/hooks/use-upload";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useMention } from "@/hooks/use-mention";
+import { MentionDropdown } from "@/components/mention-dropdown";
 import type { User, ArtistPhoto, ArtistVideo, Post } from "@shared/schema";
 
 function getCurrentUserId(): number {
@@ -92,6 +94,7 @@ export default function Points() {
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [openCommentsPosts, setOpenCommentsPosts] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
+  const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -459,14 +462,27 @@ const { data: mySongs = [] } = useQuery<any[]>({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 space-y-3">
-              <Textarea
-                placeholder="A cosa stai pensando?"
-                value={postText}
-                onChange={(e) => setPostText(e.target.value)}
-                className="resize-none border-0 bg-muted/50 focus-visible:ring-1"
-                rows={2}
-                data-testid="textarea-new-post"
-              />
+              <div className="relative">
+                <Textarea
+                  placeholder="A cosa stai pensando?"
+                  value={postText}
+                  onChange={(e) => {
+                    setPostText(e.target.value);
+                    handleTextChange(e.target.value, e.target.selectionStart || 0);
+                  }}
+                  className="resize-none border-0 bg-muted/50 focus-visible:ring-1"
+                  rows={2}
+                  data-testid="textarea-new-post"
+                />
+                <MentionDropdown
+                  query={mentionQuery}
+                  visible={showMentions}
+                  onSelect={(username) => {
+                    setPostText(insertMention(postText, username));
+                    closeMentions();
+                  }}
+                />
+              </div>
               <div className="flex items-center justify-between">
                 <div className="flex gap-1">
                   <input
