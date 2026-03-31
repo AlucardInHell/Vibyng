@@ -343,7 +343,7 @@ app.post("/api/uploads/avatar", async (req, res) => {
       const input = api.posts.create.input.parse(req.body);
       const post = await storage.createPost(input);
       res.status(201).json(post);
-      res.status(201).json(post);:
+      res.status(201).json(post);
 await sendMentionNotifications(post.content, post.authorId);
       
     } catch (err) {
