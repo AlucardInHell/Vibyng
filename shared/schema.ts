@@ -67,6 +67,7 @@ export const artistPhotos = pgTable("artist_photos", {
   title: text("title"),
   imageUrl: text("image_url").notNull(),
   description: text("description"),
+  likesCount: integer("likes_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
