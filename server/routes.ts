@@ -381,12 +381,12 @@ app.get("/api/posts", async (req, res) => {
     res.json(userPosts);
   });
 
-  // === LIKE POST ===
-app.post("/api/posts/:postId/like", async (req, res) => {
+// === LIKE POST ===
+  app.post("/api/posts/:postId/like", async (req, res) => {
     try {
       const postId = Number(req.params.postId);
       const { userId } = req.body;
-      await storage.likePost(postId);
+      await storage.likePost(postId, userId);
       const post = await storage.getPost(postId);
       if (post && userId && post.authorId !== userId) {
         const liker = await storage.getUser(userId);
@@ -407,11 +407,23 @@ app.post("/api/posts/:postId/like", async (req, res) => {
   app.post("/api/posts/:postId/unlike", async (req, res) => {
     try {
       const postId = Number(req.params.postId);
-      await storage.unlikePost(postId);
+      const { userId } = req.body;
+      await storage.unlikePost(postId, userId);
       const post = await storage.getPost(postId);
       res.json({ success: true, likesCount: post?.likesCount ?? 0 });
     } catch (err) {
       res.status(400).json({ message: "Errore nel rimuovere like" });
+    }
+  });
+
+  app.get("/api/posts/:postId/liked/:userId", async (req, res) => {
+    try {
+      const postId = Number(req.params.postId);
+      const userId = Number(req.params.userId);
+      const liked = await storage.hasLikedPost(postId, userId);
+      res.json({ liked });
+    } catch (err) {
+      res.status(400).json({ message: "Errore" });
     }
   });
 
