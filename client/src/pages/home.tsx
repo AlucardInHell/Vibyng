@@ -1038,15 +1038,16 @@ const handleLike = async (postId: string | number) => {
                 </div>
               )}
               <div className="flex items-center gap-1">
-                <Button 
+               <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => handleLike(post.id)}
+                  onClick={() => handleLike(String(post.id))}
                   className={likedPosts.has(String(post.id) as any) ? "text-red-500" : ""}
                   data-testid={`button-like-${post.id}`}
+                  key={`like-${post.id}-${post.likesCount}`}
                 >
                   <Heart className={`w-4 h-4 ${likedPosts.has(String(post.id) as any) ? "fill-current" : ""}`} />
-                 <span className="text-xs ml-1">{post.likesCount}</span>
+                <span className="text-xs ml-1">{post.likesCount}</span>
                 </Button>
                 <Button 
                   variant="ghost" 
