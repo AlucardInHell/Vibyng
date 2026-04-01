@@ -740,7 +740,13 @@ const searchableUsers: { id: number; username: string; displayName: string; genr
 
 export default function Home() {
   const { toast } = useToast();
-  const likedPosts = new Set(likedPostIds.map(Number));
+  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (likedPostIds.length > 0) {
+      setLikedPosts(new Set(likedPostIds.map(Number)));
+    }
+  }, [likedPostIds]);
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [searchOpen, setSearchOpen] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
