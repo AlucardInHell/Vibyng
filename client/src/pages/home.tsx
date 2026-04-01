@@ -809,15 +809,37 @@ useEffect(() => {
       newLiked.add(postId as number);
     }
     setLikedPosts(newLiked);
-    if (isPhoto) {
+  if (isPhoto) {
       const photoId = String(postId).replace("photo_", "");
       if (isLiked) {
         await apiRequest("POST", `/api/photos/${photoId}/unlike`, { userId: CURRENT_USER_ID });
       } else {
         await apiRequest("POST", `/api/photos/${photoId}/like`, { userId: CURRENT_USER_ID });
       }
-      await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+      queryClient.setQueryData(["/api/posts", CURRENT_USER_ID], (old: any) => {
+        if (!old) return old;
+        return old.map((p: any) => 
+          String(p.id) === String(postId) 
+            ? { ...p, likesCount: isLiked ? p.likesCount - 1 : p.likesCount + 1 }
+            : p
+        );
+      });
+    } else {
+      if (isLiked) {
+        await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
+      } else {
+        await apiRequest("POST", `/api/posts/${postId}/like`, { userId: CURRENT_USER_ID });
+      }
+      queryClient.setQueryData(["/api/posts", CURRENT_USER_ID], (old: any) => {
+        if (!old) return old;
+        return old.map((p: any) => 
+          Number(p.id) === Number(postId) 
+            ? { ...p, likesCount: isLiked ? p.likesCount - 1 : p.likesCount + 1 }
+            : p
+        );
+      });
       await refetchLikes();
+    }
     } else {
       if (isLiked) {
         await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
