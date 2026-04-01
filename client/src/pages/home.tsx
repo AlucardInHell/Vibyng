@@ -802,6 +802,16 @@ useEffect(() => {
     }
   }, [likedPostIds]);
 
+const toggleComments = (postId: number) => {
+    const newOpen = new Set(openComments);
+    if (newOpen.has(postId)) {
+      newOpen.delete(postId);
+    } else {
+      newOpen.add(postId);
+    }
+    setOpenComments(newOpen);
+  };
+  
 const handleLike = async (postId: string | number) => {
     const isPhoto = String(postId).startsWith("photo_");
     const isLiked = likedPosts.has(String(postId) as any);
