@@ -776,7 +776,7 @@ useEffect(() => {
     },
   });
 
-  const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
+ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     queryKey: ["/api/likes", CURRENT_USER_ID],
     queryFn: async () => {
       if (!posts) return [];
@@ -789,7 +789,8 @@ useEffect(() => {
       );
       return results.filter(Boolean) as number[];
     },
-   enabled: !!posts && posts.length > 0,
+    enabled: !!posts && posts.length > 0,
+    staleTime: 0,
   });
 
   useEffect(() => {
@@ -798,8 +799,18 @@ useEffect(() => {
     }
   }, [likedPostIds]);
 
-  const handleLike = async (postId: number) => {
-    if (likedPosts.has(postId)) {
+ const handleLike = async (postId: number) => {
+    const isLiked = likedPosts.has(postId);
+    // Aggiorna stato locale immediatamente
+    const newLiked = new Set(likedPosts);
+    if (isLiked) {
+      newLiked.delete(postId);
+    } else {
+      newLiked.add(postId);
+    }
+    setLikedPosts(newLiked);
+    // Aggiorna server
+    if (isLiked) {
       await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
     } else {
       await apiRequest("POST", `/api/posts/${postId}/like`, { userId: CURRENT_USER_ID });
