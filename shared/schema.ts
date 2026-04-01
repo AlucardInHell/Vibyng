@@ -382,3 +382,10 @@ export const videoComments = pgTable("video_comments", {
   likesCount: integer("likes_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
+// === POST LIKES ===
+export const postLikes = pgTable("post_likes", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull().references(() => posts.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
