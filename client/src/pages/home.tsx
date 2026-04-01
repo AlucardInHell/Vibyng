@@ -810,27 +810,16 @@ const handleLike = async (postId: string | number) => {
       newLiked.add(postId as number);
     }
     setLikedPosts(newLiked);
+    const currentCount = likeCounts[String(postId)] ?? (posts?.find(p => String(p.id) === String(postId))?.likesCount ?? 0);
+    setLikeCounts(prev => ({
+      ...prev,
+      [String(postId)]: currentCount + (isLiked ? -1 : 1)
+    }));
     if (isPhoto) {
       const photoId = String(postId).replace("photo_", "");
-      if (isLiked) {
-        await apiRequest("POST", `/api/photos/${photoId}/unlike`, { userId: CURRENT_USER_ID });
-      } else {
-        await apiRequest("POST", `/api/photos/${photoId}/like`, { userId: CURRENT_USER_ID });
-      }
-      setLikeCounts(prev => ({
-        ...prev,
-        [String(postId)]: (prev[String(postId)] ?? posts?.find(p => String(p.id) === String(postId))?.likesCount ?? 0) + (isLiked ? -1 : 1)
-      }));
+      await apiRequest("POST", `/api/photos/${photoId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
     } else {
-      if (isLiked) {
-        await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
-      } else {
-        await apiRequest("POST", `/api/posts/${postId}/like`, { userId: CURRENT_USER_ID });
-      }
-      setLikeCounts(prev => ({
-        ...prev,
-        [String(postId)]: (prev[String(postId)] ?? posts?.find(p => Number(p.id) === Number(postId))?.likesCount ?? 0) + (isLiked ? -1 : 1)
-      }));
+      await apiRequest("POST", `/api/posts/${postId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
       await refetchLikes();
     }
   };
