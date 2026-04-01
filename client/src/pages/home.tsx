@@ -777,11 +777,6 @@ useEffect(() => {
   });
 
   const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
-    useEffect(() => {
-    if (likedPostIds.length > 0) {
-      setLikedPosts(new Set(likedPostIds.map(Number)));
-    }
-  }, [likedPostIds]);
     queryKey: ["/api/likes", CURRENT_USER_ID],
     queryFn: async () => {
       if (!posts) return [];
@@ -794,8 +789,14 @@ useEffect(() => {
       );
       return results.filter(Boolean) as number[];
     },
-    enabled: !!posts && posts.length > 0,
+   enabled: !!posts && posts.length > 0,
   });
+
+  useEffect(() => {
+    if (likedPostIds.length > 0) {
+      setLikedPosts(new Set(likedPostIds.map(Number)));
+    }
+  }, [likedPostIds]);
 
   const likeMutation = useMutation({
     mutationFn: async (postId: number) => {
