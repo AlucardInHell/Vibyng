@@ -1023,7 +1023,7 @@ useEffect(() => {
                   data-testid={`button-like-${post.id}`}
                 >
                   <Heart className={`w-4 h-4 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
-                  <span className="text-xs ml-1">{post.likesCount + (likedPosts.has(post.id) ? 1 : 0)}</span>
+                 <span className="text-xs ml-1">{post.likesCount}</span>
                 </Button>
                 <Button 
                   variant="ghost" 
