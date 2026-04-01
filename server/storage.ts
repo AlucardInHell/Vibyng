@@ -190,21 +190,30 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     }
     return post;
   }
-async likePost(postId: number): Promise<void> {
-    const [post] = await db.select().from(posts).where(eq(posts.id, postId));
-    if (post) {
+async likePost(postId: number, userId: number): Promise<void> {
+    try {
+      await db.execute(sql`INSERT INTO post_likes (post_id, user_id) VALUES (${postId}, ${userId}) ON CONFLICT DO NOTHING`);
       await db.update(posts)
-        .set({ likesCount: post.likesCount + 1 })
+        .set({ likesCount: sql`${posts.likesCount} + 1` })
         .where(eq(posts.id, postId));
-    }
+    } catch {}
   }
 
-  async unlikePost(postId: number): Promise<void> {
-    const [post] = await db.select().from(posts).where(eq(posts.id, postId));
-    if (post && post.likesCount > 0) {
+  async unlikePost(postId: number, userId: number): Promise<void> {
+    try {
+      await db.execute(sql`DELETE FROM post_likes WHERE post_id = ${postId} AND user_id = ${userId}`);
       await db.update(posts)
-        .set({ likesCount: post.likesCount - 1 })
+        .set({ likesCount: sql`GREATEST(${posts.likesCount} - 1, 0)` })
         .where(eq(posts.id, postId));
+    } catch {}
+  }
+
+  async hasLikedPost(postId: number, userId: number): Promise<boolean> {
+    try {
+      const result = await db.execute(sql`SELECT id FROM post_likes WHERE post_id = ${postId} AND user_id = ${userId}`);
+      return result.rows.length > 0;
+    } catch {
+      return false;
     }
   }
 
