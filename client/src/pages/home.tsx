@@ -804,8 +804,8 @@ useEffect(() => {
     } else {
       await apiRequest("POST", `/api/posts/${postId}/like`, { userId: CURRENT_USER_ID });
     }
-    refetchLikes();
-    queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+    await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+    await refetchLikes();
   };
 
   const toggleComments = (postId: number) => {
