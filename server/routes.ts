@@ -542,12 +542,13 @@ await sendMentionNotifications(content, authorId);
       await db.execute(sql`UPDATE artist_photos SET likes_count = COALESCE(likes_count, 0) + 1 WHERE id = ${photoId}`);
       const result = await db.execute(sql`SELECT likes_count FROM artist_photos WHERE id = ${photoId}`);
       res.json({ success: true, likesCount: result.rows[0]?.likes_count ?? 0 });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel like" });
+   } catch (err: any) {
+      console.error("[photo-like]", err?.message);
+      res.status(400).json({ message: "Errore nel like", detail: err?.message });
     }
   });
 
-  app.post("/api/photos/:photoId/unlike", async (req, res) => {
+  app.post("/api/photos/:photoId/unlike",
     try {
       const photoId = Number(req.params.photoId);
       await db.execute(sql`UPDATE artist_photos SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0) WHERE id = ${photoId}`);
