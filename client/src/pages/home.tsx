@@ -799,24 +799,33 @@ useEffect(() => {
     }
   }, [likedPostIds]);
 
- const handleLike = async (postId: number) => {
-    const isLiked = likedPosts.has(postId);
-    // Aggiorna stato locale immediatamente
+ const handleLike = async (postId: number | string) => {
+    const isPhoto = String(postId).startsWith("photo_");
+    const isLiked = likedPosts.has(postId as number);
     const newLiked = new Set(likedPosts);
     if (isLiked) {
-      newLiked.delete(postId);
+      newLiked.delete(postId as number);
     } else {
-      newLiked.add(postId);
+      newLiked.add(postId as number);
     }
     setLikedPosts(newLiked);
-    // Aggiorna server
-    if (isLiked) {
-      await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
+    if (isPhoto) {
+      const photoId = String(postId).replace("photo_", "");
+      if (isLiked) {
+        await apiRequest("POST", `/api/photos/${photoId}/unlike`, { userId: CURRENT_USER_ID });
+      } else {
+        await apiRequest("POST", `/api/photos/${photoId}/like`, { userId: CURRENT_USER_ID });
+      }
+      await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
     } else {
-      await apiRequest("POST", `/api/posts/${postId}/like`, { userId: CURRENT_USER_ID });
+      if (isLiked) {
+        await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
+      } else {
+        await apiRequest("POST", `/api/posts/${postId}/like`, { userId: CURRENT_USER_ID });
+      }
+      await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+      await refetchLikes();
     }
-    await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
-    await refetchLikes();
   };
 
   const toggleComments = (postId: number) => {
