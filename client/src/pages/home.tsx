@@ -798,15 +798,6 @@ useEffect(() => {
     }
   }, [likedPostIds]);
 
-  const likeMutation = useMutation({
-    mutationFn: async (postId: number) => {
-      return apiRequest("POST", `/api/posts/${postId}/like`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-    },
-  });
-
   const handleLike = async (postId: number) => {
     if (likedPosts.has(postId)) {
       await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
