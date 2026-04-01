@@ -1037,7 +1037,7 @@ const handleLike = async (postId: string | number) => {
                   onClick={() => handleLike(String(post.id))}
                   className={likedPosts.has(String(post.id) as any) ? "text-red-500" : ""}
                   data-testid={`button-like-${post.id}`}
-                  key={`like-${post.id}-${post.likesCount}`}
+                  key={`like-${post.id}-${likeCounts[String(post.id)] ?? post.likesCount}`}
                 >
                   <Heart className={`w-4 h-4 ${likedPosts.has(String(post.id) as any) ? "fill-current" : ""}`} />
               <span className="text-xs ml-1">{likeCounts[String(post.id)] ?? post.likesCount ?? 0}</span>
