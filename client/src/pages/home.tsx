@@ -839,7 +839,6 @@ useEffect(() => {
         );
       });
       await refetchLikes();
-    }
     } else {
       if (isLiked) {
         await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
