@@ -742,6 +742,7 @@ export default function Home() {
   const { toast } = useToast();
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [searchOpen, setSearchOpen] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
@@ -816,28 +817,20 @@ const handleLike = async (postId: string | number) => {
       } else {
         await apiRequest("POST", `/api/photos/${photoId}/like`, { userId: CURRENT_USER_ID });
       }
-      queryClient.setQueryData(["/api/posts", CURRENT_USER_ID], (old: any) => {
-        if (!old) return old;
-        return old.map((p: any) => 
-          String(p.id) === String(postId) 
-            ? { ...p, likesCount: isLiked ? p.likesCount - 1 : p.likesCount + 1 }
-            : p
-        );
-      });
+      setLikeCounts(prev => ({
+        ...prev,
+        [String(postId)]: (prev[String(postId)] ?? posts?.find(p => String(p.id) === String(postId))?.likesCount ?? 0) + (isLiked ? -1 : 1)
+      }));
     } else {
       if (isLiked) {
         await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
       } else {
         await apiRequest("POST", `/api/posts/${postId}/like`, { userId: CURRENT_USER_ID });
       }
-      queryClient.setQueryData(["/api/posts", CURRENT_USER_ID], (old: any) => {
-        if (!old) return old;
-        return old.map((p: any) => 
-          Number(p.id) === Number(postId) 
-            ? { ...p, likesCount: isLiked ? p.likesCount - 1 : p.likesCount + 1 }
-            : p
-        );
-      });
+      setLikeCounts(prev => ({
+        ...prev,
+        [String(postId)]: (prev[String(postId)] ?? posts?.find(p => Number(p.id) === Number(postId))?.likesCount ?? 0) + (isLiked ? -1 : 1)
+      }));
       await refetchLikes();
     }
   };
@@ -1047,7 +1040,7 @@ const handleLike = async (postId: string | number) => {
                   key={`like-${post.id}-${post.likesCount}`}
                 >
                   <Heart className={`w-4 h-4 ${likedPosts.has(String(post.id) as any) ? "fill-current" : ""}`} />
-                <span className="text-xs ml-1">{post.likesCount}</span>
+              <span className="text-xs ml-1">{likeCounts[String(post.id)] ?? post.likesCount ?? 0}</span>
                 </Button>
                 <Button 
                   variant="ghost" 
