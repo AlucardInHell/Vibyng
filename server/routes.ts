@@ -318,13 +318,13 @@ app.post("/api/uploads/avatar", async (req, res) => {
     const posts = await storage.getPosts();
     const photos = await storage.getAllPhotosForFeed();
     const photoItems = photos.map((p: any) => ({
-      id: `photo_${p.id}`,
+     id: `photo_${p.id}`,
       type: "photo",
       authorId: p.artist_id,
       content: p.description || p.title || "📷",
       mediaUrl: p.image_url,
       createdAt: p.created_at,
-      likesCount: 0,
+      likesCount: p.likes_count || 0,
       author: {
         id: p.artist_id,
         displayName: p.display_name,
