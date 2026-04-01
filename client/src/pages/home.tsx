@@ -817,6 +817,7 @@ useEffect(() => {
         await apiRequest("POST", `/api/photos/${photoId}/like`, { userId: CURRENT_USER_ID });
       }
       await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+      await refetchLikes();
     } else {
       if (isLiked) {
         await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
