@@ -740,7 +740,7 @@ const searchableUsers: { id: number; username: string; displayName: string; genr
 
 export default function Home() {
   const { toast } = useToast();
-  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+  const likedPosts = new Set(likedPostIds.map(Number));
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [searchOpen, setSearchOpen] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
@@ -776,6 +776,22 @@ useEffect(() => {
     },
   });
 
+  const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
+    queryKey: ["/api/likes", CURRENT_USER_ID],
+    queryFn: async () => {
+      if (!posts) return [];
+      const results = await Promise.all(
+        posts.map(async (post) => {
+          const res = await fetch(`/api/posts/${post.id}/liked/${CURRENT_USER_ID}`);
+          const data = await res.json();
+          return data.liked ? Number(post.id) : null;
+        })
+      );
+      return results.filter(Boolean) as number[];
+    },
+    enabled: !!posts && posts.length > 0,
+  });
+
   const likeMutation = useMutation({
     mutationFn: async (postId: number) => {
       return apiRequest("POST", `/api/posts/${postId}/like`);
@@ -785,15 +801,14 @@ useEffect(() => {
     },
   });
 
-  const handleLike = (postId: number) => {
-    const newLiked = new Set(likedPosts);
-    if (newLiked.has(postId)) {
-      newLiked.delete(postId);
+  const handleLike = async (postId: number) => {
+    if (likedPosts.has(postId)) {
+      await apiRequest("POST", `/api/posts/${postId}/unlike`, { userId: CURRENT_USER_ID });
     } else {
-      newLiked.add(postId);
+      await apiRequest("POST", `/api/posts/${postId}/like`, { userId: CURRENT_USER_ID });
     }
-    setLikedPosts(newLiked);
-    likeMutation.mutate(postId);
+    refetchLikes();
+    queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
   };
 
   const toggleComments = (postId: number) => {
