@@ -799,7 +799,7 @@ useEffect(() => {
     }
   }, [likedPostIds]);
 
- const handleLike = async (postId: string | number) => {
+const handleLike = async (postId: string | number) => {
     const isPhoto = String(postId).startsWith("photo_");
     const isLiked = likedPosts.has(String(postId) as any);
     const newLiked = new Set(likedPosts);
@@ -809,15 +809,7 @@ useEffect(() => {
       newLiked.add(postId as number);
     }
     setLikedPosts(newLiked);
-  if (isPhoto) {
-      const photoId = String(postId).replace("photo_", "");
-      if (isLiked) {
-        await apiRequest("POST", `/api/photos/${photoId}/unlike`, { userId: CURRENT_USER_ID });
-      } else {
-        await apiRequest("POST", `/api/photos/${photoId}/like`, { userId: CURRENT_USER_ID });
-      }
-      queryClient.setQueryData(["/api/posts", CURRENT_USER_ID], (old: any) => {
-       if (isPhoto) {
+    if (isPhoto) {
       const photoId = String(postId).replace("photo_", "");
       if (isLiked) {
         await apiRequest("POST", `/api/photos/${photoId}/unlike`, { userId: CURRENT_USER_ID });
@@ -849,13 +841,6 @@ useEffect(() => {
       await refetchLikes();
     }
   };
-      newOpen.delete(postId);
-    } else {
-      newOpen.add(postId);
-    }
-    setOpenComments(newOpen);
-  };
-
   const handleShare = async (post: PostWithAuthor) => {
     const shareData = {
       title: `Post di ${post.author.displayName}`,
