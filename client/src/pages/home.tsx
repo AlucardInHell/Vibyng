@@ -775,6 +775,8 @@ useEffect(() => {
       const res = await fetch(`/api/posts?userId=${CURRENT_USER_ID}`);
       return res.json();
     },
+    refetchInterval: 30000,
+    staleTime: 0,
   });
 
  const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
