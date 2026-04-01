@@ -406,7 +406,7 @@ function Stories() {
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      onClick={() => handleLikeStory(activeStory.stories[activeStoryIndex]?.id)}
+                     onClick={() => handleLike(String(post.id))}
                       className="text-white"
                       data-testid="button-like-story"
                     >
@@ -799,9 +799,9 @@ useEffect(() => {
     }
   }, [likedPostIds]);
 
- const handleLike = async (postId: number | string) => {
+ const handleLike = async (postId: string | number) => {
     const isPhoto = String(postId).startsWith("photo_");
-    const isLiked = likedPosts.has(postId as number);
+    const isLiked = likedPosts.has(String(postId) as any);
     const newLiked = new Set(likedPosts);
     if (isLiked) {
       newLiked.delete(postId as number);
@@ -1039,10 +1039,10 @@ useEffect(() => {
                   variant="ghost" 
                   size="sm" 
                   onClick={() => handleLike(post.id)}
-                  className={likedPosts.has(post.id) ? "text-red-500" : ""}
+                  className={likedPosts.has(String(post.id) as any) ? "text-red-500" : ""}
                   data-testid={`button-like-${post.id}`}
                 >
-                  <Heart className={`w-4 h-4 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
+                  <Heart className={`w-4 h-4 ${likedPosts.has(String(post.id) as any) ? "fill-current" : ""}`} />
                  <span className="text-xs ml-1">{post.likesCount}</span>
                 </Button>
                 <Button 
