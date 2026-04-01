@@ -548,7 +548,7 @@ await sendMentionNotifications(content, authorId);
     }
   });
 
-  app.post("/api/photos/:photoId/unlike",
+ app.post("/api/photos/:photoId/unlike", async (req, res) => {
     try {
       const photoId = Number(req.params.photoId);
       await db.execute(sql`UPDATE artist_photos SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0) WHERE id = ${photoId}`);
