@@ -113,8 +113,8 @@ export const messages = pgTable("messages", {
 // === COMMENTS TABLE ===
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull().references(() => posts.id),
-  authorId: integer("author_id").notNull().references(() => users.id),
+  postId: integer("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -369,16 +369,16 @@ export type InsertEventAttendee = z.infer<typeof insertEventAttendeeSchema>;
 // === PHOTO COMMENTS ===
 export const photoComments = pgTable("photo_comments", {
   id: serial("id").primaryKey(),
-  photoId: integer("photo_id").notNull().references(() => artistPhotos.id),
-  authorId: integer("author_id").notNull().references(() => users.id),
+  photoId: integer("photo_id").notNull().references(() => artistPhotos.id, { onDelete: "cascade" }),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 // === VIDEO COMMENTS ===
 export const videoComments = pgTable("video_comments", {
   id: serial("id").primaryKey(),
-  videoId: integer("video_id").notNull().references(() => artistVideos.id),
-  authorId: integer("author_id").notNull().references(() => users.id),
+  videoId: integer("video_id").notNull().references(() => artistVideos.id, { onDelete: "cascade" }),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   likesCount: integer("likes_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
