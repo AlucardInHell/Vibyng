@@ -988,7 +988,10 @@ const handleLike = async (postId: string | number) => {
                 </div>
             <span className="text-xs text-muted-foreground">@{post.author.username}</span>
                   <span className="text-xs text-muted-foreground block">
-                    {post.createdAt && new Date(post.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    {post.createdAt && (() => {
+  const dateStr = post.createdAt.toString().replace(' ', 'T') + (post.createdAt.toString().includes('Z') ? '' : 'Z');
+  return new Date(dateStr).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+})()}
                   </span>
             </div>
             {post.authorId === CURRENT_USER_ID && (
