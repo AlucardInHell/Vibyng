@@ -63,7 +63,7 @@ export const supports = pgTable("supports", {
 // === ARTIST PHOTOS TABLE ===
 export const artistPhotos = pgTable("artist_photos", {
   id: serial("id").primaryKey(),
-  artistId: integer("artist_id").notNull().references(() => users.id),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title"),
   imageUrl: text("image_url").notNull(),
   description: text("description"),
