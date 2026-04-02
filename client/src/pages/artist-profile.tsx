@@ -116,29 +116,6 @@ export default function ArtistProfile() {
   const [postText, setPostText] = useState("");
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
-
-  const { data: likedPostIds = [] } = useQuery<number[]>({
-    queryKey: ["/api/likes", currentUserId, artistId],
-    queryFn: async () => {
-      if (!artistPosts || artistPosts.length === 0) return [];
-      const results = await Promise.all(
-        artistPosts.map(async (post: any) => {
-          const res = await fetch(`/api/posts/${post.id}/liked/${currentUserId}`);
-          const data = await res.json();
-          return data.liked ? Number(post.id) : null;
-        })
-      );
-      return results.filter(Boolean) as number[];
-    },
-    enabled: !!artistPosts && artistPosts.length > 0,
-    staleTime: 0,
-  });
-
-  useEffect(() => {
-    if (likedPostIds.length > 0) {
-      setLikedPosts(new Set(likedPostIds.map(Number)));
-    }
-  }, [likedPostIds]);
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
@@ -216,6 +193,29 @@ export default function ArtistProfile() {
     queryKey: ["/api/users", artistId, "posts"],
   });
 
+  const { data: likedPostIds = [] } = useQuery<number[]>({
+    queryKey: ["/api/likes", currentUserId, artistId],
+    queryFn: async () => {
+      if (!artistPosts || artistPosts.length === 0) return [];
+      const results = await Promise.all(
+        artistPosts.map(async (post: any) => {
+          const res = await fetch(`/api/posts/${post.id}/liked/${currentUserId}`);
+          const data = await res.json();
+          return data.liked ? Number(post.id) : null;
+        })
+      );
+      return results.filter(Boolean) as number[];
+    },
+    enabled: !!artistPosts && artistPosts.length > 0,
+    staleTime: 0,
+  });
+
+  useEffect(() => {
+    if (likedPostIds.length > 0) {
+      setLikedPosts(new Set(likedPostIds.map(Number)));
+    }
+  }, [likedPostIds]);
+  
   const { data: artistEvents = [] } = useQuery<Event[]>({
     queryKey: [`/api/artists/${id}/events`],
     enabled: !!artist && artist.role === "artist",
