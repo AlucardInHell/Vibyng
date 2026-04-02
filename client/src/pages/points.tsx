@@ -667,7 +667,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                   <div className="p-4 overflow-hidden">
                     <p className="font-medium">{selectedPhoto.title}</p>
                     <p className="text-xs text-muted-foreground mb-3">
-                      {selectedPhoto.createdAt && new Date(selectedPhoto.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                     {selectedPhoto.createdAt && new Date(selectedPhoto.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" })}
                     </p>
                     <div className="flex items-center gap-4 mb-4 border-b pb-3">
                       <button
