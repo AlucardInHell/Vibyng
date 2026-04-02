@@ -110,6 +110,7 @@ export default function ArtistProfile() {
 
   const { toast } = useToast();
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
+  const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const [supportAmount, setSupportAmount] = useState("5");
   const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
