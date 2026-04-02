@@ -115,6 +115,30 @@ export default function ArtistProfile() {
   const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+  const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
+
+  const { data: likedPostIds = [] } = useQuery<number[]>({
+    queryKey: ["/api/likes", currentUserId, artistId],
+    queryFn: async () => {
+      if (!posts || posts.length === 0) return [];
+      const results = await Promise.all(
+        posts.map(async (post: any) => {
+          const res = await fetch(`/api/posts/${post.id}/liked/${currentUserId}`);
+          const data = await res.json();
+          return data.liked ? Number(post.id) : null;
+        })
+      );
+      return results.filter(Boolean) as number[];
+    },
+    enabled: !!posts && posts.length > 0,
+    staleTime: 0,
+  });
+
+  useEffect(() => {
+    if (likedPostIds.length > 0) {
+      setLikedPosts(new Set(likedPostIds.map(Number)));
+    }
+  }, [likedPostIds]);
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
@@ -548,21 +572,23 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         <div className="flex items-center gap-3 mt-2">
                           <button
                             className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"}`}
-                            onClick={async () => {
+                           onClick={async () => {
+                              const isLiked = likedPosts.has(post.id);
                               const newLiked = new Set(likedPosts);
-                              if (newLiked.has(post.id)) {
+                              if (isLiked) {
                                 newLiked.delete(post.id);
-                                await apiRequest("POST", `/api/posts/${post.id}/unlike`);
+                                await apiRequest("POST", `/api/posts/${post.id}/unlike`, { userId: currentUserId });
                               } else {
                                 newLiked.add(post.id);
-                                await apiRequest("POST", `/api/posts/${post.id}/like`);
+                                await apiRequest("POST", `/api/posts/${post.id}/like`, { userId: currentUserId });
                               }
                               setLikedPosts(new Set(newLiked));
-                              queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
+                              const currentCount = likeCounts[post.id] ?? post.likesCount ?? 0;
+                              setLikeCounts(prev => ({ ...prev, [post.id]: currentCount + (isLiked ? -1 : 1) }));
                             }}
                           >
                             <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-red-500" : ""}`} />
-                            {post.likesCount}
+                          {likeCounts[post.id] !== undefined ? likeCounts[post.id] : post.likesCount}
                           </button>
                           <button
                             className={`flex items-center gap-1 text-xs ${openComments.has(post.id) ? "text-primary" : "text-muted-foreground"}`}
