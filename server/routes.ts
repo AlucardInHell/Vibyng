@@ -739,8 +739,9 @@ app.delete("/api/posts/:postId", async (req, res) => {
         await storage.deletePhotoByUrl(post.mediaUrl);
       }
       res.json({ success: true });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nell'eliminazione del post" });
+    } catch (err: any) {
+      console.error("[delete-post]", err?.message);
+      res.status(400).json({ message: "Errore nell'eliminazione del post", detail: err?.message });
     }
   });
 app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
