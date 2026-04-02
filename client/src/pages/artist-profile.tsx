@@ -122,6 +122,18 @@ export default function ArtistProfile() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
+  const { data: photoLikeData, refetch: refetchPhotoLike } = useQuery<{ liked: boolean }>({
+    queryKey: ["/api/photos", selectedPhoto?.id, "liked", currentUserId],
+    queryFn: async () => {
+      if (!selectedPhoto?.id) return { liked: false };
+      const res = await fetch(`/api/photos/${selectedPhoto.id}/liked/${currentUserId}`);
+      return res.json();
+    },
+    enabled: !!selectedPhoto?.id,
+    staleTime: 0,
+  });
+  const isPhotoLiked = photoLikeData?.liked ?? false;
+  const [photoLikeCount, setPhotoLikeCount] = useState<Record<number, number>>({});
   const { data: photoCommentsList = [], refetch: refetchPhotoComments } = useQuery<any[]>({
     queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
     queryFn: async () => {
@@ -1006,12 +1018,22 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   {selectedPhoto.createdAt && new Date(selectedPhoto.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
                 <div className="flex items-center gap-4 mb-4 border-b pb-3">
-                  <button
-                    className={`flex items-center gap-1 text-sm ${photoLikes[selectedPhoto.id] ? "text-red-500" : "text-muted-foreground"}`}
-                    onClick={() => setPhotoLikes(prev => ({ ...prev, [selectedPhoto.id]: !prev[selectedPhoto.id] }))}
+                <button
+                    className={`flex items-center gap-1 text-sm ${isPhotoLiked ? "text-red-500" : "text-muted-foreground"}`}
+                    onClick={async () => {
+                      const currentCount = photoLikeCount[selectedPhoto.id] ?? selectedPhoto.likesCount ?? 0;
+                      if (isPhotoLiked) {
+                        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/unlike`, { userId: currentUserId });
+                        setPhotoLikeCount(prev => ({ ...prev, [selectedPhoto.id]: currentCount - 1 }));
+                      } else {
+                        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/like`, { userId: currentUserId });
+                        setPhotoLikeCount(prev => ({ ...prev, [selectedPhoto.id]: currentCount + 1 }));
+                      }
+                      refetchPhotoLike();
+                    }}
                   >
-                    <Heart className={`w-5 h-5 ${photoLikes[selectedPhoto.id] ? "fill-red-500" : ""}`} />
-                    {photoLikes[selectedPhoto.id] ? "Mi piace" : "Like"}
+                    <Heart className={`w-5 h-5 ${isPhotoLiked ? "fill-red-500" : ""}`} />
+                    <span>{photoLikeCount[selectedPhoto.id] !== undefined ? photoLikeCount[selectedPhoto.id] : (selectedPhoto.likesCount ?? 0)}</span>
                   </button>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
