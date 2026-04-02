@@ -667,7 +667,10 @@ const { data: mySongs = [] } = useQuery<any[]>({
                   <div className="p-4 overflow-hidden">
                     <p className="font-medium">{selectedPhoto.title}</p>
                     <p className="text-xs text-muted-foreground mb-3">
-                    {selectedPhoto.createdAt && new Date(selectedPhoto.createdAt + (selectedPhoto.createdAt.includes('Z') ? '' : 'Z')).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    {selectedPhoto.createdAt && (() => {
+  const dateStr = selectedPhoto.createdAt.toString().replace(' ', 'T') + (selectedPhoto.createdAt.toString().includes('Z') ? '' : 'Z');
+  return new Date(dateStr).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+})()}
                     </p>
                     <div className="flex items-center gap-4 mb-4 border-b pb-3">
                       <button
