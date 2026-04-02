@@ -390,3 +390,10 @@ export const postLikes = pgTable("post_likes", {
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
+// === PHOTO LIKES ===
+export const photoLikes = pgTable("photo_likes", {
+  id: serial("id").primaryKey(),
+  photoId: integer("photo_id").notNull().references(() => artistPhotos.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
