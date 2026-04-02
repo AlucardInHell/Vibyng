@@ -191,6 +191,8 @@ export default function ArtistProfile() {
 
   const { data: artistPosts = [] } = useQuery<(Post & { author: User })[]>({
     queryKey: ["/api/users", artistId, "posts"],
+    refetchInterval: 30000,
+    staleTime: 0,
   });
 
   const { data: likedPostIds = [] } = useQuery<number[]>({
