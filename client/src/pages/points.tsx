@@ -181,6 +181,23 @@ const { data: followersData } = useQuery<{ count: number }>({
     queryKey: ["/api/users", CURRENT_USER_ID, "posts"],
   });
 
+const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
+    queryKey: ["/api/likes", CURRENT_USER_ID, "posts"],
+    queryFn: async () => {
+      if (!myPosts || myPosts.length === 0) return [];
+      const results = await Promise.all(
+        myPosts.map(async (post) => {
+          const res = await fetch(`/api/posts/${post.id}/liked/${CURRENT_USER_ID}`);
+          const data = await res.json();
+          return data.liked ? Number(post.id) : null;
+        })
+      );
+      return results.filter(Boolean) as number[];
+    },
+    enabled: myPosts.length > 0,
+    staleTime: 0,
+  });
+  
 const { data: mySongs = [] } = useQuery<any[]>({
     queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`],
     enabled: true,
@@ -819,18 +836,18 @@ const { data: mySongs = [] } = useQuery<any[]>({
                       <div className="flex items-center gap-4 mt-2 text-muted-foreground">
                          <button
                             className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"}`}
-                            onClick={async () => {
+                           onClick={async () => {
+                              const isLiked = likedPosts.has(post.id);
                               const newLiked = new Set(likedPosts);
-                              if (newLiked.has(post.id)) {
+                              if (isLiked) {
                                 newLiked.delete(post.id);
-                                await apiRequest("POST", `/api/posts/${post.id}/unlike`);
+                                await apiRequest("POST", `/api/posts/${post.id}/unlike`, { userId: CURRENT_USER_ID });
                               } else {
                                 newLiked.add(post.id);
-                                await apiRequest("POST", `/api/posts/${post.id}/like`);
+                                await apiRequest("POST", `/api/posts/${post.id}/like`, { userId: CURRENT_USER_ID });
                               }
-                             setLikedPosts(new Set(newLiked));
-                              queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-                              queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+                              setLikedPosts(new Set(newLiked));
+                              await refetchLikes();
                             }}
                           >
                             <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
