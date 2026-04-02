@@ -119,6 +119,12 @@ export default function ArtistProfile() {
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
+  useEffect(() => {
+    if (selectedPhoto && photos) {
+      const updated = photos.find((p: any) => p.id === selectedPhoto.id);
+      if (updated) setSelectedPhoto(updated);
+    }
+  }, [photos]);
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
