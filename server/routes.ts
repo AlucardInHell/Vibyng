@@ -321,7 +321,7 @@ app.post("/api/uploads/avatar", async (req, res) => {
      id: `photo_${p.id}`,
       type: "photo",
       authorId: p.artist_id,
-      content: p.description || p.title || "📷",
+      content: (p.description && p.description !== "Foto") ? p.description : (p.title && p.title !== "Foto" ? p.title : ""),
       mediaUrl: p.image_url,
       createdAt: p.created_at,
       likesCount: p.likes_count || 0,
