@@ -386,7 +386,7 @@ export const videoComments = pgTable("video_comments", {
 // === POST LIKES ===
 export const postLikes = pgTable("post_likes", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id").notNull().references(() => posts.id),
-  userId: integer("user_id").notNull().references(() => users.id),
+  postId: integer("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
