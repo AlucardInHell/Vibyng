@@ -47,6 +47,7 @@ function ArtistPostComments({ postId, postAuthorId }: { postId: number; postAuth
   const [newComment, setNewComment] = useState("");
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const currentUserId = getCurrentUserId();
+  const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
 
   const { data: comments = [], isLoading, refetch } = useQuery<any[]>({
     queryKey: ["/api/posts", postId, "comments"],
