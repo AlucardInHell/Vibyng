@@ -156,8 +156,10 @@ export default function ArtistProfile() {
     enabled: !!artist && artist.role === "artist",
   });
 
-  const { data: photos } = useQuery<ArtistPhoto[]>({
+ const { data: photos } = useQuery<ArtistPhoto[]>({
     queryKey: ["/api/users", artistId, "photos"],
+    refetchInterval: 30000,
+    staleTime: 0,
   });
 
   const { data: videos } = useQuery<ArtistVideo[]>({
