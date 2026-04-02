@@ -120,9 +120,9 @@ export default function ArtistProfile() {
   const { data: likedPostIds = [] } = useQuery<number[]>({
     queryKey: ["/api/likes", currentUserId, artistId],
     queryFn: async () => {
-      if (!posts || posts.length === 0) return [];
+      if (!artistPosts || artistPosts.length === 0) return [];
       const results = await Promise.all(
-        posts.map(async (post: any) => {
+        artistPosts.map(async (post: any) => {
           const res = await fetch(`/api/posts/${post.id}/liked/${currentUserId}`);
           const data = await res.json();
           return data.liked ? Number(post.id) : null;
@@ -130,7 +130,7 @@ export default function ArtistProfile() {
       );
       return results.filter(Boolean) as number[];
     },
-    enabled: !!posts && posts.length > 0,
+    enabled: !!artistPosts && artistPosts.length > 0,
     staleTime: 0,
   });
 
