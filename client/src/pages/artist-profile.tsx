@@ -678,7 +678,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           <div className="grid grid-cols-2 gap-2">
             {photos && photos.length > 0 ? (
               photos.map((photo) => (
-                <Card key={photo.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedPhoto(photo)}>
+                <Card key={photo.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => { setSelectedPhoto(photo); setPhotoLikeCount(prev => ({ ...prev, [photo.id]: photo.likesCount ?? 0 })); }}>
                   <img src={photo.imageUrl ?? undefined} alt={photo.title || "Foto"} className="w-full h-32 object-cover" />
                   {photo.title && (
                     <CardContent className="p-2">
