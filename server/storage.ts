@@ -192,10 +192,12 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
   }
 async likePost(postId: number, userId: number): Promise<void> {
     try {
-      await db.execute(sql`INSERT INTO post_likes (post_id, user_id) VALUES (${postId}, ${userId}) ON CONFLICT DO NOTHING`);
-      await db.update(posts)
-        .set({ likesCount: sql`${posts.likesCount} + 1` })
-        .where(eq(posts.id, postId));
+      const result = await db.execute(sql`INSERT INTO post_likes (post_id, user_id) VALUES (${postId}, ${userId}) ON CONFLICT DO NOTHING RETURNING id`);
+      if (result.rows.length > 0) {
+        await db.update(posts)
+          .set({ likesCount: sql`${posts.likesCount} + 1` })
+          .where(eq(posts.id, postId));
+      }
     } catch {}
   }
 
