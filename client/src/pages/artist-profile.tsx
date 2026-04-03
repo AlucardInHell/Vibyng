@@ -122,6 +122,18 @@ export default function ArtistProfile() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
+  const { data: selectedPhotoData } = useQuery<any>({
+    queryKey: ["/api/photos", selectedPhoto?.id, "data"],
+    queryFn: async () => {
+      if (!selectedPhoto?.id) return null;
+      const res = await fetch(`/api/users/${artistId}/photos?t=${Date.now()}`);
+      const photos = await res.json();
+      return photos.find((p: any) => p.id === selectedPhoto.id) || null;
+    },
+    enabled: !!selectedPhoto?.id,
+    refetchInterval: 10000,
+    staleTime: 0,
+  });
   const { data: photoLikeData, refetch: refetchPhotoLike } = useQuery<{ liked: boolean }>({
     queryKey: ["/api/photos", selectedPhoto?.id, "liked", currentUserId],
     queryFn: async () => {
@@ -1048,7 +1060,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     }}
                   >
                     <Heart className={`w-5 h-5 ${isPhotoLiked ? "fill-red-500" : ""}`} />
-                    <span>{photoLikeCount[selectedPhoto.id] !== undefined ? photoLikeCount[selectedPhoto.id] : ((photos?.find((p: any) => p.id === selectedPhoto.id)?.likesCount) ?? selectedPhoto.likesCount ?? 0)}</span>
+                   <span>{photoLikeCount[selectedPhoto.id] !== undefined ? photoLikeCount[selectedPhoto.id] : (selectedPhotoData?.likesCount ?? selectedPhoto.likesCount ?? 0)}</span>
                   </button>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
