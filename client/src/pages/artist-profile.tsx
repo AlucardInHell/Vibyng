@@ -160,8 +160,8 @@ export default function ArtistProfile() {
     queryKey: ["/api/users", artistId, "photos"],
     refetchInterval: 30000,
     staleTime: 0,
+    refetchOnWindowFocus: true,
   });
-
   useEffect(() => {
     if (selectedPhoto && photos) {
       const updated = photos.find((p: any) => p.id === selectedPhoto.id);
