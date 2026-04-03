@@ -109,6 +109,18 @@ export default function Points() {
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
+  const { data: selectedPhotoLiveData } = useQuery<any>({
+    queryKey: ["/api/photos", selectedPhoto?.id, "livedata"],
+    queryFn: async () => {
+      if (!selectedPhoto?.id) return null;
+      const res = await fetch(`/api/users/${CURRENT_USER_ID}/photos?t=${Date.now()}`);
+      const photos = await res.json();
+      return photos.find((p: any) => p.id === selectedPhoto.id) || null;
+    },
+    enabled: !!selectedPhoto?.id,
+    refetchInterval: 10000,
+    staleTime: 0,
+  });
   const { data: photoCommentsList = [], refetch: refetchPhotoComments } = useQuery<any[]>({
     queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
     queryFn: async () => {
@@ -678,7 +690,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                         onClick={() => setPhotoLikes(prev => ({ ...prev, [selectedPhoto.id]: !prev[selectedPhoto.id] }))}
                       >
                         <Heart className={`w-5 h-5 ${photoLikes[selectedPhoto.id] ? "fill-red-500" : ""}`} />
-                        {photoLikes[selectedPhoto.id] ? "Mi piace" : "Like"}
+                        <span>{selectedPhotoLiveData?.likesCount ?? selectedPhoto.likesCount ?? 0}</span>
                       </button>
                       <button
                         className="flex items-center gap-1 text-sm text-muted-foreground"
