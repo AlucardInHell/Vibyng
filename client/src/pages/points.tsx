@@ -687,11 +687,11 @@ const { data: mySongs = [] } = useQuery<any[]>({
 })()}
                     </p>
                     <div className="flex items-center gap-4 mb-4 border-b pb-3">
-                      <button
-                        className={`flex items-center gap-1 text-sm ${photoLikes[selectedPhoto.id] ? "text-red-500" : "text-muted-foreground"}`}
-                        onClick={() => setPhotoLikes(prev => ({ ...prev, [selectedPhoto.id]: !prev[selectedPhoto.id] }))}
+                     <button
+                        className="flex items-center gap-1 text-sm text-muted-foreground opacity-50 cursor-not-allowed"
+                        disabled={true}
                       >
-                        <Heart className={`w-5 h-5 ${photoLikes[selectedPhoto.id] ? "fill-red-500" : ""}`} />
+                        <Heart className="w-5 h-5" />
                         <span>{selectedPhotoLiveData?.likesCount ?? selectedPhoto.likesCount ?? 0}</span>
                       </button>
                       <button
