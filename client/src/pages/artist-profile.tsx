@@ -158,6 +158,10 @@ export default function ArtistProfile() {
 
  const { data: photos } = useQuery<ArtistPhoto[]>({
     queryKey: ["/api/users", artistId, "photos"],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${artistId}/photos?t=${Date.now()}`);
+      return res.json();
+    },
     refetchInterval: 30000,
     staleTime: 0,
     refetchOnWindowFocus: true,
