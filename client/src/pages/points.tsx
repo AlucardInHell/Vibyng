@@ -677,7 +677,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                 <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden" onClick={e => e.stopPropagation()}>
                   <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[60vh] object-contain bg-black" />
                   <div className="p-4 overflow-hidden">
-                    <p className="font-medium">{selectedPhoto.title}</p>
+                   {selectedPhoto.title && selectedPhoto.title !== "Foto" && <p className="font-medium">{selectedPhoto.title}</p>}
                     <p className="text-xs text-muted-foreground mb-3">
                     {selectedPhoto.createdAt && (() => {
   const dateStr = selectedPhoto.createdAt.toString().replace(' ', 'T') + (selectedPhoto.createdAt.toString().includes('Z') ? '' : 'Z');
