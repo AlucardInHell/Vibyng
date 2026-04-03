@@ -818,7 +818,7 @@ const toggleComments = (postId: number) => {
   
 const handleLike = async (postId: string | number) => {
     const isPhoto = String(postId).startsWith("photo_");
-    const isLiked = likedPosts.has(String(postId) as any);
+    const isLiked = likedPosts.has(String(postId) as any) || likedPosts.has(Number(postId) as any);
     const newLiked = new Set(likedPosts);
     if (isLiked) {
       newLiked.delete(postId as number);
