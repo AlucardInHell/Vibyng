@@ -780,8 +780,6 @@ useEffect(() => {
     staleTime: 0,
   });
 
-  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-
   useEffect(() => {
     if (posts && posts.length > 0) {
       const initial: Record<string, number> = {};
