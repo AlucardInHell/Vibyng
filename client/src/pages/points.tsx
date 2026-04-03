@@ -849,23 +849,11 @@ const { data: mySongs = [] } = useQuery<any[]>({
                         </div>
                         <p className="text-sm mt-1" data-testid={`text-post-content-${post.id}`}>{post.content}</p>
                       <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-                         <button
-                            className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"}`}
-                           onClick={async () => {
-                              const isLiked = likedPosts.has(post.id);
-                              const newLiked = new Set(likedPosts);
-                              if (isLiked) {
-                                newLiked.delete(post.id);
-                                await apiRequest("POST", `/api/posts/${post.id}/unlike`, { userId: CURRENT_USER_ID });
-                              } else {
-                                newLiked.add(post.id);
-                                await apiRequest("POST", `/api/posts/${post.id}/like`, { userId: CURRENT_USER_ID });
-                              }
-                              setLikedPosts(new Set(newLiked));
-                              await refetchLikes();
-                            }}
+                        <button
+                            className="flex items-center gap-1 text-xs text-muted-foreground opacity-50 cursor-not-allowed"
+                            disabled={true}
                           >
-                            <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
+                            <Heart className="w-3 h-3" />
                             {post.likesCount}
                           </button>
                         <button
