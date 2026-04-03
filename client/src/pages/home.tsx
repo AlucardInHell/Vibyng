@@ -801,12 +801,16 @@ useEffect(() => {
     staleTime: 0,
   });
 
-  useEffect(() => {
+useEffect(() => {
     if (likedPostIds.length > 0) {
-      setLikedPosts(new Set(likedPostIds.map(Number)));
+      const likedSet = new Set<any>();
+      likedPostIds.forEach(id => {
+        likedSet.add(Number(id));
+        likedSet.add(String(id));
+      });
+      setLikedPosts(likedSet);
     }
   }, [likedPostIds]);
-
 const toggleComments = (postId: number) => {
     const newOpen = new Set(openComments);
     if (newOpen.has(postId)) {
