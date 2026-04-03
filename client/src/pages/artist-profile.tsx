@@ -611,10 +611,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                           <img src={post.mediaUrl} alt="media" className="w-full mt-2 rounded-lg max-h-60 object-cover" />
                         )}
                         <div className="flex items-center gap-3 mt-2">
-                          <button
+                        <button
                             className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"} ${isOwnProfile ? "opacity-50 cursor-not-allowed" : ""}`}
                             disabled={isOwnProfile}
                             onClick={async () => {
+                              if (isOwnProfile) return;
                               const isLiked = likedPosts.has(post.id);
                               const newLiked = new Set(likedPosts);
                               if (isLiked) {
