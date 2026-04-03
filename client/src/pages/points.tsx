@@ -661,9 +661,11 @@ const { data: mySongs = [] } = useQuery<any[]>({
               {myPhotos.map((photo) => (
                 <Card key={photo.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedPhoto(photo)} data-testid={`card-photo-${photo.id}`}>
                   <img src={photo.imageUrl ?? undefined} alt={photo.title} className="w-full h-32 object-cover" />
-                 <CardContent className="p-2">
-                    <p className="text-xs text-muted-foreground truncate">{photo.title}</p>
-                  </CardContent>
+               {photo.title && photo.title !== "Foto" && (
+                    <CardContent className="p-2">
+                      <p className="text-xs text-muted-foreground truncate">{photo.title}</p>
+                    </CardContent>
+                  )}
                 </Card>
               ))}
             </div>
