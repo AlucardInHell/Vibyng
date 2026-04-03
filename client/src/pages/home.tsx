@@ -1061,7 +1061,7 @@ const handleLike = async (postId: string | number) => {
              <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => handleLike(String(post.id))}
+                  onClick={() => { if (!pendingLikes.has(String(post.id))) handleLike(String(post.id)); }}
                   className={likedPosts.has(String(post.id) as any) ? "text-red-500" : ""}
                   data-testid={`button-like-${post.id}`}
                   key={`like-${post.id}-${likeCounts[String(post.id)] ?? post.likesCount}`}
