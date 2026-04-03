@@ -856,8 +856,6 @@ const handleLike = async (postId: string | number) => {
       await apiRequest("POST", `/api/posts/${postId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
       await refetchLikes();
     }
-    onClick={() => handleLike(String(post.id))}
-                  disabled={post.authorId === CURRENT_USER_ID}
   };
   const handleShare = async (post: PostWithAuthor) => {
     const shareData = {
