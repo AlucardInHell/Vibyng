@@ -169,7 +169,9 @@ export default function ArtistProfile() {
   useEffect(() => {
     if (selectedPhoto && photos) {
       const updated = photos.find((p: any) => p.id === selectedPhoto.id);
-      if (updated) setSelectedPhoto(updated);
+      if (updated && updated.likesCount !== selectedPhoto.likesCount) {
+        setSelectedPhoto(updated);
+      }
     }
   }, [photos]);
 
