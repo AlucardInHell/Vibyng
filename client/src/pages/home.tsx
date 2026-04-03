@@ -780,6 +780,18 @@ useEffect(() => {
     staleTime: 0,
   });
 
+  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (posts && posts.length > 0) {
+      const initial: Record<string, number> = {};
+      posts.forEach((p: any) => {
+        initial[String(p.id)] = p.likesCount ?? 0;
+      });
+      setLikeCounts(initial);
+    }
+  }, [posts]);
+
  const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     queryKey: ["/api/likes", CURRENT_USER_ID],
     queryFn: async () => {
