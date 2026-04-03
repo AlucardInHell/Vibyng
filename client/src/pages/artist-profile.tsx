@@ -612,7 +612,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         )}
                         <div className="flex items-center gap-3 mt-2">
                         <button
-                            className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"} ${isOwnProfile ? "opacity-50 cursor-not-allowed" : ""}`}
+                            className={`flex items-center gap-1 text-xs ${!isOwnProfile && likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"} ${isOwnProfile ? "opacity-50 cursor-not-allowed" : ""}`}
                             disabled={isOwnProfile}
                             onClick={async () => {
                               if (isOwnProfile) return;
@@ -630,7 +630,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                               setLikeCounts(prev => ({ ...prev, [post.id]: currentCount + (isLiked ? -1 : 1) }));
                             }}
                           >
-                            <Heart className={`w-3 h-3 ${likedPosts.has(post.id) ? "fill-red-500" : ""}`} />
+                            <Heart className={`w-3 h-3 ${!isOwnProfile && likedPosts.has(post.id) ? "fill-red-500" : ""}`} />
                           {likeCounts[post.id] !== undefined ? likeCounts[post.id] : post.likesCount}
                           </button>
                           <button
