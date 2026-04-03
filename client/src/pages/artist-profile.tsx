@@ -1048,7 +1048,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     }}
                   >
                     <Heart className={`w-5 h-5 ${isPhotoLiked ? "fill-red-500" : ""}`} />
-                    <span>{photoLikeCount[selectedPhoto.id] !== undefined ? photoLikeCount[selectedPhoto.id] : (selectedPhoto.likesCount ?? 0)}</span>
+                    <span>{photoLikeCount[selectedPhoto.id] !== undefined ? photoLikeCount[selectedPhoto.id] : ((photos?.find((p: any) => p.id === selectedPhoto.id)?.likesCount) ?? selectedPhoto.likesCount ?? 0)}</span>
                   </button>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
