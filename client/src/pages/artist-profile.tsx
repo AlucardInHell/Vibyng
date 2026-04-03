@@ -1048,10 +1048,10 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                 <button
                     className={`flex items-center gap-1 text-sm ${isPhotoLiked ? "text-red-500" : "text-muted-foreground"}`}
                     onClick={async () => {
-                      const currentCount = photoLikeCount[selectedPhoto.id] ?? selectedPhoto.likesCount ?? 0;
+                     const currentCount = photoLikeCount[selectedPhoto.id] ?? selectedPhotoData?.likesCount ?? selectedPhoto.likesCount ?? 0;
                       if (isPhotoLiked) {
                         await apiRequest("POST", `/api/photos/${selectedPhoto.id}/unlike`, { userId: currentUserId });
-                        setPhotoLikeCount(prev => ({ ...prev, [selectedPhoto.id]: currentCount - 1 }));
+                        setPhotoLikeCount(prev => ({ ...prev, [selectedPhoto.id]: Math.max(0, currentCount - 1) }));
                       } else {
                         await apiRequest("POST", `/api/photos/${selectedPhoto.id}/like`, { userId: currentUserId });
                         setPhotoLikeCount(prev => ({ ...prev, [selectedPhoto.id]: currentCount + 1 }));
