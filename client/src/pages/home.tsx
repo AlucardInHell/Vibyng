@@ -741,7 +741,7 @@ const searchableUsers: { id: number; username: string; displayName: string; genr
 export default function Home() {
   const { toast } = useToast();
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
-  const [pendingLikes, setPendingLikes] = useState<Set<string>>(new Set());
+  const pendingLikesRef = useRef<Set<string>>(new Set());
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [searchOpen, setSearchOpen] = useState(false);
@@ -832,9 +832,9 @@ const toggleComments = (postId: number) => {
   };
   
 const handleLike = async (postId: string | number) => {
-    const key = String(postId);
-    if (pendingLikes.has(key)) return;
-    setPendingLikes(prev => new Set(prev).add(key));
+   const key = String(postId);
+    if (pendingLikesRef.current.has(key)) return;
+    pendingLikesRef.current.add(key);
     const isPhoto = String(postId).startsWith("photo_");
     const isLiked = likedPosts.has(String(postId) as any) || likedPosts.has(Number(postId) as any);
     const newLiked = new Set(likedPosts);
@@ -856,7 +856,8 @@ const handleLike = async (postId: string | number) => {
       await apiRequest("POST", `/api/posts/${postId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
       await refetchLikes();
     }
-    setPendingLikes(prev => { const s = new Set(prev); s.delete(key); return s; });
+    onClick={() => handleLike(String(post.id))}
+                  disabled={post.authorId === CURRENT_USER_ID}
   };
   const handleShare = async (post: PostWithAuthor) => {
     const shareData = {
@@ -1061,11 +1062,11 @@ const handleLike = async (postId: string | number) => {
              <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => { if (!pendingLikes.has(String(post.id))) handleLike(String(post.id)); }}
+                  onClick={() => handleLike(String(post.id))}
                   className={likedPosts.has(String(post.id) as any) ? "text-red-500" : ""}
                   data-testid={`button-like-${post.id}`}
                   key={`like-${post.id}-${likeCounts[String(post.id)] ?? post.likesCount}`}
-                 disabled={post.authorId === CURRENT_USER_ID || pendingLikes.has(String(post.id))}
+                  disabled={post.authorId === CURRENT_USER_ID}
                 >
                   <Heart className={`w-4 h-4 ${likedPosts.has(String(post.id) as any) ? "fill-current" : ""}`} />
               <span className="text-xs ml-1">{likeCounts[String(post.id)] ?? post.likesCount ?? 0}</span>
