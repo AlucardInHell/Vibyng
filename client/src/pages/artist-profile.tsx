@@ -612,8 +612,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         )}
                         <div className="flex items-center gap-3 mt-2">
                           <button
-                            className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"}`}
-                           onClick={async () => {
+                            className={`flex items-center gap-1 text-xs ${likedPosts.has(post.id) ? "text-red-500" : "text-muted-foreground"} ${isOwnProfile ? "opacity-50 cursor-not-allowed" : ""}`}
+                            disabled={isOwnProfile}
+                            onClick={async () => {
                               const isLiked = likedPosts.has(post.id);
                               const newLiked = new Set(likedPosts);
                               if (isLiked) {
