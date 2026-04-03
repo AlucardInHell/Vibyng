@@ -1045,8 +1045,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   {selectedPhoto.createdAt && new Date(selectedPhoto.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
                 <div className="flex items-center gap-4 mb-4 border-b pb-3">
-                <button
-                    className={`flex items-center gap-1 text-sm ${isPhotoLiked ? "text-red-500" : "text-muted-foreground"}`}
+              <button
+                    className={`flex items-center gap-1 text-sm ${isPhotoLiked ? "text-red-500" : "text-muted-foreground"} ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
+                    disabled={artistId === currentUserId}
                     onClick={async () => {
                      const currentCount = photoLikeCount[selectedPhoto.id] ?? selectedPhotoData?.likesCount ?? selectedPhoto.likesCount ?? 0;
                       if (isPhotoLiked) {
