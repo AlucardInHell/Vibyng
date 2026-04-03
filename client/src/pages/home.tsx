@@ -856,6 +856,7 @@ const handleLike = async (postId: string | number) => {
       await apiRequest("POST", `/api/posts/${postId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
       await refetchLikes();
     }
+    pendingLikesRef.current.delete(key);
   };
   const handleShare = async (post: PostWithAuthor) => {
     const shareData = {
