@@ -785,7 +785,11 @@ useEffect(() => {
       if (!posts) return [];
       const results = await Promise.all(
         posts.map(async (post) => {
-          const res = await fetch(`/api/posts/${post.id}/liked/${CURRENT_USER_ID}`);
+          const isPhoto = String(post.id).startsWith("photo_");
+          const url = isPhoto 
+            ? `/api/photos/${String(post.id).replace("photo_", "")}/liked/${CURRENT_USER_ID}`
+            : `/api/posts/${post.id}/liked/${CURRENT_USER_ID}`;
+          const res = await fetch(url);
           const data = await res.json();
           return data.liked ? Number(post.id) : null;
         })
