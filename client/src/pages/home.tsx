@@ -791,7 +791,7 @@ useEffect(() => {
     }
   }, [posts]);
 
- const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
+ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<(number | string)[]>({
     queryKey: ["/api/likes", CURRENT_USER_ID],
    queryFn: async () => {
       if (!posts) return [];
