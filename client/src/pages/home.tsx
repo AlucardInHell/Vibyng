@@ -793,7 +793,7 @@ useEffect(() => {
 
  const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     queryKey: ["/api/likes", CURRENT_USER_ID],
-    queryFn: async () => {
+   queryFn: async () => {
       if (!posts) return [];
       const results = await Promise.all(
         posts.map(async (post) => {
@@ -803,7 +803,6 @@ useEffect(() => {
             : `/api/posts/${post.id}/liked/${CURRENT_USER_ID}`;
           const res = await fetch(url);
           const data = await res.json();
-          const isPhoto = String(post.id).startsWith("photo_");
           const numericId = isPhoto ? Number(String(post.id).replace("photo_", "")) : Number(post.id);
           return data.liked ? (isPhoto ? `photo_${numericId}` : numericId) : null;
         })
