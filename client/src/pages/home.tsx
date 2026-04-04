@@ -818,6 +818,7 @@ useEffect(() => {
       likedPostIds.forEach(id => {
         likedSet.add(Number(id));
         likedSet.add(String(id));
+        likedSet.add(`photo_${id}`);
       });
       setLikedPosts(likedSet);
       likedPostsRef.current = likedSet;
