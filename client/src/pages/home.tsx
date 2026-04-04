@@ -803,7 +803,9 @@ useEffect(() => {
             : `/api/posts/${post.id}/liked/${CURRENT_USER_ID}`;
           const res = await fetch(url);
           const data = await res.json();
-          return data.liked ? Number(post.id) : null;
+          const isPhoto = String(post.id).startsWith("photo_");
+          const numericId = isPhoto ? Number(String(post.id).replace("photo_", "")) : Number(post.id);
+          return data.liked ? (isPhoto ? `photo_${numericId}` : numericId) : null;
         })
       );
       return results.filter(Boolean) as number[];
