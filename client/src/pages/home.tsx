@@ -742,6 +742,7 @@ export default function Home() {
   const { toast } = useToast();
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const pendingLikesRef = useRef<Set<string>>(new Set());
+  const likedPostsRef = useRef<Set<any>>(new Set());
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [searchOpen, setSearchOpen] = useState(false);
@@ -819,6 +820,7 @@ useEffect(() => {
         likedSet.add(String(id));
       });
       setLikedPosts(likedSet);
+      likedPostsRef.current = likedSet;
     }
   }, [likedPostIds]);
 const toggleComments = (postId: number) => {
@@ -832,22 +834,24 @@ const toggleComments = (postId: number) => {
   };
   
 const handleLike = async (postId: string | number) => {
-   const key = String(postId);
+    const key = String(postId);
     if (pendingLikesRef.current.has(key)) return;
     pendingLikesRef.current.add(key);
     const isPhoto = String(postId).startsWith("photo_");
-    const isLiked = likedPosts.has(String(postId) as any) || likedPosts.has(Number(postId) as any);
-    const newLiked = new Set(likedPosts);
+    const isLiked = likedPostsRef.current.has(String(postId)) || likedPostsRef.current.has(Number(postId));
     if (isLiked) {
-      newLiked.delete(postId as number);
+      likedPostsRef.current.delete(String(postId));
+      likedPostsRef.current.delete(Number(postId));
     } else {
-      newLiked.add(postId as number);
+      likedPostsRef.current.add(String(postId));
+      likedPostsRef.current.add(Number(postId));
     }
+    const newLiked = new Set(likedPostsRef.current);
     setLikedPosts(newLiked);
     const currentCount = likeCounts[String(postId)] ?? (posts?.find(p => String(p.id) === String(postId))?.likesCount ?? 0);
     setLikeCounts(prev => ({
       ...prev,
-      [String(postId)]: currentCount + (isLiked ? -1 : 1)
+      [String(postId)]: Math.max(0, currentCount + (isLiked ? -1 : 1))
     }));
     if (isPhoto) {
       const photoId = String(postId).replace("photo_", "");
