@@ -712,11 +712,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                       </div>
                     )}
                   </div>
-                {video.title && video.title !== "Video" && (
-                    <CardContent className="p-3">
+               <CardContent className="p-3">
+                    {video.title && video.title !== "Video" && (
                       <h4 className="font-medium">{video.title}</h4>
-                    </CardContent>
-                  )}
+                    )}
+                  </CardContent>
                 </Card>
               ))
             ) : (
