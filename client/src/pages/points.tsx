@@ -819,11 +819,11 @@ const { data: mySongs = [] } = useQuery<any[]>({
                       </>
                     )}
                   </div>
-                 {video.title && video.title !== "Video" && (
-                    <CardContent className="p-3">
+                 <CardContent className="p-3">
+                    {video.title && video.title !== "Video" && (
                       <h4 className="font-medium" data-testid={`text-video-title-${video.id}`}>{video.title}</h4>
-                    </CardContent>
-                  )}
+                    )}
+                  </CardContent>
                 </Card>
               ))}
             </div>
