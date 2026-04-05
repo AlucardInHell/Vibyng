@@ -119,6 +119,7 @@ export default function ArtistProfile() {
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
@@ -700,7 +701,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           <div className="flex flex-col gap-3">
             {videos && videos.length > 0 ? (
               videos.map((video) => (
-                <Card key={video.id} className="overflow-hidden hover-elevate">
+               <Card key={video.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedVideo(video)}>
                   <div className="relative">
                     {video.videoUrl ? (
                       <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
@@ -724,6 +725,23 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             )}
           </div>
         </TabsContent>
+
+        {selectedVideo && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
+          <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+            <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
+              <video src={selectedVideo.videoUrl} controls className="w-full max-h-[60vh] object-contain bg-black" />
+              <div className="p-4">
+                {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium">{selectedVideo.title}</p>}
+                <p className="text-xs text-muted-foreground mb-3">
+                  {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </p>
+                <button className="ml-auto text-muted-foreground text-lg block" onClick={() => setSelectedVideo(null)}>✕</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* Tab Canzoni — solo Artista */}
         {isArtist && (
