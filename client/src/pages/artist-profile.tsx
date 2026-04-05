@@ -120,6 +120,17 @@ export default function ArtistProfile() {
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
+  const [videoCommentInput, setVideoCommentInput] = useState("");
+  const [videoLikes, setVideoLikes] = useState<Record<number, boolean>>({});
+  const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
+    queryKey: ["/api/videos", selectedVideo?.id, "comments"],
+    queryFn: async () => {
+      if (!selectedVideo?.id) return [];
+      const res = await fetch(`/api/videos/${selectedVideo.id}/comments`);
+      return res.json();
+    },
+    enabled: !!selectedVideo,
+  });
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
@@ -726,7 +737,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           </div>
         </TabsContent>
 
-        {selectedVideo && (
+       {selectedVideo && (
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
           <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
             <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
@@ -736,7 +747,74 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                 <p className="text-xs text-muted-foreground mb-3">
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
-                <button className="ml-auto text-muted-foreground text-lg block" onClick={() => setSelectedVideo(null)}>✕</button>
+                <div className="flex items-center gap-4 mb-4 border-b pb-3">
+                  <button
+                    className={`flex items-center gap-1 text-sm ${videoLikes[selectedVideo.id] ? "text-red-500" : "text-muted-foreground"}`}
+                    onClick={async () => {
+                      const isLiked = videoLikes[selectedVideo.id];
+                      setVideoLikes(prev => ({ ...prev, [selectedVideo.id]: !isLiked }));
+                      await apiRequest("POST", `/api/videos/${selectedVideo.id}/${isLiked ? "unlike" : "like"}`, { userId: currentUserId });
+                    }}
+                  >
+                    <Heart className={`w-5 h-5 ${videoLikes[selectedVideo.id] ? "fill-red-500" : ""}`} />
+                    <span>{videoLikes[selectedVideo.id] ? "Mi piace" : "Like"}</span>
+                  </button>
+                  <button
+                    className="flex items-center gap-1 text-sm text-muted-foreground"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({ title: selectedVideo.title, text: "Guarda questo video su Vibyng!" });
+                      } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        toast({ title: "Link copiato!" });
+                      }
+                    }}
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Condividi
+                  </button>
+                  <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
+                </div>
+                <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
+                  {videoCommentsList.map((c: any) => (
+                    <div key={c.id} className="flex gap-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
+                      </div>
+                      <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+                        <p className="text-sm font-semibold">{c.display_name}</p>
+                        <p className="text-sm">{c.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
+                    placeholder="Scrivi un commento..."
+                    value={videoCommentInput}
+                    onChange={e => setVideoCommentInput(e.target.value)}
+                    onKeyDown={async e => {
+                      if (e.key === "Enter" && videoCommentInput.trim()) {
+                        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, { authorId: currentUserId, content: videoCommentInput.trim() });
+                        setVideoCommentInput("");
+                        refetchVideoComments();
+                      }
+                    }}
+                  />
+                  <button
+                    className="text-sm text-primary font-medium px-2"
+                    onClick={async () => {
+                      if (videoCommentInput.trim()) {
+                        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, { authorId: currentUserId, content: videoCommentInput.trim() });
+                        setVideoCommentInput("");
+                        refetchVideoComments();
+                      }
+                    }}
+                  >
+                    Invia
+                  </button>
+                </div>
               </div>
             </div>
           </div>
