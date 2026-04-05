@@ -819,9 +819,11 @@ const { data: mySongs = [] } = useQuery<any[]>({
                       </>
                     )}
                   </div>
-                  <CardContent className="p-3">
-                    <h4 className="font-medium" data-testid={`text-video-title-${video.id}`}>{video.title}</h4>
-                  </CardContent>
+                 {video.title && video.title !== "Video" && (
+                    <CardContent className="p-3">
+                      <h4 className="font-medium" data-testid={`text-video-title-${video.id}`}>{video.title}</h4>
+                    </CardContent>
+                  )}
                 </Card>
               ))}
             </div>
@@ -1244,7 +1246,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
             <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
               <video src={selectedVideo.videoUrl} controls className="w-full max-h-[60vh] object-contain bg-black" />
               <div className="p-4">
-                <p className="font-medium">{selectedVideo.title}</p>
+                {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium">{selectedVideo.title}</p>}
                 <p className="text-xs text-muted-foreground mb-3">
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
