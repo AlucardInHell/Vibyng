@@ -722,7 +722,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                           }
                         }}
                       >
-                        🗑️ Elimina
+                        🗑️ 
                       </button>
                       <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
                     </div>
@@ -1283,7 +1283,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                       }
                     }}
                   >
-                    🗑️ Elimina
+                    🗑️
                   </button>
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
