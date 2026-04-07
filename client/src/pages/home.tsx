@@ -715,7 +715,7 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
                         }}
                       >🗑️</button>
                     )}
-                    <button
+                   <button
                       className={`flex items-center gap-1 text-xs ${comment.likedByMe ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
                       onClick={async () => {
                         if (comment.likedByMe) {
@@ -723,7 +723,7 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
                         } else {
                           await apiRequest("POST", `/api/comments/${comment.id}/like`, { userId: CURRENT_USER_ID });
                         }
-                        queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
+                        await queryClient.refetchQueries({ queryKey: ["/api/posts", postId, "comments"] });
                       }}
                     >
                       <Heart className={`w-3 h-3 ${comment.likedByMe ? "fill-red-500" : ""}`} />
