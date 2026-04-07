@@ -475,15 +475,16 @@ app.get("/api/posts", async (req, res) => {
     }
   });
 
-  app.post("/api/comments/:commentId/unlike", async (req, res) => {
+ app.post("/api/comments/:commentId/unlike", async (req, res) => {
     try {
       const commentId = Number(req.params.commentId);
       const { userId } = req.body;
       await storage.unlikeComment(commentId, userId);
       const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
       res.json({ success: true, likesCount: comment?.likesCount ?? 0 });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel like" });
+    } catch (err: any) {
+      console.error("[comment-unlike]", err?.message);
+      res.status(400).json({ message: "Errore nel like", detail: err?.message });
     }
   });
 
