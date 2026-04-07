@@ -469,8 +469,9 @@ app.get("/api/posts", async (req, res) => {
       await storage.likeComment(commentId, userId);
       const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
       res.json({ success: true, likesCount: comment?.likesCount ?? 0 });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel like" });
+    } catch (err: any) {
+      console.error("[comment-like]", err?.message);
+      res.status(400).json({ message: "Errore nel like", detail: err?.message });
     }
   });
 
