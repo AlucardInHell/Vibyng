@@ -430,9 +430,15 @@ app.get("/api/posts", async (req, res) => {
   });
 
   // === COMMENTS ===
-  app.get("/api/posts/:postId/comments", async (req, res) => {
-    const comments = await storage.getCommentsByPost(Number(req.params.postId));
-    res.json(comments);
+ app.get("/api/posts/:postId/comments", async (req, res) => {
+    const userId = Number(req.query.userId);
+    const postComments = await storage.getCommentsByPost(Number(req.params.postId));
+    if (!userId) return res.json(postComments);
+    const commentsWithLikes = await Promise.all(postComments.map(async (c) => {
+      const result = await db.execute(sql`SELECT id FROM comment_likes WHERE comment_id = ${c.id} AND user_id = ${userId}`);
+      return { ...c, likedByMe: result.rows.length > 0 };
+    }));
+    res.json(commentsWithLikes);
   });
 
   app.post("/api/posts/:postId/comments", async (req, res) => {
@@ -447,7 +453,7 @@ app.get("/api/posts", async (req, res) => {
     } catch (err) {
       res.status(400).json({ message: "Errore nel creare il commento" });
       res.status(201).json(comment);
-await sendMentionNotifications(content, authorId);
+      await sendMentionNotifications(content, authorId);
     }
   });
 
