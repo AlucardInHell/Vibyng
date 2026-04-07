@@ -715,8 +715,9 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
                         }}
                       >🗑️</button>
                     )}
-                   <button
-                      className={`flex items-center gap-1 text-xs ${comment.likedByMe ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+                  <button
+                      className={`flex items-center gap-1 text-xs ${comment.authorId === CURRENT_USER_ID ? "opacity-50 cursor-not-allowed text-muted-foreground" : comment.likedByMe ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+                      disabled={comment.authorId === CURRENT_USER_ID}
                       onClick={async () => {
                         if (comment.likedByMe) {
                           await apiRequest("POST", `/api/comments/${comment.id}/unlike`, { userId: CURRENT_USER_ID });
