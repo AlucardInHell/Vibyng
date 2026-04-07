@@ -459,10 +459,35 @@ await sendMentionNotifications(content, authorId);
   app.post("/api/comments/:commentId/like", async (req, res) => {
     try {
       const commentId = Number(req.params.commentId);
-      await storage.likeComment(commentId);
-      res.json({ success: true });
+      const { userId } = req.body;
+      await storage.likeComment(commentId, userId);
+      const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
+      res.json({ success: true, likesCount: comment?.likesCount ?? 0 });
     } catch (err) {
       res.status(400).json({ message: "Errore nel like" });
+    }
+  });
+
+  app.post("/api/comments/:commentId/unlike", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const { userId } = req.body;
+      await storage.unlikeComment(commentId, userId);
+      const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
+      res.json({ success: true, likesCount: comment?.likesCount ?? 0 });
+    } catch (err) {
+      res.status(400).json({ message: "Errore nel like" });
+    }
+  });
+
+  app.get("/api/comments/:commentId/liked/:userId", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = Number(req.params.userId);
+      const result = await db.execute(sql`SELECT id FROM comment_likes WHERE comment_id = ${commentId} AND user_id = ${userId}`);
+      res.json({ liked: result.rows.length > 0 });
+    } catch (err) {
+      res.json({ liked: false });
     }
   });
 
