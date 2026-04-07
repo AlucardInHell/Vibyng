@@ -712,13 +712,17 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
                       >🗑️</button>
                     )}
                     <button
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                      className={`flex items-center gap-1 text-xs ${comment.likedByMe ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
                       onClick={async () => {
-                        await apiRequest("POST", `/api/comments/${comment.id}/like`);
+                        if (comment.likedByMe) {
+                          await apiRequest("POST", `/api/comments/${comment.id}/unlike`, { userId: CURRENT_USER_ID });
+                        } else {
+                          await apiRequest("POST", `/api/comments/${comment.id}/like`, { userId: CURRENT_USER_ID });
+                        }
                         queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
                       }}
                     >
-                      <Heart className="w-3 h-3" />
+                      <Heart className={`w-3 h-3 ${comment.likedByMe ? "fill-red-500" : ""}`} />
                       <span>{comment.likesCount ?? 0}</span>
                     </button>
                   </div>
