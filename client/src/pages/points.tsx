@@ -726,7 +726,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                       </button>
                       <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
                     </div>
-                <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
+               <div className="space-y-2 max-h-24 overflow-y-auto mb-3">
                       {photoCommentsList.map((c: any) => (
                         <div key={c.id} className="flex gap-2">
                           <Avatar className="w-8 h-8 flex-shrink-0">
@@ -1289,7 +1289,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
                   </button>
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
-                <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
+                <div className="space-y-2 max-h-24 overflow-y-auto mb-3">
                   {videoCommentsList.map((c: any) => (
                     <div key={c.id} className="flex gap-2">
                       <Avatar className="w-8 h-8 flex-shrink-0">
