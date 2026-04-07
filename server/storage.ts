@@ -579,12 +579,17 @@ async deleteVideo(videoId: number): Promise<void> {
     return comment;
   }
 
-  async likeComment(commentId: number): Promise<void> {
-    const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
-    if (comment) {
-      await db.update(comments)
-        .set({ likesCount: (comment.likesCount ?? 0) + 1 })
-        .where(eq(comments.id, commentId));
+  async likeComment(commentId: number, userId: number): Promise<void> {
+    const result = await db.execute(sql`INSERT INTO comment_likes (comment_id, user_id) VALUES (${commentId}, ${userId}) ON CONFLICT DO NOTHING RETURNING id`);
+    if (result.rows.length > 0) {
+      await db.execute(sql`UPDATE comments SET likes_count = COALESCE(likes_count, 0) + 1 WHERE id = ${commentId}`);
+    }
+  }
+
+  async unlikeComment(commentId: number, userId: number): Promise<void> {
+    const result = await db.execute(sql`DELETE FROM comment_likes WHERE comment_id = ${commentId} AND user_id = ${userId} RETURNING id`);
+    if (result.rows.length > 0) {
+      await db.execute(sql`UPDATE comments SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0) WHERE id = ${commentId}`);
     }
   }
 
