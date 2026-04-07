@@ -116,6 +116,7 @@ export const comments = pgTable("comments", {
   postId: integer("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
   authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
+  likesCount: integer("likes_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -394,6 +395,13 @@ export const postLikes = pgTable("post_likes", {
 export const photoLikes = pgTable("photo_likes", {
   id: serial("id").primaryKey(),
   photoId: integer("photo_id").notNull().references(() => artistPhotos.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+// === COMMENT LIKES ===
+export const commentLikes = pgTable("comment_likes", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").notNull().references(() => comments.id, { onDelete: "cascade" }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
