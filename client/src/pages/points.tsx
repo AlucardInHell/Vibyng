@@ -1243,8 +1243,8 @@ const { data: mySongs = [] } = useQuery<any[]>({
       {selectedVideo && (
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
           <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
-            <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden">
-              <video src={selectedVideo.videoUrl} controls className="w-full max-h-[60vh] object-contain bg-black" />
+            <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
+              <video src={selectedVideo.videoUrl} controls className="w-full max-h-[40vh] object-contain bg-black" />
               <div className="p-4">
                 {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium">{selectedVideo.title}</p>}
                 <p className="text-xs text-muted-foreground mb-3">
