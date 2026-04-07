@@ -607,8 +607,12 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const [newComment, setNewComment] = useState("");
 
-  const { data: comments, isLoading } = useQuery<CommentWithAuthor[]>({
+ const { data: comments, isLoading } = useQuery<CommentWithAuthor[]>({
     queryKey: ["/api/posts", postId, "comments"],
+    queryFn: async () => {
+      const res = await fetch(`/api/posts/${postId}/comments?userId=${CURRENT_USER_ID}`);
+      return res.json();
+    },
   });
 
   const addCommentMutation = useMutation({
