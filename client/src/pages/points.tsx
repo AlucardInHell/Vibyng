@@ -678,7 +678,7 @@ const { data: mySongs = [] } = useQuery<any[]>({
               <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
                 <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden" onClick={e => e.stopPropagation()}>
                   <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[60vh] object-contain bg-black" />
-                  <div className="p-4 overflow-hidden">
+                    <div className="p-4 overflow-y-auto max-h-[40vh]">
                    {selectedPhoto.title && selectedPhoto.title !== "Foto" && <p className="font-medium">{selectedPhoto.title}</p>}
                     <p className="text-xs text-muted-foreground mb-3">
                     {selectedPhoto.createdAt && (() => {
