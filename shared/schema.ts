@@ -372,7 +372,20 @@ export const photoComments = pgTable("photo_comments", {
   photoId: integer("photo_id").notNull().references(() => artistPhotos.id, { onDelete: "cascade" }),
   authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
+  likesCount: integer("likes_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// === PHOTO COMMENT LIKES ===
+export const photoCommentLikes = pgTable("photo_comment_likes", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").notNull().references(() => photoComments.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PhotoComment = typeof photoComments.$inferSelect;
+export type PhotoCommentLike = typeof photoCommentLikes.$inferSelect;
 });
 // === VIDEO COMMENTS ===
 export const videoComments = pgTable("video_comments", {
