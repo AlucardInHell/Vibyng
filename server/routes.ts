@@ -467,8 +467,8 @@ app.get("/api/posts", async (req, res) => {
       const commentId = Number(req.params.commentId);
       const { userId } = req.body;
       await storage.likeComment(commentId, userId);
-      const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
-      res.json({ success: true, likesCount: comment?.likesCount ?? 0 });
+      const result = await db.execute(sql`SELECT likes_count FROM comments WHERE id = ${commentId}`);
+      res.json({ success: true, likesCount: result.rows[0]?.likes_count ?? 0 });
     } catch (err: any) {
       console.error("[comment-like]", err?.message);
       res.status(400).json({ message: "Errore nel like", detail: err?.message });
@@ -480,8 +480,8 @@ app.get("/api/posts", async (req, res) => {
       const commentId = Number(req.params.commentId);
       const { userId } = req.body;
       await storage.unlikeComment(commentId, userId);
-      const [comment] = await db.select().from(comments).where(eq(comments.id, commentId));
-      res.json({ success: true, likesCount: comment?.likesCount ?? 0 });
+      const result = await db.execute(sql`SELECT likes_count FROM comments WHERE id = ${commentId}`);
+      res.json({ success: true, likesCount: result.rows[0]?.likes_count ?? 0 });
     } catch (err: any) {
       console.error("[comment-unlike]", err?.message);
       res.status(400).json({ message: "Errore nel like", detail: err?.message });
