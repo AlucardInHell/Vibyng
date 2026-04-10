@@ -58,6 +58,25 @@ export async function registerRoutes(
     CREATE UNIQUE INDEX IF NOT EXISTS photo_comment_likes_comment_user_idx
     ON photo_comment_likes (comment_id, user_id)
   `);
+
+  await db.execute(sql`
+  ALTER TABLE artist_videos
+  ADD COLUMN IF NOT EXISTS likes_count integer DEFAULT 0
+`);
+
+  await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS video_likes (
+    id serial PRIMARY KEY,
+    video_id integer NOT NULL REFERENCES artist_videos(id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS video_likes_video_user_idx
+  ON video_likes (video_id, user_id)
+`);
   
   // === USERS ===
   app.get(api.users.artists.path, async (_req, res) => {
@@ -367,7 +386,7 @@ app.post("/api/uploads/avatar", async (req, res) => {
     mediaUrl: v.video_url,
     thumbnailUrl: v.thumbnail_url,
     createdAt: v.created_at,
-    likesCount: 0,
+    likesCount: Number(v.likes_count ?? 0),
     author: {
       id: v.artist_id,
       displayName: v.display_name,
@@ -722,6 +741,101 @@ app.post("/api/photos/:photoId/like", async (req, res) => {
     }
   });
 
+app.post("/api/videos/:videoId/like", async (req, res) => {
+  try {
+    const videoId = Number(req.params.videoId);
+    const { userId } = req.body;
+
+    const inserted = await db.execute(sql`
+      INSERT INTO video_likes (video_id, user_id)
+      VALUES (${videoId}, ${userId})
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `);
+
+    if ((inserted.rows?.length ?? 0) > 0) {
+      await db.execute(sql`
+        UPDATE artist_videos
+        SET likes_count = COALESCE(likes_count, 0) + 1
+        WHERE id = ${videoId}
+      `);
+    }
+
+    const result = await db.execute(sql`
+      SELECT likes_count, artist_id
+      FROM artist_videos
+      WHERE id = ${videoId}
+    `);
+
+    const video = result.rows[0];
+
+    if ((inserted.rows?.length ?? 0) > 0 && video && userId && Number(video.artist_id) !== Number(userId)) {
+      const liker = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: Number(video.artist_id),
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
+        relatedUserId: userId,
+      });
+    }
+
+    res.json({ success: true, likesCount: Number(video?.likes_count ?? 0) });
+  } catch (err: any) {
+    console.error("[video-like]", err?.message);
+    res.status(400).json({ message: "Errore nel like", detail: err?.message });
+  }
+});
+
+app.post("/api/videos/:videoId/unlike", async (req, res) => {
+  try {
+    const videoId = Number(req.params.videoId);
+    const { userId } = req.body;
+
+    const deleted = await db.execute(sql`
+      DELETE FROM video_likes
+      WHERE video_id = ${videoId} AND user_id = ${userId}
+      RETURNING id
+    `);
+
+    if ((deleted.rows?.length ?? 0) > 0) {
+      await db.execute(sql`
+        UPDATE artist_videos
+        SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0)
+        WHERE id = ${videoId}
+      `);
+    }
+
+    const result = await db.execute(sql`
+      SELECT likes_count
+      FROM artist_videos
+      WHERE id = ${videoId}
+    `);
+
+    res.json({ success: true, likesCount: Number(result.rows[0]?.likes_count ?? 0) });
+  } catch (err: any) {
+    console.error("[video-unlike]", err?.message);
+    res.status(400).json({ message: "Errore nel unlike", detail: err?.message });
+  }
+});
+
+app.get("/api/videos/:videoId/liked/:userId", async (req, res) => {
+  try {
+    const videoId = Number(req.params.videoId);
+    const userId = Number(req.params.userId);
+
+    const result = await db.execute(sql`
+      SELECT id
+      FROM video_likes
+      WHERE video_id = ${videoId} AND user_id = ${userId}
+    `);
+
+    res.json({ liked: result.rows.length > 0 });
+  } catch (err: any) {
+    console.error("[video-liked]", err?.message);
+    res.json({ liked: false });
+  }
+});
+  
 app.post("/api/artists/:artistId/songs", async (req, res) => {
     try {
       const artistId = Number(req.params.artistId);
