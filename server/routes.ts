@@ -590,42 +590,79 @@ app.get("/api/posts", async (req, res) => {
   });
 
 app.post("/api/photos/:photoId/like", async (req, res) => {
-    try {
-      const photoId = Number(req.params.photoId);
-      const { userId } = req.body;
-      await db.execute(sql`INSERT INTO photo_likes (photo_id, user_id) VALUES (${photoId}, ${userId}) ON CONFLICT DO NOTHING`);
-      await db.execute(sql`UPDATE artist_photos SET likes_count = COALESCE(likes_count, 0) + 1 WHERE id = ${photoId}`);
-      const result = await db.execute(sql`SELECT likes_count, artist_id FROM artist_photos WHERE id = ${photoId}`);
-      const photo = result.rows[0];
-      if (photo && userId && Number(photo.artist_id) !== Number(userId)) {
-        const liker = await storage.getUser(userId);
-        await storage.createNotification({
-          userId: Number(photo.artist_id),
-          type: "like",
-          message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua foto`,
-          relatedUserId: userId,
-        });
-      }
-      res.json({ success: true, likesCount: photo?.likes_count ?? 0 });
-    } catch (err: any) {
-      console.error("[photo-like]", err?.message);
-      res.status(400).json({ message: "Errore nel like", detail: err?.message });
-    }
-  });
+  try {
+    const photoId = Number(req.params.photoId);
+    const { userId } = req.body;
 
-  app.post("/api/photos/:photoId/unlike", async (req, res) => {
-    try {
-      const photoId = Number(req.params.photoId);
-      const { userId } = req.body;
-      await db.execute(sql`DELETE FROM photo_likes WHERE photo_id = ${photoId} AND user_id = ${userId}`);
-      await db.execute(sql`UPDATE artist_photos SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0) WHERE id = ${photoId}`);
-      const result = await db.execute(sql`SELECT likes_count FROM artist_photos WHERE id = ${photoId}`);
-      res.json({ success: true, likesCount: result.rows[0]?.likes_count ?? 0 });
-    } catch (err: any) {
-      res.status(400).json({ message: "Errore nel like" });
-    }
-  });
+    const inserted = await db.execute(sql`
+      INSERT INTO photo_likes (photo_id, user_id)
+      VALUES (${photoId}, ${userId})
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `);
 
+    if ((inserted.rows?.length ?? 0) > 0) {
+      await db.execute(sql`
+        UPDATE artist_photos
+        SET likes_count = COALESCE(likes_count, 0) + 1
+        WHERE id = ${photoId}
+      `);
+    }
+
+    const result = await db.execute(sql`
+      SELECT likes_count, artist_id
+      FROM artist_photos
+      WHERE id = ${photoId}
+    `);
+
+    const photo = result.rows[0];
+
+    if ((inserted.rows?.length ?? 0) > 0 && photo && userId && Number(photo.artist_id) !== Number(userId)) {
+      const liker = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: Number(photo.artist_id),
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua foto`,
+        relatedUserId: userId,
+      });
+    }
+
+    res.json({ success: true, likesCount: photo?.likes_count ?? 0 });
+  } catch (err: any) {
+    console.error("[photo-like]", err?.message);
+    res.status(400).json({ message: "Errore nel like", detail: err?.message });
+  }
+});
+ app.post("/api/photos/:photoId/unlike", async (req, res) => {
+  try {
+    const photoId = Number(req.params.photoId);
+    const { userId } = req.body;
+
+    const deleted = await db.execute(sql`
+      DELETE FROM photo_likes
+      WHERE photo_id = ${photoId} AND user_id = ${userId}
+      RETURNING id
+    `);
+
+    if ((deleted.rows?.length ?? 0) > 0) {
+      await db.execute(sql`
+        UPDATE artist_photos
+        SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0)
+        WHERE id = ${photoId}
+      `);
+    }
+
+    const result = await db.execute(sql`
+      SELECT likes_count
+      FROM artist_photos
+      WHERE id = ${photoId}
+    `);
+
+    res.json({ success: true, likesCount: result.rows[0]?.likes_count ?? 0 });
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore nel like" });
+  }
+});
   app.get("/api/photos/:photoId/liked/:userId", async (req, res) => {
     try {
       const photoId = Number(req.params.photoId);
