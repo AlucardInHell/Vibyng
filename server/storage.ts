@@ -33,6 +33,7 @@ export interface IStorage {
   createPhoto(photo: InsertArtistPhoto): Promise<ArtistPhoto>;
   getVideosByArtist(artistId: number): Promise<ArtistVideo[]>;
   createVideo(video: InsertArtistVideo): Promise<ArtistVideo>;
+  getAllVideosForFeed(): Promise<any[]>;
   getSongsByArtist(artistId: number): Promise<ArtistSong[]>;
   createSong(song: InsertArtistSong): Promise<ArtistSong>;
 
@@ -344,6 +345,20 @@ async getAllPhotosForFeed() {
       return [];
     }
   }
+
+async getAllVideosForFeed() {
+  try {
+    const result = await db.execute(
+      sql`SELECT av.*, u.display_name, u.username, u.avatar_url, u.role
+          FROM artist_videos av
+          JOIN users u ON av.artist_id = u.id
+          ORDER BY av.created_at DESC`
+    );
+    return Array.isArray(result.rows) ? result.rows : [];
+  } catch {
+    return [];
+  }
+}
   
   async getPhotosByUser(userId: number): Promise<ArtistPhoto[]> {
     return await db.select().from(artistPhotos)
