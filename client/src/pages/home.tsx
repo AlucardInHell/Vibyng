@@ -404,14 +404,25 @@ function Stories() {
                     </Button>
                   ) : (
                     <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      onClick={() => handleLike(String(post.id))}
-                      className="text-white"
-                      data-testid="button-like-story"
-                    >
-                      <Heart className={`w-6 h-6 ${liked.has(activeStory.stories[activeStoryIndex]?.id) ? "fill-red-500 text-red-500" : ""}`} />
-                    </Button>
+  size="icon" 
+  variant="ghost" 
+  onClick={() => {
+    const storyId = activeStory?.stories[activeStoryIndex]?.id;
+    if (!storyId) return;
+    handleLikeStory(storyId);
+  }}
+  className="text-white"
+  data-testid="button-like-story"
+>
+  <Heart
+    className={`w-6 h-6 ${
+      activeStory?.stories[activeStoryIndex]?.id &&
+      liked.has(activeStory.stories[activeStoryIndex].id)
+        ? "fill-red-500 text-red-500"
+        : ""
+    }`}
+  />
+</Button>
                   )}
                 </div>
               )}
@@ -576,29 +587,39 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
                     {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </span>
                   <div className="flex items-center gap-2">
-                    {(c.author_id === CURRENT_USER_ID || photoAuthorId === CURRENT_USER_ID) && (
-                      <button
-                        className="text-xs text-red-400 hover:text-red-600"
-                        onClick={async () => {
-                          await apiRequest("DELETE", `/api/photos/${photoId}/comments/${c.id}`);
-                          refetch();
-                        }}
-                      >🗑️</button>
-                    )}
-                  <button
-  className={`flex items-center gap-1 text-xs ${c.likedByMe ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+         {(Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL) || Number(photoAuthorId) === Number(CURRENT_USER_ID_LOCAL)) && (
+  <button
+    className="text-xs text-red-400 hover:text-red-600"
+    onClick={async () => {
+      await apiRequest("DELETE", `/api/photos/${photoId}/comments/${c.id}`);
+      await refetch();
+    }}
+  >
+    🗑️
+  </button>
+)}
+
+<button
+  className={`flex items-center gap-1 text-xs ${
+    Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)
+      ? "opacity-50 cursor-not-allowed text-muted-foreground"
+      : c.likedByMe
+        ? "text-red-500"
+        : "text-muted-foreground hover:text-red-500"
+  }`}
+  disabled={Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)}
   onClick={async () => {
     if (c.likedByMe) {
       await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/unlike/${CURRENT_USER_ID_LOCAL}`);
     } else {
       await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/like/${CURRENT_USER_ID_LOCAL}`);
     }
-    refetch();
+    await refetch();
   }}
 >
   <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
   <span>{c.likes_count ?? 0}</span>
-                  </button>
+</button>
                   </div>
                 </div>
               </div>
