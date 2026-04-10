@@ -848,17 +848,19 @@ useEffect(() => {
   });
 
 useEffect(() => {
-    if (likedPostIds.length > 0) {
-      const likedSet = new Set<any>();
-      likedPostIds.forEach(id => {
-        likedSet.add(Number(id));
-        likedSet.add(String(id));
-        likedSet.add(`photo_${id}`);
-      });
-      setLikedPosts(likedSet);
-      likedPostsRef.current = likedSet;
+  const likedSet = new Set<string | number>();
+
+  likedPostIds.forEach((id) => {
+    if (typeof id === "string" && id.startsWith("photo_")) {
+      likedSet.add(id);
+    } else {
+      likedSet.add(Number(id));
     }
-  }, [likedPostIds]);
+  });
+
+  setLikedPosts(likedSet as Set<any>);
+  likedPostsRef.current = likedSet as Set<any>;
+}, [likedPostIds]);
 const toggleComments = (postId: number) => {
     const newOpen = new Set(openComments);
     if (newOpen.has(postId)) {
@@ -874,14 +876,22 @@ const handleLike = async (postId: string | number) => {
     if (pendingLikesRef.current.has(key)) return;
     pendingLikesRef.current.add(key);
     const isPhoto = String(postId).startsWith("photo_");
-    const isLiked = likedPostsRef.current.has(String(postId)) || likedPostsRef.current.has(Number(postId));
-    if (isLiked) {
-      likedPostsRef.current.delete(String(postId));
-      likedPostsRef.current.delete(Number(postId));
-    } else {
-      likedPostsRef.current.add(String(postId));
-      likedPostsRef.current.add(Number(postId));
-    }
+    const isLiked = isPhoto
+  ? likedPostsRef.current.has(String(postId))
+  : likedPostsRef.current.has(Number(postId));
+  if (isLiked) {
+  if (isPhoto) {
+    likedPostsRef.current.delete(String(postId));
+  } else {
+    likedPostsRef.current.delete(Number(postId));
+  }
+  } else {
+  if (isPhoto) {
+    likedPostsRef.current.add(String(postId));
+  } else {
+    likedPostsRef.current.add(Number(postId));
+  }
+}
     const newLiked = new Set(likedPostsRef.current);
     setLikedPosts(newLiked);
     const currentCount = likeCounts[String(postId)] ?? (posts?.find(p => String(p.id) === String(postId))?.likesCount ?? 0);
