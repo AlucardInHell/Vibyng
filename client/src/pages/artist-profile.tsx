@@ -1207,7 +1207,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                               >🗑️</button>
                             )}
                             <button
-                              <button
   className={`flex items-center gap-1 text-xs ${
     Number(c.author_id) === Number(currentUserId)
       ? "opacity-50 cursor-not-allowed text-muted-foreground"
