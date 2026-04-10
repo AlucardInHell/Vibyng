@@ -1229,8 +1229,9 @@ const { data: mySongs = [] } = useQuery<any[]>({
                     videoUrl: url,
                     thumbnailUrl: url,
                   });
-                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
-                  toast({ title: "Video caricato!" });
+                 queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
+                 queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+                 toast({ title: "Video caricato!" });
                 } catch {
                   toast({ title: "Errore", variant: "destructive" });
                 } finally {
