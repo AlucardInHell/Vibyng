@@ -265,7 +265,15 @@ function NotificationBell() {
   );
 }
 function BottomNav() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const handleFeedRefresh = () => {
+  if (location !== "/") {
+    setLocation("/");
+  }
+  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
   const { toast } = useToast();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -304,24 +312,38 @@ const navItemsRight = [
   };
 
   const renderNavItem = (item: { path: string; icon: React.ComponentType<{ className?: string }>; label: string }) => {
-   const isActive = location === item.path || (item.path !== "/" && item.path !== "/me" && location.startsWith(item.path));
-    return (
-      <Link key={item.path} href={item.path}>
-        <button
-          className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors ${
-            isActive
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-          data-testid={`nav-${item.label.toLowerCase()}`}
-        >
-          <item.icon className="w-5 h-5" />
-          <span className="text-xs font-medium">{item.label}</span>
-        </button>
-      </Link>
-    );
-  };
+  const isActive = location === item.path || (item.path !== "/" && item.path !== "/me" && location.startsWith(item.path));
 
+  if (item.path === "/") {
+    return (
+      <button
+        key={item.path}
+        onClick={handleFeedRefresh}
+        className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors ${
+          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+        }`}
+        data-testid={`nav-${item.label.toLowerCase()}`}
+      >
+        <item.icon className="w-5 h-5" />
+        <span className="text-xs font-medium">{item.label}</span>
+      </button>
+    );
+  }
+
+  return (
+    <Link key={item.path} href={item.path}>
+      <button
+        className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors ${
+          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+        }`}
+        data-testid={`nav-${item.label.toLowerCase()}`}
+      >
+        <item.icon className="w-5 h-5" />
+        <span className="text-xs font-medium">{item.label}</span>
+      </button>
+    </Link>
+  );
+};
   return (
     <>
       <input
@@ -884,14 +906,12 @@ function AppLayout() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
         <div className="flex items-center justify-between h-14 px-4 max-w-md mx-auto gap-4">
-         <Link href="/">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <Music className="w-6 h-6 text-primary" />
-              <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Vibyng
-              </span>
-            </div>
-          </Link>
+        <button onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer">
+  <Music className="w-6 h-6 text-primary" />
+  <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+    Vibyng
+  </span>
+</button>
           <div className="flex items-center gap-1">
             <SettingsMenu />
           </div>
@@ -907,6 +927,16 @@ function AppLayout() {
 }
 
 function AppWithAuth() {
+  const [location, setLocation] = useLocation();
+
+  const handleLogoClick = () => {
+  if (location !== "/") {
+    setLocation("/");
+  }
+  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
   const [currentUser, setCurrentUser] = useState<any>(getStoredUser());
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
 
