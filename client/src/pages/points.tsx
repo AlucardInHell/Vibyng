@@ -125,7 +125,7 @@ export default function Points() {
     queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
     queryFn: async () => {
       if (!selectedPhoto?.id) return [];
-      const res = await fetch(`/api/photos/${selectedPhoto.id}/comments`);
+  const res = await fetch(`/api/photos/${selectedPhoto.id}/comments?userId=${CURRENT_USER_ID}`);
       return res.json();
     },
     enabled: !!selectedPhoto?.id,
@@ -750,14 +750,19 @@ const { data: mySongs = [] } = useQuery<any[]>({
                                     }}
                                   >🗑️</button>
                                 )}
-                                <button
-                                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                               <button
+                                  className={`flex items-center gap-1 text-xs ${Number(c.author_id) === CURRENT_USER_ID ? "opacity-50 cursor-not-allowed text-muted-foreground" : c.likedByMe ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+                                  disabled={Number(c.author_id) === CURRENT_USER_ID}
                                   onClick={async () => {
-                                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like`);
-                                    refetchPhotoComments();
+                                    if (c.likedByMe) {
+                                      await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike`, { userId: CURRENT_USER_ID });
+                                    } else {
+                                      await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like`, { userId: CURRENT_USER_ID });
+                                    }
+                                    await refetchPhotoComments();
                                   }}
                                 >
-                                  <Heart className="w-3 h-3" />
+                                  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
                                   <span>{c.likes_count ?? 0}</span>
                                 </button>
                               </div>
