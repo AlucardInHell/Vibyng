@@ -1022,11 +1022,11 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     }
   });
 
-  app.post("/api/photos/:photoId/comments/:commentId/like", async (req, res) => {
+  app.post("/api/photos/:photoId/comments/:commentId/like/:userId", async (req, res) => {
     try {
       const commentId = Number(req.params.commentId);
       console.log("[photo-comment-like] body:", req.body, "query:", req.query);
-      const userId = Number(req.body?.userId) || Number(req.query.userId) || Number(req.params.photoId && req.query.userId);
+      const userId = Number(req.params.userId);
       console.log("[photo-comment-like] FULL body:", JSON.stringify(req.body), "query:", JSON.stringify(req.query), "headers:", req.headers['content-type']);
       if (!userId) throw new Error("userId mancante");
       const result = await db.execute(sql`INSERT INTO photo_comment_likes (comment_id, user_id) VALUES (${commentId}, ${userId}) ON CONFLICT DO NOTHING RETURNING id`);
@@ -1041,10 +1041,10 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     }
   });
 
-  app.post("/api/photos/:photoId/comments/:commentId/unlike", async (req, res) => {
+  app.post("/api/photos/:photoId/comments/:commentId/unlike/:userId", async (req, res) => {
     try {
       const commentId = Number(req.params.commentId);
-      const userId = Number(req.body?.userId || req.query.userId);
+      const userId = Number(req.params.userId);
       if (!userId) throw new Error("userId mancante");
       const result = await db.execute(sql`DELETE FROM photo_comment_likes WHERE comment_id = ${commentId} AND user_id = ${userId} RETURNING id`);
       if (result.rows.length > 0) {
