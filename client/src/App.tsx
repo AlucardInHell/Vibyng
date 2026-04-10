@@ -939,7 +939,6 @@ function AppLayout() {
 }
 
 function AppWithAuth() {
-  const [location, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(getStoredUser());
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
 
