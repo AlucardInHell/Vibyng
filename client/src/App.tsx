@@ -266,6 +266,7 @@ function NotificationBell() {
 }
 function BottomNav() {
   const [location, setLocation] = useLocation();
+  
   const handleFeedRefresh = () => {
   if (location !== "/") {
     setLocation("/");
@@ -902,6 +903,17 @@ function SettingsMenu() {
   );
 }
 function AppLayout() {
+  const [location, setLocation] = useLocation();
+
+  const handleLogoClick = () => {
+    if (location !== "/") {
+      setLocation("/");
+    }
+    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
@@ -928,15 +940,6 @@ function AppLayout() {
 
 function AppWithAuth() {
   const [location, setLocation] = useLocation();
-
-  const handleLogoClick = () => {
-  if (location !== "/") {
-    setLocation("/");
-  }
-  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-  queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
   const [currentUser, setCurrentUser] = useState<any>(getStoredUser());
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
 
