@@ -333,31 +333,57 @@ app.post("/api/uploads/avatar", async (req, res) => {
 });;
 
   // === POSTS ===
-  app.get(api.posts.list.path, async (_req, res) => {
-    const posts = await storage.getPosts();
-    const photos = await storage.getAllPhotosForFeed();
-    const photoItems = photos.map((p: any) => ({
-     id: `photo_${p.id}`,
-      type: "photo",
-      authorId: p.artist_id,
-      content: (p.description && p.description !== "Foto") ? p.description : (p.title && p.title !== "Foto" ? p.title : ""),
-      mediaUrl: p.image_url,
-      createdAt: p.created_at,
-      likesCount: p.likes_count || 0,
-      author: {
-        id: p.artist_id,
-        displayName: p.display_name,
-        username: p.username,
-        avatarUrl: p.avatar_url,
-        role: p.role,
-      },
-      photoId: p.id,
-    }));
-    const combined = [...posts, ...photoItems].sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    res.json(combined);
-  });
+ app.get(api.posts.list.path, async (_req, res) => {
+  const posts = await storage.getPosts();
+  const photos = await storage.getAllPhotosForFeed();
+  const videos = await storage.getAllVideosForFeed();
+
+  const photoItems = photos.map((p: any) => ({
+    id: `photo_${p.id}`,
+    type: "photo",
+    authorId: p.artist_id,
+    content:
+      (p.description && p.description !== "Foto")
+        ? p.description
+        : (p.title && p.title !== "Foto" ? p.title : ""),
+    mediaUrl: p.image_url,
+    createdAt: p.created_at,
+    likesCount: p.likes_count || 0,
+    author: {
+      id: p.artist_id,
+      displayName: p.display_name,
+      username: p.username,
+      avatarUrl: p.avatar_url,
+      role: p.role,
+    },
+    photoId: p.id,
+  }));
+
+  const videoItems = videos.map((v: any) => ({
+    id: `video_${v.id}`,
+    type: "video",
+    authorId: v.artist_id,
+    content: (v.title && v.title !== "Video") ? v.title : "",
+    mediaUrl: v.video_url,
+    thumbnailUrl: v.thumbnail_url,
+    createdAt: v.created_at,
+    likesCount: 0,
+    author: {
+      id: v.artist_id,
+      displayName: v.display_name,
+      username: v.username,
+      avatarUrl: v.avatar_url,
+      role: v.role,
+    },
+    videoId: v.id,
+  }));
+
+  const combined = [...posts, ...photoItems, ...videoItems].sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  res.json(combined);
+});
   
   app.post(api.posts.create.path, async (req, res) => {
     try {
