@@ -78,7 +78,6 @@ export const artistVideos = pgTable("artist_videos", {
   title: text("title").notNull(),
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
-  likesCount: integer("likes_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
