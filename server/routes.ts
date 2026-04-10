@@ -994,16 +994,21 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     }
   });
   // === PHOTO COMMENTS ===
-  app.get("/api/photos/:photoId/comments", async (req, res) => {
+ app.get("/api/photos/:photoId/comments", async (req, res) => {
     try {
       const photoId = Number(req.params.photoId);
+      const userId = Number(req.query.userId);
       const comments = await storage.getPhotoComments(photoId);
-      res.json(comments);
+      if (!userId) return res.json(comments);
+      const commentsWithLikes = await Promise.all(comments.map(async (c: any) => {
+        const result = await db.execute(sql`SELECT id FROM photo_comment_likes WHERE comment_id = ${c.id} AND user_id = ${userId}`);
+        return { ...c, likedByMe: result.rows.length > 0 };
+      }));
+      res.json(commentsWithLikes);
     } catch (err) {
       res.status(400).json({ message: "Errore nel recupero commenti" });
     }
   });
-
   app.post("/api/photos/:photoId/comments", async (req, res) => {
     try {
       const photoId = Number(req.params.photoId);
@@ -1020,10 +1025,43 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   app.post("/api/photos/:photoId/comments/:commentId/like", async (req, res) => {
     try {
       const commentId = Number(req.params.commentId);
-      await storage.likePhotoComment(commentId);
-      res.json({ success: true });
-    } catch (err) {
+      const { userId } = req.body;
+      const result = await db.execute(sql`INSERT INTO photo_comment_likes (comment_id, user_id) VALUES (${commentId}, ${userId}) ON CONFLICT DO NOTHING RETURNING id`);
+      if (result.rows.length > 0) {
+        await db.execute(sql`UPDATE photo_comments SET likes_count = COALESCE(likes_count, 0) + 1 WHERE id = ${commentId}`);
+      }
+      const updated = await db.execute(sql`SELECT likes_count FROM photo_comments WHERE id = ${commentId}`);
+      res.json({ success: true, likesCount: updated.rows[0]?.likes_count ?? 0 });
+    } catch (err: any) {
+      console.error("[photo-comment-like]", err?.message);
       res.status(400).json({ message: "Errore nel like" });
+    }
+  });
+
+  app.post("/api/photos/:photoId/comments/:commentId/unlike", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const { userId } = req.body;
+      const result = await db.execute(sql`DELETE FROM photo_comment_likes WHERE comment_id = ${commentId} AND user_id = ${userId} RETURNING id`);
+      if (result.rows.length > 0) {
+        await db.execute(sql`UPDATE photo_comments SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0) WHERE id = ${commentId}`);
+      }
+      const updated = await db.execute(sql`SELECT likes_count FROM photo_comments WHERE id = ${commentId}`);
+      res.json({ success: true, likesCount: updated.rows[0]?.likes_count ?? 0 });
+    } catch (err: any) {
+      console.error("[photo-comment-unlike]", err?.message);
+      res.status(400).json({ message: "Errore nel like" });
+    }
+  });
+
+  app.get("/api/photos/:photoId/comments/:commentId/liked/:userId", async (req, res) => {
+    try {
+      const commentId = Number(req.params.commentId);
+      const userId = Number(req.params.userId);
+      const result = await db.execute(sql`SELECT id FROM photo_comment_likes WHERE comment_id = ${commentId} AND user_id = ${userId}`);
+      res.json({ liked: result.rows.length > 0 });
+    } catch (err) {
+      res.json({ liked: false });
     }
   });
 
