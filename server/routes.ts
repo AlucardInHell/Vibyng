@@ -40,6 +40,25 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
+  await db.execute(sql`
+    ALTER TABLE photo_comments
+    ADD COLUMN IF NOT EXISTS likes_count integer DEFAULT 0
+  `);
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS photo_comment_likes (
+      id serial PRIMARY KEY,
+      comment_id integer NOT NULL REFERENCES photo_comments(id) ON DELETE CASCADE,
+      user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at timestamp DEFAULT now()
+    )
+  `);
+
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS photo_comment_likes_comment_user_idx
+    ON photo_comment_likes (comment_id, user_id)
+  `);
+  
   // === USERS ===
   app.get(api.users.artists.path, async (_req, res) => {
     const artists = await storage.getArtists();
