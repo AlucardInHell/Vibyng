@@ -243,7 +243,7 @@ export const insertPostSchema = createInsertSchema(posts).omit({ id: true, creat
 export const insertGoalSchema = createInsertSchema(artistGoals).omit({ id: true, createdAt: true, currentAmount: true, isCompleted: true });
 export const insertSupportSchema = createInsertSchema(supports).omit({ id: true, createdAt: true });
 export const insertPhotoSchema = createInsertSchema(artistPhotos).omit({ id: true, createdAt: true });
-export const insertVideoSchema = createInsertSchema(artistVideos).omit({ id: true, createdAt: true, likesCount: true });
+export const insertVideoSchema = createInsertSchema(artistVideos).omit({ id: true, createdAt: true });
 export const insertSongSchema = createInsertSchema(artistSongs).omit({ id: true, createdAt: true });
 export const insertMessageSchema = createInsertSchema(messages).omit({ id: true, createdAt: true, isRead: true });
 export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
@@ -397,13 +397,6 @@ export const postLikes = pgTable("post_likes", {
 export const photoLikes = pgTable("photo_likes", {
   id: serial("id").primaryKey(),
   photoId: integer("photo_id").notNull().references(() => artistPhotos.id, { onDelete: "cascade" }),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-// === VIDEO LIKES ===
-export const videoLikes = pgTable("video_likes", {
-  id: serial("id").primaryKey(),
-  videoId: integer("video_id").notNull().references(() => artistVideos.id, { onDelete: "cascade" }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
