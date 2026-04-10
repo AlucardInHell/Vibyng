@@ -755,9 +755,9 @@ const { data: mySongs = [] } = useQuery<any[]>({
                                   disabled={Number(c.author_id) === CURRENT_USER_ID}
                                   onClick={async () => {
                                     if (c.likedByMe) {
-                                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike?userId=${CURRENT_USER_ID}`);
+                                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${CURRENT_USER_ID}`);
                                     } else {
-                                      await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like?userId=${CURRENT_USER_ID}`);
+                                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${CURRENT_USER_ID}`);
                                     }
                                     await refetchPhotoComments();
                                   }}
