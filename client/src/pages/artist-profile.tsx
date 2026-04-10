@@ -159,14 +159,14 @@ export default function ArtistProfile() {
   const isPhotoLiked = photoLikeData?.liked ?? false;
   const [photoLikeCount, setPhotoLikeCount] = useState<Record<number, number>>({});
   const { data: photoCommentsList = [], refetch: refetchPhotoComments } = useQuery<any[]>({
-    queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
-    queryFn: async () => {
-      if (!selectedPhoto?.id) return [];
-      const res = await fetch(`/api/photos/${selectedPhoto.id}/comments`);
-      return res.json();
-    },
-    enabled: !!selectedPhoto,
-  });
+  queryKey: ["/api/photos", selectedPhoto?.id, "comments", currentUserId],
+  queryFn: async () => {
+    if (!selectedPhoto?.id) return [];
+    const res = await fetch(`/api/photos/${selectedPhoto.id}/comments?userId=${currentUserId}`);
+    return res.json();
+  },
+  enabled: !!selectedPhoto?.id,
+ });
   const [attendingEventIds, setAttendingEventIds] = useState<Set<number>>(new Set());
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1207,15 +1207,27 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                               >🗑️</button>
                             )}
                             <button
-                              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
-                              onClick={async () => {
-                                await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like`);
-                                refetchPhotoComments();
-                              }}
-                            >
-                              <Heart className="w-3 h-3" />
-                              <span>{c.likes_count ?? 0}</span>
-                            </button>
+                              <button
+  className={`flex items-center gap-1 text-xs ${
+    Number(c.author_id) === Number(currentUserId)
+      ? "opacity-50 cursor-not-allowed text-muted-foreground"
+      : c.likedByMe
+        ? "text-red-500"
+        : "text-muted-foreground hover:text-red-500"
+  }`}
+  disabled={Number(c.author_id) === Number(currentUserId)}
+  onClick={async () => {
+    if (c.likedByMe) {
+      await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${currentUserId}`);
+    } else {
+      await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${currentUserId}`);
+    }
+    await refetchPhotoComments();
+  }}
+>
+  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+  <span>{c.likes_count ?? 0}</span>
+</button>
                           </div>
                         </div>
                       </div>
