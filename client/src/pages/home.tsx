@@ -528,13 +528,13 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
   const [newComment, setNewComment] = useState("");
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
 
-  const { data: comments = [], refetch } = useQuery<any[]>({
-    queryKey: ["/api/photos", photoId, "comments"],
-    queryFn: async () => {
-      const res = await fetch(`/api/photos/${photoId}/comments`);
-      return res.json();
-    },
-  });
+ const { data: comments = [], refetch } = useQuery<any[]>({
+  queryKey: ["/api/photos", photoId, "comments", CURRENT_USER_ID_LOCAL],
+  queryFn: async () => {
+    const res = await fetch(`/api/photos/${photoId}/comments?userId=${CURRENT_USER_ID_LOCAL}`);
+    return res.json();
+  },
+})
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
@@ -585,18 +585,22 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
                         }}
                       >🗑️</button>
                     )}
-                    <button
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
-                      onClick={async () => {
-                        await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/like`);
-                        refetch();
-                      }}
-                    >
-                      <Heart className="w-3 h-3" />
-                      <span>{c.likes_count ?? 0}</span>
-                    </button>
+                  <button
+  className={`flex items-center gap-1 text-xs ${c.likedByMe ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+  onClick={async () => {
+    if (c.likedByMe) {
+      await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/unlike/${CURRENT_USER_ID_LOCAL}`);
+    } else {
+      await apiRequest("POST", `/api/photos/${photoId}/comments/${c.id}/like/${CURRENT_USER_ID_LOCAL}`);
+    }
+    refetch();
+  }}
+>
+  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+  <span>{c.likes_count ?? 0}</span>
+                  </button>
                   </div>
-       </div>
+                </div>
               </div>
             </div>
           ))}
