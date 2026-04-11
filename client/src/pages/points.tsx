@@ -687,10 +687,10 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 
           {selectedPhoto && (
             <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
-              <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+              <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
                <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                  <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[40vh] object-contain bg-black" />
-                  <div className="p-4">
+                  <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[32dvh] sm:max-h-[40vh] object-contain bg-black flex-shrink-0" />
+                  <div className="p-4 flex-1 min-h-0 flex flex-col">
                    {selectedPhoto.title && selectedPhoto.title !== "Foto" && <p className="font-medium">{selectedPhoto.title}</p>}
                     <p className="text-xs text-muted-foreground mb-3">
                     {selectedPhoto.createdAt && (() => {
@@ -738,7 +738,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                       </button>
                       <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
                     </div>
-               <div className="space-y-2 max-h-24 overflow-y-auto mb-3">
+               <div className="space-y-2 flex-1 min-h-0 overflow-y-auto mb-3">
                       {photoCommentsList.map((c: any) => (
                         <div key={c.id} className="flex gap-2">
                           <Avatar className="w-8 h-8 flex-shrink-0">
@@ -784,8 +784,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                       ))}
                     </div>
                     <div className="flex gap-2">
-                      <input
-                        className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
+                      <div className="mt-auto flex gap-2 pt-3 border-t">
                         placeholder="Scrivi un commento..."
                         value={commentInput}
                         onChange={e => setCommentInput(e.target.value)}
