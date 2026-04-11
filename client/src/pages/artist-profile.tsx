@@ -742,7 +742,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 )}
   </>
 ))}
-              ))}
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">Nessun post ancora.</p>
@@ -1145,7 +1144,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 )}
   </>
 ))}
-                ))}
               </div>
             ) : (!isArtist && profileAttendingEvents.length > 0) ? (
                 <div className="flex flex-col gap-3 mt-2">
