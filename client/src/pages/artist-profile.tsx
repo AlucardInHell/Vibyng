@@ -1217,126 +1217,191 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           </CardContent>
         </Card>
       )}
-      {selectedPhoto && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
-          <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
-           <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
-              <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[40vh] object-contain bg-black" />
-              <div className="p-4">
-                {selectedPhoto.title && selectedPhoto.title !== "Foto" && <p className="font-medium">{selectedPhoto.title}</p>}
-                <p className="text-xs text-muted-foreground mb-3">
-                  {selectedPhoto.createdAt && new Date(selectedPhoto.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                </p>
-                <div className="flex items-center gap-4 mb-4 border-b pb-3">
-              <button
-                    className={`flex items-center gap-1 text-sm ${isPhotoLiked ? "text-red-500" : "text-muted-foreground"} ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
-                    disabled={artistId === currentUserId}
-                    onClick={async () => {
-                     const currentCount = photoLikeCount[selectedPhoto.id] ?? selectedPhotoData?.likesCount ?? selectedPhoto.likesCount ?? 0;
-                      if (isPhotoLiked) {
-                        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/unlike`, { userId: currentUserId });
-                        setPhotoLikeCount(prev => ({ ...prev, [selectedPhoto.id]: Math.max(0, currentCount - 1) }));
-                      } else {
-                        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/like`, { userId: currentUserId });
-                        setPhotoLikeCount(prev => ({ ...prev, [selectedPhoto.id]: currentCount + 1 }));
-                      }
-                      refetchPhotoLike();
-                    }}
-                  >
-                    <Heart className={`w-5 h-5 ${isPhotoLiked ? "fill-red-500" : ""}`} />
-                   <span>{photoLikeCount[selectedPhoto.id] !== undefined ? photoLikeCount[selectedPhoto.id] : (selectedPhotoData?.likesCount ?? selectedPhoto.likesCount ?? 0)}</span>
-                  </button>
-                  <button
-                    className="flex items-center gap-1 text-sm text-muted-foreground"
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({ title: selectedPhoto.title, text: "Guarda questa foto su Vibyng!" });
-                      } else {
-                        navigator.clipboard.writeText(window.location.href);
-                        toast({ title: "Link copiato!" });
-                      }
-                    }}
-                  >
-                    <Share2 className="w-5 h-5" />
-                    Condividi
-                  </button>
-                  <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
+     {selectedPhoto && (
+  <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
+    <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[90dvh] flex flex-col">
+        <img
+          src={selectedPhoto.imageUrl ?? undefined}
+          alt={selectedPhoto.title}
+          className="w-full max-h-[32dvh] sm:max-h-[40vh] object-contain bg-black flex-shrink-0"
+        />
+
+        <div className="p-4 flex-1 min-h-0 flex flex-col">
+          {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
+            <p className="font-medium">{selectedPhoto.title}</p>
+          )}
+
+          <p className="text-xs text-muted-foreground mb-3">
+            {selectedPhoto.createdAt &&
+              new Date(selectedPhoto.createdAt).toLocaleDateString("it-IT", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+          </p>
+
+          <div className="flex items-center gap-4 mb-4 border-b pb-3">
+            <button
+              className={`flex items-center gap-1 text-sm ${isPhotoLiked ? "text-red-500" : "text-muted-foreground"} ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
+              disabled={artistId === currentUserId}
+              onClick={async () => {
+                const currentCount =
+                  photoLikeCount[selectedPhoto.id] ??
+                  selectedPhotoData?.likesCount ??
+                  selectedPhoto.likesCount ??
+                  0;
+
+                if (isPhotoLiked) {
+                  await apiRequest("POST", `/api/photos/${selectedPhoto.id}/unlike`, { userId: currentUserId });
+                  setPhotoLikeCount(prev => ({
+                    ...prev,
+                    [selectedPhoto.id]: Math.max(0, currentCount - 1),
+                  }));
+                } else {
+                  await apiRequest("POST", `/api/photos/${selectedPhoto.id}/like`, { userId: currentUserId });
+                  setPhotoLikeCount(prev => ({
+                    ...prev,
+                    [selectedPhoto.id]: currentCount + 1,
+                  }));
+                }
+
+                await refetchPhotoLike();
+              }}
+            >
+              <Heart className={`w-5 h-5 ${isPhotoLiked ? "fill-red-500" : ""}`} />
+              <span>
+                {photoLikeCount[selectedPhoto.id] !== undefined
+                  ? photoLikeCount[selectedPhoto.id]
+                  : (selectedPhotoData?.likesCount ?? selectedPhoto.likesCount ?? 0)}
+              </span>
+            </button>
+
+            <button
+              className="flex items-center gap-1 text-sm text-muted-foreground"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: selectedPhoto.title, text: "Guarda questa foto su Vibyng!" });
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast({ title: "Link copiato!" });
+                }
+              }}
+            >
+              <Share2 className="w-5 h-5" />
+              Condividi
+            </button>
+
+            <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>
+              ✕
+            </button>
+          </div>
+
+          <div className="space-y-2 flex-1 min-h-0 overflow-y-auto mb-3">
+            {photoCommentsList.map((c: any) => (
+              <div key={c.id} className="flex gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  {c.avatar_url ? (
+                    <img src={c.avatar_url} alt={c.display_name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
+                  )}
                 </div>
-               <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
-                  {photoCommentsList.map((c: any) => (
-                    <div key={c.id} className="flex gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {c.avatar_url ? (
-                          <img src={c.avatar_url} alt={c.display_name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
-                        )}
-                      </div>
-                      <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                        <p className="text-sm font-semibold">{c.display_name}</p>
-                        <p className="text-sm">{c.content}</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                         <div className="flex items-center gap-2">
-                            {(Number(c.author_id) === Number(currentUserId) || Number(artistId) === Number(currentUserId)) && (
-                              <button
-                                className="text-xs text-red-400 hover:text-red-600"
-                                onClick={async () => {
-                                  await apiRequest("DELETE", `/api/photos/${selectedPhoto.id}/comments/${c.id}`);
-                                  refetchPhotoComments();
-                                }}
-                              >🗑️</button>
-                            )}
-                            <button
-  className={`flex items-center gap-1 text-xs ${
-    Number(c.author_id) === Number(currentUserId)
-      ? "opacity-50 cursor-not-allowed text-muted-foreground"
-      : c.likedByMe
-        ? "text-red-500"
-        : "text-muted-foreground hover:text-red-500"
-  }`}
-  disabled={Number(c.author_id) === Number(currentUserId)}
-  onClick={async () => {
-    if (c.likedByMe) {
-      await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${currentUserId}`);
-    } else {
-      await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${currentUserId}`);
-    }
-    await refetchPhotoComments();
-  }}
->
-  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
-  <span>{c.likes_count ?? 0}</span>
-</button>
-                          </div>
-                        </div>
-                      </div>
+
+                <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+                  <p className="text-sm font-semibold">{c.display_name}</p>
+                  <p className="text-sm">{c.content}</p>
+
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {c.created_at &&
+                        new Date(c.created_at).toLocaleDateString("it-IT", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {(Number(c.author_id) === Number(currentUserId) || Number(artistId) === Number(currentUserId)) && (
+                        <button
+                          className="text-xs text-red-400 hover:text-red-600"
+                          onClick={async () => {
+                            await apiRequest("DELETE", `/api/photos/${selectedPhoto.id}/comments/${c.id}`);
+                            await refetchPhotoComments();
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      )}
+
+                      <button
+                        className={`flex items-center gap-1 text-xs ${
+                          Number(c.author_id) === Number(currentUserId)
+                            ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                            : c.likedByMe
+                              ? "text-red-500"
+                              : "text-muted-foreground hover:text-red-500"
+                        }`}
+                        disabled={Number(c.author_id) === Number(currentUserId)}
+                        onClick={async () => {
+                          if (c.likedByMe) {
+                            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${currentUserId}`);
+                          } else {
+                            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${currentUserId}`);
+                          }
+                          await refetchPhotoComments();
+                        }}
+                      >
+                        <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+                        <span>{c.likes_count ?? 0}</span>
+                      </button>
                     </div>
-                  ))}
-                </div>
-                <div className="relative flex-1">
-                  <input
-                    className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
-                    placeholder="Scrivi un commento..."
-                    value={commentInput}
-                    onChange={e => { setCommentInput(e.target.value); handleTextChange(e.target.value, e.target.selectionStart || 0); }}
-                    onKeyDown={async e => {
-                      if (e.key === "Enter" && commentInput.trim()) {
-                        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: currentUserId, content: commentInput.trim() });
-                        setCommentInput("");
-                        refetchPhotoComments();
-                      }
-                    }}
-                  />
-                  <MentionDropdown query={mentionQuery} visible={showMentions} onSelect={(username) => { setCommentInput(insertMention(commentInput, username)); closeMentions(); }} />
                   </div>
+                </div>
               </div>
+            ))}
+          </div>
+
+          <div className="mt-auto pt-3 border-t">
+            <div className="relative">
+              <input
+                className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
+                placeholder="Scrivi un commento..."
+                value={commentInput}
+                onChange={e => {
+                  setCommentInput(e.target.value);
+                  handleTextChange(e.target.value, e.target.selectionStart || 0);
+                }}
+                onKeyDown={async e => {
+                  if (e.key === "Enter" && commentInput.trim()) {
+                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+                      authorId: currentUserId,
+                      content: commentInput.trim(),
+                    });
+                    setCommentInput("");
+                    await refetchPhotoComments();
+                  }
+                }}
+              />
+              <MentionDropdown
+                query={mentionQuery}
+                visible={showMentions}
+                onSelect={(username) => {
+                  setCommentInput(insertMention(commentInput, username));
+                  closeMentions();
+                }}
+              />
             </div>
           </div>
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
    <Dialog open={connectionsOpen} onOpenChange={setConnectionsOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
