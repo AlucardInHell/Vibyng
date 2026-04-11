@@ -686,7 +686,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           )}
 
           {selectedPhoto && (
-  <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
+  <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
     <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
       <div
         className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[100dvh] sm:h-auto sm:max-h-[90dvh] flex flex-col"
@@ -841,7 +841,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             ))}
           </div>
 
-          <div className="sticky bottom-0 mt-auto flex gap-2 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] border-t bg-background shrink-0">
+          <div className="sticky bottom-0 mt-auto flex gap-2 pt-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] border-t bg-background shrink-0">
             <input
               className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
               placeholder="Scrivi un commento..."
