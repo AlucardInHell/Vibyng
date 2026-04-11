@@ -616,8 +616,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           <p className="text-sm text-muted-foreground mb-2">Post ({artistPosts.length})</p>
           {artistPosts.length > 0 ? (
             <div className="flex flex-col gap-3">
-              {artistPosts.map((post) => (
-                <Card key={post.id} className="hover-elevate">
+              {artistPosts.map((post, index) => (
+  <>
+    <Card key={post.id} className="hover-elevate">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
@@ -692,7 +693,55 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                       <ArtistPostComments postId={post.id} postAuthorId={post.author.id} />
                     </CardContent>
                   )}
-                </Card>
+              </Card>
+
+{isArtist && !isOwnProfile && index === 0 && (
+  <Card className="mt-3">
+    <CardHeader className="pb-2">
+      <div className="flex items-center gap-2">
+        <Heart className="w-5 h-5 text-primary" />
+        <CardTitle className="text-lg">Supporta l'artista</CardTitle>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <p className="text-sm text-muted-foreground mb-4">
+        Aiuta {artist.displayName} a raggiungere i suoi obiettivi!
+      </p>
+      <div className="flex gap-2 mb-3">
+        {["5", "10", "25", "50"].map((amount) => (
+          <Button
+            key={amount}
+            variant={supportAmount === amount ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSupportAmount(amount)}
+          >
+            {amount}€
+          </Button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          type="number"
+          value={supportAmount}
+          onChange={(e) => setSupportAmount(e.target.value)}
+          min="1"
+          className="flex-1"
+        />
+        <Button
+          onClick={() => supportMutation.mutate(supportAmount)}
+          disabled={supportMutation.isPending}
+        >
+          {supportMutation.isPending ? "..." : "Supporta"}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground mt-2 text-center">
+        Riceverai 50 VibyngPoints per il tuo supporto!
+      </p>
+    </CardContent>
+  </Card>
+)}
+  </>
+))}
               ))}
             </div>
           ) : (
@@ -986,8 +1035,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             )}
             {artistEvents.length > 0 ? (
               <div className="flex flex-col gap-3">
-                {artistEvents.map((event) => (
-                  <Card key={event.id} className="hover-elevate">
+                {artistEvents.map((event, index) => (
+  <>
+    <Card key={event.id} className="hover-elevate">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
@@ -1046,7 +1096,55 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
+                 </Card>
+
+{isArtist && !isOwnProfile && index === 0 && (
+  <Card className="mt-3">
+    <CardHeader className="pb-2">
+      <div className="flex items-center gap-2">
+        <Heart className="w-5 h-5 text-primary" />
+        <CardTitle className="text-lg">Supporta l'artista</CardTitle>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <p className="text-sm text-muted-foreground mb-4">
+        Aiuta {artist.displayName} a raggiungere i suoi obiettivi!
+      </p>
+      <div className="flex gap-2 mb-3">
+        {["5", "10", "25", "50"].map((amount) => (
+          <Button
+            key={amount}
+            variant={supportAmount === amount ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSupportAmount(amount)}
+          >
+            {amount}€
+          </Button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          type="number"
+          value={supportAmount}
+          onChange={(e) => setSupportAmount(e.target.value)}
+          min="1"
+          className="flex-1"
+        />
+        <Button
+          onClick={() => supportMutation.mutate(supportAmount)}
+          disabled={supportMutation.isPending}
+        >
+          {supportMutation.isPending ? "..." : "Supporta"}
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground mt-2 text-center">
+        Riceverai 50 VibyngPoints per il tuo supporto!
+      </p>
+    </CardContent>
+  </Card>
+)}
+  </>
+))}
                 ))}
               </div>
             ) : (!isArtist && profileAttendingEvents.length > 0) ? (
@@ -1171,52 +1269,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           </CardContent>
         </Card>
       )}
-
-      {/* Supporto — solo Artista e non il proprio profilo */}
-    {isArtist && !isOwnProfile && activeTab !== "songs" && activeTab !== "messages" && activeTab !== "photos" && activeTab !== "videos" && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">Supporta l'artista</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Aiuta {artist.displayName} a raggiungere i suoi obiettivi!
-            </p>
-            <div className="flex gap-2 mb-3">
-              {["5", "10", "25", "50"].map((amount) => (
-                <Button
-                  key={amount}
-                  variant={supportAmount === amount ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSupportAmount(amount)}
-                >
-                  {amount}€
-                </Button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                value={supportAmount}
-                onChange={(e) => setSupportAmount(e.target.value)}
-                min="1"
-                className="flex-1"
-              />
-              <Button
-                onClick={() => supportMutation.mutate(supportAmount)}
-                disabled={supportMutation.isPending}
-              >
-                {supportMutation.isPending ? "..." : "Supporta"}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Riceverai 50 VibyngPoints per il tuo supporto!
-            </p>
-          </CardContent>
-        </Card>
+   
       )}
      {selectedPhoto && (
   <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
