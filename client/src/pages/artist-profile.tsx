@@ -722,36 +722,40 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         {/* Tab Video */}
         <TabsContent value="videos" className="mt-4">
           <div className="flex flex-col gap-3">
-            {videos && videos.length > 0 ? (
-              videos.map((video) => (
-               <Card key={video.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => {
-  setSelectedVideo(video);
-  setVideoLikeCount(prev => ({
-    ...prev,
-    [video.id]: Number((video as any).likesCount ?? 0),
-  }));
-}}
-                  <div className="relative">
-                    {video.videoUrl ? (
-                      <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
-                    ) : video.thumbnailUrl ? (
-                      <img src={video.thumbnailUrl} alt={video.title} className="w-full h-40 object-cover" />
-                    ) : (
-                      <div className="w-full h-40 bg-primary/10 flex items-center justify-center">
-                        <Video className="w-12 h-12 text-primary" />
-                      </div>
-                    )}
-                  </div>
-               <CardContent className="p-3">
-                    {video.title && video.title !== "Video" && (
-                      <h4 className="font-medium">{video.title}</h4>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <p className="text-center text-muted-foreground py-8">Nessun video disponibile</p>
-            )}
+           {videos && videos.length > 0 ? (
+  videos.map((video) => (
+    <Card
+      key={video.id}
+      className="overflow-hidden hover-elevate cursor-pointer"
+      onClick={() => {
+        setSelectedVideo(video);
+        setVideoLikeCount(prev => ({
+          ...prev,
+          [video.id]: Number((video as any).likesCount ?? 0),
+        }));
+      }}
+    >
+      <div className="relative">
+        {video.videoUrl ? (
+          <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
+        ) : video.thumbnailUrl ? (
+          <img src={video.thumbnailUrl} alt={video.title} className="w-full h-40 object-cover" />
+        ) : (
+          <div className="w-full h-40 bg-primary/10 flex items-center justify-center">
+            <Video className="w-12 h-12 text-primary" />
+          </div>
+        )}
+      </div>
+      <CardContent className="p-3">
+        {video.title && video.title !== "Video" && (
+          <h4 className="font-medium">{video.title}</h4>
+        )}
+      </CardContent>
+    </Card>
+  ))
+) : (
+  <p className="text-center text-muted-foreground py-8">Nessun video disponibile</p>
+)}
           </div>
         </TabsContent>
 
