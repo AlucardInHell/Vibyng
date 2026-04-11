@@ -634,12 +634,12 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
 
   const { data: comments = [], refetch } = useQuery<any[]>({
-    queryKey: ["/api/videos", videoId, "comments"],
-    queryFn: async () => {
-      const res = await fetch(`/api/videos/${videoId}/comments`);
-      return res.json();
-    },
-  });
+  queryKey: ["/api/videos", videoId, "comments", CURRENT_USER_ID_LOCAL],
+  queryFn: async () => {
+    const res = await fetch(`/api/videos/${videoId}/comments?userId=${CURRENT_USER_ID_LOCAL}`);
+    return res.json();
+  },
+});
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
@@ -705,15 +705,26 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
                 )}
 
                 <button
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
-                  onClick={async () => {
-                    await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/like`);
-                    refetch();
-                  }}
-                >
-                  <Heart className="w-3 h-3" />
-                  <span>{c.likes_count ?? 0}</span>
-                </button>
+  className={`flex items-center gap-1 text-xs ${
+    Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)
+      ? "opacity-50 cursor-not-allowed text-muted-foreground"
+      : c.likedByMe
+        ? "text-red-500"
+        : "text-muted-foreground hover:text-red-500"
+  }`}
+  disabled={Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)}
+  onClick={async () => {
+    if (c.likedByMe) {
+      await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/unlike`, { userId: CURRENT_USER_ID_LOCAL });
+    } else {
+      await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/like`, { userId: CURRENT_USER_ID_LOCAL });
+    }
+    await refetch();
+  }}
+>
+  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+  <span>{c.likes_count ?? 0}</span>
+</button>
               </div>
             </div>
           </div>
