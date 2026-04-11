@@ -845,18 +845,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                       }
                     }}
                   />
-                  <button
-                    className="text-sm text-primary font-medium px-2"
-                    onClick={async () => {
-                      if (videoCommentInput.trim()) {
-                        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, { authorId: currentUserId, content: videoCommentInput.trim() });
-                        setVideoCommentInput("");
-                        refetchVideoComments();
-                      }
-                    }}
-                  >
-                    Invia
-                  </button>
                 </div>
               </div>
             </div>
@@ -1292,18 +1280,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   />
                   <MentionDropdown query={mentionQuery} visible={showMentions} onSelect={(username) => { setCommentInput(insertMention(commentInput, username)); closeMentions(); }} />
                   </div>
-                  <button
-                    className="text-sm text-primary font-medium px-2"
-                    onClick={async () => {
-                      if (commentInput.trim()) {
-                        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: currentUserId, content: commentInput.trim() });
-                        setCommentInput("");
-                        refetchPhotoComments();
-                      }
-                    }}
-                  >
-                    Invia
-                  </button>
               </div>
             </div>
           </div>
