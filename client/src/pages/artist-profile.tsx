@@ -1268,7 +1268,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         </Card>
       )}
    
-      )}
      {selectedPhoto && (
   <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
     <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
