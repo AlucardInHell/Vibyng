@@ -827,19 +827,28 @@ useEffect(() => {
 
  const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<(number | string)[]>({
     queryKey: ["/api/likes", CURRENT_USER_ID],
-   queryFn: async () => {
+    queryFn: async () => {
       if (!posts) return [];
       const results = await Promise.all(
         posts.map(async (post) => {
-          const isPhoto = String(post.id).startsWith("photo_");
-          const url = isPhoto 
-            ? `/api/photos/${String(post.id).replace("photo_", "")}/liked/${CURRENT_USER_ID}`
-            : `/api/posts/${post.id}/liked/${CURRENT_USER_ID}`;
-          const res = await fetch(url);
-          const data = await res.json();
-          const numericId = isPhoto ? Number(String(post.id).replace("photo_", "")) : Number(post.id);
-          return data.liked ? (isPhoto ? `photo_${numericId}` : numericId) : null;
-        })
+  const isPhoto = String(post.id).startsWith("photo_");
+  const isVideo = String(post.id).startsWith("video_");
+
+  const url = isPhoto
+    ? `/api/photos/${String(post.id).replace("photo_", "")}/liked/${CURRENT_USER_ID}`
+    : isVideo
+      ? `/api/videos/${String(post.id).replace("video_", "")}/liked/${CURRENT_USER_ID}`
+      : `/api/posts/${post.id}/liked/${CURRENT_USER_ID}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if (!data.liked) return null;
+
+  if (isPhoto) return `photo_${Number(String(post.id).replace("photo_", ""))}`;
+  if (isVideo) return `video_${Number(String(post.id).replace("video_", ""))}`;
+  return Number(post.id);
+})
       );
       return results.filter(Boolean) as number[];
     },
@@ -850,13 +859,13 @@ useEffect(() => {
 useEffect(() => {
   const likedSet = new Set<string | number>();
 
-  likedPostIds.forEach((id) => {
-    if (typeof id === "string" && id.startsWith("photo_")) {
-      likedSet.add(id);
-    } else {
-      likedSet.add(Number(id));
-    }
-  });
+ likedPostIds.forEach((id) => {
+  if (typeof id === "string" && (id.startsWith("photo_") || id.startsWith("video_"))) {
+    likedSet.add(id);
+  } else {
+    likedSet.add(Number(id));
+  }
+});
 
   setLikedPosts(likedSet as Set<any>);
   likedPostsRef.current = likedSet as Set<any>;
@@ -876,17 +885,20 @@ const handleLike = async (postId: string | number) => {
     if (pendingLikesRef.current.has(key)) return;
     pendingLikesRef.current.add(key);
     const isPhoto = String(postId).startsWith("photo_");
-    const isLiked = isPhoto
+const isVideo = String(postId).startsWith("video_");
+
+const isLiked = (isPhoto || isVideo)
   ? likedPostsRef.current.has(String(postId))
   : likedPostsRef.current.has(Number(postId));
-  if (isLiked) {
-  if (isPhoto) {
+
+if (isLiked) {
+  if (isPhoto || isVideo) {
     likedPostsRef.current.delete(String(postId));
   } else {
     likedPostsRef.current.delete(Number(postId));
   }
-  } else {
-  if (isPhoto) {
+} else {
+  if (isPhoto || isVideo) {
     likedPostsRef.current.add(String(postId));
   } else {
     likedPostsRef.current.add(Number(postId));
@@ -899,13 +911,18 @@ const handleLike = async (postId: string | number) => {
       ...prev,
       [String(postId)]: Math.max(0, currentCount + (isLiked ? -1 : 1))
     }));
-    if (isPhoto) {
-      const photoId = String(postId).replace("photo_", "");
-      await apiRequest("POST", `/api/photos/${photoId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
-    } else {
-      await apiRequest("POST", `/api/posts/${postId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
-      await refetchLikes();
-    }
+   if (isPhoto) {
+  const photoId = String(postId).replace("photo_", "");
+  await apiRequest("POST", `/api/photos/${photoId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
+} else if (isVideo) {
+  const videoId = String(postId).replace("video_", "");
+  await apiRequest("POST", `/api/videos/${videoId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
+} else {
+  await apiRequest("POST", `/api/posts/${postId}/${isLiked ? "unlike" : "like"}`, { userId: CURRENT_USER_ID });
+}
+
+await refetchLikes();
+queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     pendingLikesRef.current.delete(key);
   };
   const handleShare = async (post: PostWithAuthor) => {
