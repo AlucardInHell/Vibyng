@@ -139,12 +139,12 @@ export default function Points() {
   const [videoCommentInput, setVideoCommentInput] = useState("");
   const [videoLikeCount, setVideoLikeCount] = useState<Record<number, number>>({});
   const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
-    queryKey: ["/api/videos", selectedVideo?.id, "comments"],
-    queryFn: async () => {
-      if (!selectedVideo?.id) return [];
-      const res = await fetch(`/api/videos/${selectedVideo.id}/comments`);
-      return res.json();
-    },
+  queryKey: ["/api/videos", selectedVideo?.id, "comments", CURRENT_USER_ID],
+  queryFn: async () => {
+    if (!selectedVideo?.id) return [];
+    const res = await fetch(`/api/videos/${selectedVideo.id}/comments?userId=${CURRENT_USER_ID}`);
+    return res.json();
+  },
     enabled: !!selectedVideo?.id,
     staleTime: 0,
   });
@@ -1324,9 +1324,27 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                             {(Number(c.author_id) === Number(CURRENT_USER_ID) || Number(selectedVideo.artistId) === Number(CURRENT_USER_ID)) && (
                               <button className="text-xs text-red-400 hover:text-red-600" onClick={async () => { await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`); refetchVideoComments(); }}>🗑️</button>
                             )}
-                            <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500" onClick={async () => { await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like`); refetchVideoComments(); }}>
-                              <Heart className="w-3 h-3" /><span>{c.likes_count ?? 0}</span>
-                            </button>
+                            <button
+  className={`flex items-center gap-1 text-xs ${
+    Number(c.author_id) === Number(CURRENT_USER_ID)
+      ? "opacity-50 cursor-not-allowed text-muted-foreground"
+      : c.likedByMe
+        ? "text-red-500"
+        : "text-muted-foreground hover:text-red-500"
+  }`}
+  disabled={Number(c.author_id) === Number(CURRENT_USER_ID)}
+  onClick={async () => {
+    if (c.likedByMe) {
+      await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/unlike`, { userId: CURRENT_USER_ID });
+    } else {
+      await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like`, { userId: CURRENT_USER_ID });
+    }
+    await refetchVideoComments();
+  }}
+>
+  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+  <span>{c.likes_count ?? 0}</span>
+</button>
                           </div>
                         </div>
                       </div>
