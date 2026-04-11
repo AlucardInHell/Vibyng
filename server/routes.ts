@@ -721,9 +721,26 @@ app.post("/api/photos/:photoId/like", async (req, res) => {
 
   // === VIDEOS ===
   app.get(api.videos.listByArtist.path, async (req, res) => {
-    const videos = await storage.getVideosByArtist(Number(req.params.artistId));
-    res.json(videos);
-  });
+  try {
+    const artistId = Number(req.params.artistId);
+    const result = await db.execute(sql`
+      SELECT
+        id,
+        artist_id AS "artistId",
+        title,
+        video_url AS "videoUrl",
+        thumbnail_url AS "thumbnailUrl",
+        likes_count AS "likesCount",
+        created_at AS "createdAt"
+      FROM artist_videos
+      WHERE artist_id = ${artistId}
+      ORDER BY created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore nel recupero video", detail: err?.message });
+  }
+});
 
   app.post(api.videos.create.path, async (req, res) => {
     try {
@@ -998,9 +1015,26 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   });
 
   app.get("/api/users/:userId/videos", async (req, res) => {
-    const videos = await storage.getVideosByUser(Number(req.params.userId));
-    res.json(videos);
-  });
+  try {
+    const userId = Number(req.params.userId);
+    const result = await db.execute(sql`
+      SELECT
+        id,
+        artist_id AS "artistId",
+        title,
+        video_url AS "videoUrl",
+        thumbnail_url AS "thumbnailUrl",
+        likes_count AS "likesCount",
+        created_at AS "createdAt"
+      FROM artist_videos
+      WHERE artist_id = ${userId}
+      ORDER BY created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore nel recupero video", detail: err?.message });
+  }
+});
 
   app.post("/api/users/:userId/videos", async (req, res) => {
     try {
