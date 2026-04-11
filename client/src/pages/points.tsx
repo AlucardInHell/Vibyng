@@ -1286,7 +1286,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 >
   <Heart className="w-5 h-5" />
   <span>{videoLikeCount[selectedVideo.id] ?? Number((selectedVideo as any).likesCount ?? 0)}</span>
-</button>>
+</button>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
                     onClick={() => {
