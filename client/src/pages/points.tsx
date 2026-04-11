@@ -1281,34 +1281,12 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                 </p>
                 <div className="flex items-center gap-4 mb-4 border-b pb-3">
                   <button
-  className={`flex items-center gap-1 text-sm ${isVideoLiked ? "text-red-500" : "text-muted-foreground"}`}
-  onClick={async () => {
-    const currentCount =
-      videoLikeCount[selectedVideo.id] ??
-      Number((selectedVideo as any).likesCount ?? 0);
-
-    if (isVideoLiked) {
-      await apiRequest("POST", `/api/videos/${selectedVideo.id}/unlike`, { userId: CURRENT_USER_ID });
-      setVideoLikeCount(prev => ({
-        ...prev,
-        [selectedVideo.id]: Math.max(0, currentCount - 1),
-      }));
-    } else {
-      await apiRequest("POST", `/api/videos/${selectedVideo.id}/like`, { userId: CURRENT_USER_ID });
-      setVideoLikeCount(prev => ({
-        ...prev,
-        [selectedVideo.id]: currentCount + 1,
-      }));
-    }
-
-    await refetchVideoLike();
-    queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-  }}
+  className="flex items-center gap-1 text-sm text-muted-foreground opacity-50 cursor-not-allowed"
+  disabled={true}
 >
-  <Heart className={`w-5 h-5 ${isVideoLiked ? "fill-red-500" : ""}`} />
+  <Heart className="w-5 h-5" />
   <span>{videoLikeCount[selectedVideo.id] ?? Number((selectedVideo as any).likesCount ?? 0)}</span>
-</button>
+</button>>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
                     onClick={() => {
