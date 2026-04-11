@@ -628,6 +628,101 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
         </div>
     );
 }
+
+function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAuthorId: number }) {
+  const [newComment, setNewComment] = useState("");
+  const CURRENT_USER_ID_LOCAL = getCurrentUserId();
+
+  const { data: comments = [], refetch } = useQuery<any[]>({
+    queryKey: ["/api/videos", videoId, "comments"],
+    queryFn: async () => {
+      const res = await fetch(`/api/videos/${videoId}/comments`);
+      return res.json();
+    },
+  });
+
+  const handleSubmit = async () => {
+    if (!newComment.trim()) return;
+    await apiRequest("POST", `/api/videos/${videoId}/comments`, {
+      authorId: CURRENT_USER_ID_LOCAL,
+      content: newComment.trim(),
+    });
+    setNewComment("");
+    refetch();
+  };
+
+  return (
+    <div className="border-t pt-3 mt-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Scrivi un commento..."
+          value={newComment}
+          onChange={e => setNewComment(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
+          className="flex-1"
+        />
+        <Button size="icon" onClick={handleSubmit} disabled={newComment.length === 0}>
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {comments.map((c: any) => (
+        <div key={c.id} className="flex gap-2">
+          <Link href={`/artist/${c.author_id}`}>
+            <Avatar className="w-8 h-8 cursor-pointer flex-shrink-0">
+              {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
+              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                {c.display_name?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+
+          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+            <p className="text-sm font-semibold">{c.display_name}</p>
+            <p className="text-sm">{c.content}</p>
+
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs text-muted-foreground">
+                {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+
+              <div className="flex items-center gap-2">
+                {(Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL) || Number(videoAuthorId) === Number(CURRENT_USER_ID_LOCAL)) && (
+                  <button
+                    className="text-xs text-red-400 hover:text-red-600"
+                    onClick={async () => {
+                      await apiRequest("DELETE", `/api/videos/${videoId}/comments/${c.id}`);
+                      refetch();
+                    }}
+                  >
+                    🗑️
+                  </button>
+                )}
+
+                <button
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                  onClick={async () => {
+                    await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/like`);
+                    refetch();
+                  }}
+                >
+                  <Heart className="w-3 h-3" />
+                  <span>{c.likes_count ?? 0}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const [newComment, setNewComment] = useState("");
@@ -777,7 +872,7 @@ export default function Home() {
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const pendingLikesRef = useRef<Set<string>>(new Set());
   const likedPostsRef = useRef<Set<any>>(new Set());
-  const [openComments, setOpenComments] = useState<Set<number>>(new Set());
+  const [openComments, setOpenComments] = useState<Set<string | number>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [searchOpen, setSearchOpen] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
@@ -1157,12 +1252,20 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
               </div>
 
              {openComments.has(post.id) && (
-                String(post.id).startsWith("photo_") ? (
-                  <PhotoComments photoId={Number(String(post.id).replace("photo_", ""))} photoAuthorId={post.authorId} />
-                ) : (
-                  <PostComments postId={post.id as number} postAuthorId={post.authorId} />
-                )
-              )}
+  String(post.id).startsWith("photo_") ? (
+    <PhotoComments
+      photoId={Number(String(post.id).replace("photo_", ""))}
+      photoAuthorId={post.authorId}
+    />
+  ) : String(post.id).startsWith("video_") ? (
+    <VideoComments
+      videoId={Number(String(post.id).replace("video_", ""))}
+      videoAuthorId={post.authorId}
+    />
+  ) : (
+    <PostComments postId={post.id as number} postAuthorId={post.authorId} />
+  )
+)}
             </CardContent>
          </Card>
         </div>
