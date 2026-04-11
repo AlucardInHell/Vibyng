@@ -242,6 +242,7 @@ export default function ArtistProfile() {
 
   const [connectionsOpen, setConnectionsOpen] = useState(false);
   const [connectionsTab, setConnectionsTab] = useState<"followers" | "following">("followers");
+  const [activeTab, setActiveTab] = useState("posts");
 
   const { data: isFollowingData } = useQuery<{ isFollowing: boolean }>({
     queryKey: ["/api/users", currentUserId, "following", artistId],
@@ -574,7 +575,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       )}
 
       {/* Tabs */}
-      <Tabs defaultValue="posts" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="w-full grid grid-cols-6 p-1">
           <TabsTrigger value="posts" className="px-1 text-xs">
             <FileText className="w-4 h-4 sm:mr-1" />
@@ -1172,7 +1173,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       )}
 
       {/* Supporto — solo Artista e non il proprio profilo */}
-      {isArtist && !isOwnProfile && (
+     {isArtist && !isOwnProfile && activeTab !== "songs" && (
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
