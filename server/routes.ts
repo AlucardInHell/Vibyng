@@ -77,6 +77,25 @@ await db.execute(sql`
   CREATE UNIQUE INDEX IF NOT EXISTS video_likes_video_user_idx
   ON video_likes (video_id, user_id)
 `);
+
+await db.execute(sql`
+  ALTER TABLE video_comments
+  ADD COLUMN IF NOT EXISTS likes_count integer DEFAULT 0
+`);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS video_comment_likes (
+    id serial PRIMARY KEY,
+    comment_id integer NOT NULL REFERENCES video_comments(id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS video_comment_likes_comment_user_idx
+  ON video_comment_likes (comment_id, user_id)
+`);
   
   // === USERS ===
   app.get(api.users.artists.path, async (_req, res) => {
@@ -1308,57 +1327,149 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nell'eliminazione" });
     }
   });
-  // === VIDEO COMMENTS ===
-  app.get("/api/videos/:videoId/comments", async (req, res) => {
-    try {
-      const videoId = Number(req.params.videoId);
-      const result = await storage.getVideoComments(videoId);
-      res.json(result);
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel recupero commenti" });
-    }
-  });
+ // === VIDEO COMMENTS ===
+app.get("/api/videos/:videoId/comments", async (req, res) => {
+  try {
+    const videoId = Number(req.params.videoId);
+    const userId = Number(req.query.userId);
 
-  app.post("/api/videos/:videoId/comments", async (req, res) => {
-    try {
-      const videoId = Number(req.params.videoId);
-      const { authorId, content } = req.body;
-      const comment = await storage.createVideoComment({ videoId, authorId, content });
-      res.status(201).json(comment);
-    } catch (err: any) {
-      res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
-    }
-  });
+    const result = await db.execute(sql`
+      SELECT
+        vc.id,
+        vc.video_id,
+        vc.author_id,
+        vc.content,
+        vc.likes_count,
+        vc.created_at,
+        u.display_name,
+        u.avatar_url
+      FROM video_comments vc
+      JOIN users u ON vc.author_id = u.id
+      WHERE vc.video_id = ${videoId}
+      ORDER BY vc.created_at ASC
+    `);
 
-  app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
-    try {
-      const commentId = Number(req.params.commentId);
-      await storage.likeVideoComment(commentId);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel like" });
-    }
-  });
+    const comments = Array.isArray(result.rows) ? result.rows : [];
 
-  app.delete("/api/videos/:videoId/comments/:commentId", async (req, res) => {
-    try {
-      const commentId = Number(req.params.commentId);
-      await storage.deleteVideoComment(commentId);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nell'eliminazione" });
+    if (!userId) {
+      return res.json(comments);
     }
-  });
 
-  app.delete("/api/videos/:videoId", async (req, res) => {
-    try {
-      const videoId = Number(req.params.videoId);
-      await storage.deleteVideo(videoId);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nell'eliminazione video" });
+    const commentsWithLikes = await Promise.all(
+      comments.map(async (c: any) => {
+        const likeResult = await db.execute(sql`
+          SELECT id
+          FROM video_comment_likes
+          WHERE comment_id = ${c.id} AND user_id = ${userId}
+        `);
+
+        return {
+          ...c,
+          likedByMe: likeResult.rows.length > 0,
+        };
+      })
+    );
+
+    res.json(commentsWithLikes);
+  } catch (err: any) {
+    console.error("[video-comments]", err?.message);
+    res.status(400).json({ message: "Errore nel recupero commenti", detail: err?.message });
+  }
+});
+
+app.post("/api/videos/:videoId/comments", async (req, res) => {
+  try {
+    const videoId = Number(req.params.videoId);
+    const { authorId, content } = req.body;
+    const comment = await storage.createVideoComment({ videoId, authorId, content });
+    res.status(201).json(comment);
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
+  }
+});
+
+app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
+  try {
+    const commentId = Number(req.params.commentId);
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId mancante" });
     }
-  });
+
+    const inserted = await db.execute(sql`
+      INSERT INTO video_comment_likes (comment_id, user_id)
+      VALUES (${commentId}, ${userId})
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `);
+
+    if ((inserted.rows?.length ?? 0) > 0) {
+      await db.execute(sql`
+        UPDATE video_comments
+        SET likes_count = COALESCE(likes_count, 0) + 1
+        WHERE id = ${commentId}
+      `);
+    }
+
+    const updated = await db.execute(sql`
+      SELECT likes_count
+      FROM video_comments
+      WHERE id = ${commentId}
+    `);
+
+    res.json({ success: true, likesCount: updated.rows[0]?.likes_count ?? 0 });
+  } catch (err: any) {
+    console.error("[video-comment-like]", err?.message);
+    res.status(400).json({ message: "Errore nel like", detail: err?.message });
+  }
+});
+
+app.post("/api/videos/:videoId/comments/:commentId/unlike", async (req, res) => {
+  try {
+    const commentId = Number(req.params.commentId);
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId mancante" });
+    }
+
+    const deleted = await db.execute(sql`
+      DELETE FROM video_comment_likes
+      WHERE comment_id = ${commentId} AND user_id = ${userId}
+      RETURNING id
+    `);
+
+    if ((deleted.rows?.length ?? 0) > 0) {
+      await db.execute(sql`
+        UPDATE video_comments
+        SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0)
+        WHERE id = ${commentId}
+      `);
+    }
+
+    const updated = await db.execute(sql`
+      SELECT likes_count
+      FROM video_comments
+      WHERE id = ${commentId}
+    `);
+
+    res.json({ success: true, likesCount: updated.rows[0]?.likes_count ?? 0 });
+  } catch (err: any) {
+    console.error("[video-comment-unlike]", err?.message);
+    res.status(400).json({ message: "Errore nel unlike", detail: err?.message });
+  }
+});
+
+app.delete("/api/videos/:videoId/comments/:commentId", async (req, res) => {
+  try {
+    const commentId = Number(req.params.commentId);
+    await storage.deleteVideoComment(commentId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ message: "Errore nell'eliminazione" });
+  }
+});
 // === NOTIFICATIONS ===
   app.get("/api/notifications/:userId", async (req, res) => {
     try {
