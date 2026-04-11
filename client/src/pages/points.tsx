@@ -797,18 +797,6 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                           }
                         }}
                       />
-                      <button
-                        className="text-sm text-primary font-medium px-2"
-                        onClick={async () => {
-                          if (commentInput.trim()) {
-                            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: CURRENT_USER_ID, content: commentInput.trim() });
-                            setCommentInput("");
-                            refetchPhotoComments();
-                          }
-                        }}
-                      >
-                        Invia
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -1359,18 +1347,6 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                       }
                     }}
                   />
-                  <button
-                    className="text-sm text-primary font-medium px-2"
-                    onClick={async () => {
-                      if (videoCommentInput.trim()) {
-                        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, { authorId: CURRENT_USER_ID, content: videoCommentInput.trim() });
-                        setVideoCommentInput("");
-                        refetchVideoComments();
-                      }
-                    }}
-                  >
-                    Invia
-                  </button>
                 </div>
               </div>
             </div>
