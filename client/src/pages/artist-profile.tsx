@@ -1218,7 +1218,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         </Card>
       )}
      {selectedPhoto && (
-  <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
+  <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
     <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
       <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[90dvh] flex flex-col">
         <img
@@ -1366,7 +1366,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             ))}
           </div>
 
-          <div className="mt-auto pt-3 border-t">
+         <div className="sticky bottom-0 mt-auto pt-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] border-t bg-background shrink-0">
             <div className="relative">
               <input
                 className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
