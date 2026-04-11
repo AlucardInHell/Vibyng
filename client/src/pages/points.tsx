@@ -686,122 +686,184 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           )}
 
           {selectedPhoto && (
-            <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
-              <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
-               <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
-                  <img src={selectedPhoto.imageUrl ?? undefined} alt={selectedPhoto.title} className="w-full max-h-[32dvh] sm:max-h-[40vh] object-contain bg-black flex-shrink-0" />
-                  <div className="p-4 flex-1 min-h-0 flex flex-col">
-                   {selectedPhoto.title && selectedPhoto.title !== "Foto" && <p className="font-medium">{selectedPhoto.title}</p>}
-                    <p className="text-xs text-muted-foreground mb-3">
-                    {selectedPhoto.createdAt && (() => {
-  const dateStr = selectedPhoto.createdAt.toString().replace(' ', 'T') + (selectedPhoto.createdAt.toString().includes('Z') ? '' : 'Z');
-  return new Date(dateStr).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-})()}
-                    </p>
-                    <div className="flex items-center gap-4 mb-4 border-b pb-3">
-                     <button
-                        className="flex items-center gap-1 text-sm text-muted-foreground opacity-50 cursor-not-allowed"
-                        disabled={true}
-                      >
-                        <Heart className="w-5 h-5" />
-                        <span>{selectedPhotoLiveData?.likesCount ?? selectedPhoto.likesCount ?? 0}</span>
-                      </button>
-                      <button
-                        className="flex items-center gap-1 text-sm text-muted-foreground"
-                        onClick={() => {
-                          if (navigator.share) {
-                            navigator.share({ title: selectedPhoto.title, text: "Guarda questa foto su Vibyng!" });
-                          } else {
-                            navigator.clipboard.writeText(window.location.href);
-                            toast({ title: "Link copiato!" });
-                          }
-                        }}
-                      >
-                        <Share2 className="w-5 h-5" />
-                        Condividi
-                      </button>
-                     <button
-                        className="flex items-center gap-1 text-sm text-red-500"
-                        onClick={async () => {
-                          try {
-                            await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${selectedPhoto.id}`);
-                            queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-                            queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
-                            setSelectedPhoto(null);
-                            toast({ title: "Foto eliminata" });
-                          } catch {
-                            toast({ title: "Errore", description: "Non è stato possibile eliminare la foto", variant: "destructive" });
-                          }
-                        }}
-                      >
-                        🗑️ 
-                      </button>
-                      <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>✕</button>
-                    </div>
-               <div className="space-y-2 flex-1 min-h-0 overflow-y-auto mb-3">
-                      {photoCommentsList.map((c: any) => (
-                        <div key={c.id} className="flex gap-2">
-                          <Avatar className="w-8 h-8 flex-shrink-0">
-                            {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                            <p className="text-sm font-semibold">{c.display_name}</p>
-                            <p className="text-sm">{c.content}</p>
-                            <div className="flex items-center justify-between mt-1">
-                              <span className="text-xs text-muted-foreground">
-                                {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                              </span>
-                              <div className="flex items-center gap-2">
-                               {(Number(c.author_id) === Number(CURRENT_USER_ID) || Number(selectedPhoto.artistId) === Number(CURRENT_USER_ID)) && (
-                                  <button
-                                    className="text-xs text-red-400 hover:text-red-600"
-                                    onClick={async () => {
-                                      await apiRequest("DELETE", `/api/photos/${selectedPhoto.id}/comments/${c.id}`);
-                                      refetchPhotoComments();
-                                    }}
-                                  >🗑️</button>
-                                )}
-                               <button
-                                  className={`flex items-center gap-1 text-xs ${Number(c.author_id) === CURRENT_USER_ID ? "opacity-50 cursor-not-allowed text-muted-foreground" : c.likedByMe ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
-                                  disabled={Number(c.author_id) === CURRENT_USER_ID}
-                                  onClick={async () => {
-                                    if (c.likedByMe) {
-                                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${CURRENT_USER_ID}`);
-                                    } else {
-                                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${CURRENT_USER_ID}`);
-                                    }
-                                    await refetchPhotoComments();
-                                  }}
-                                >
-                                  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
-                                  <span>{c.likes_count ?? 0}</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="mt-auto flex gap-2 pt-3 border-t">
-                        placeholder="Scrivi un commento..."
-                        value={commentInput}
-                        onChange={e => setCommentInput(e.target.value)}
-                        onKeyDown={async e => {
-                          if (e.key === "Enter" && commentInput.trim()) {
-                            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, { authorId: CURRENT_USER_ID, content: commentInput.trim() });
-                            setCommentInput("");
+  <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
+    <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
+      <div
+        className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[90dvh] flex flex-col"
+        onClick={e => e.stopPropagation()}
+      >
+        <img
+          src={selectedPhoto.imageUrl ?? undefined}
+          alt={selectedPhoto.title}
+          className="w-full max-h-[32dvh] sm:max-h-[40vh] object-contain bg-black flex-shrink-0"
+        />
+
+        <div className="p-4 flex-1 min-h-0 flex flex-col">
+          {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
+            <p className="font-medium">{selectedPhoto.title}</p>
+          )}
+
+          <p className="text-xs text-muted-foreground mb-3">
+            {selectedPhoto.createdAt && (() => {
+              const dateStr =
+                selectedPhoto.createdAt.toString().replace(" ", "T") +
+                (selectedPhoto.createdAt.toString().includes("Z") ? "" : "Z");
+              return new Date(dateStr).toLocaleDateString("it-IT", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+            })()}
+          </p>
+
+          <div className="flex items-center gap-4 mb-4 border-b pb-3">
+            <button
+              className="flex items-center gap-1 text-sm text-muted-foreground opacity-50 cursor-not-allowed"
+              disabled={true}
+            >
+              <Heart className="w-5 h-5" />
+              <span>{selectedPhotoLiveData?.likesCount ?? selectedPhoto.likesCount ?? 0}</span>
+            </button>
+
+            <button
+              className="flex items-center gap-1 text-sm text-muted-foreground"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: selectedPhoto.title, text: "Guarda questa foto su Vibyng!" });
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast({ title: "Link copiato!" });
+                }
+              }}
+            >
+              <Share2 className="w-5 h-5" />
+              Condividi
+            </button>
+
+            <button
+              className="flex items-center gap-1 text-sm text-red-500"
+              onClick={async () => {
+                try {
+                  await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${selectedPhoto.id}`);
+                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+                  setSelectedPhoto(null);
+                  toast({ title: "Foto eliminata" });
+                } catch {
+                  toast({
+                    title: "Errore",
+                    description: "Non è stato possibile eliminare la foto",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              🗑️
+            </button>
+
+            <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>
+              ✕
+            </button>
+          </div>
+
+          <div className="space-y-2 flex-1 min-h-0 overflow-y-auto mb-3">
+            {photoCommentsList.map((c: any) => (
+              <div key={c.id} className="flex gap-2">
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                    {c.display_name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+                  <p className="text-sm font-semibold">{c.display_name}</p>
+                  <p className="text-sm">{c.content}</p>
+
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {c.created_at &&
+                        new Date(c.created_at).toLocaleDateString("it-IT", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {(Number(c.author_id) === Number(CURRENT_USER_ID) ||
+                        Number(selectedPhoto.artistId) === Number(CURRENT_USER_ID)) && (
+                        <button
+                          className="text-xs text-red-400 hover:text-red-600"
+                          onClick={async () => {
+                            await apiRequest("DELETE", `/api/photos/${selectedPhoto.id}/comments/${c.id}`);
                             refetchPhotoComments();
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      )}
+
+                      <button
+                        className={`flex items-center gap-1 text-xs ${
+                          Number(c.author_id) === CURRENT_USER_ID
+                            ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                            : c.likedByMe
+                              ? "text-red-500"
+                              : "text-muted-foreground hover:text-red-500"
+                        }`}
+                        disabled={Number(c.author_id) === CURRENT_USER_ID}
+                        onClick={async () => {
+                          if (c.likedByMe) {
+                            await apiRequest(
+                              "POST",
+                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${CURRENT_USER_ID}`
+                            );
+                          } else {
+                            await apiRequest(
+                              "POST",
+                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${CURRENT_USER_ID}`
+                            );
                           }
+                          await refetchPhotoComments();
                         }}
-                      />
+                      >
+                        <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+                        <span>{c.likes_count ?? 0}</span>
+                      </button>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
+
+          <div className="mt-auto flex gap-2 pt-3 border-t">
+            <input
+              className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
+              placeholder="Scrivi un commento..."
+              value={commentInput}
+              onChange={e => setCommentInput(e.target.value)}
+              onKeyDown={async e => {
+                if (e.key === "Enter" && commentInput.trim()) {
+                  await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+                    authorId: CURRENT_USER_ID,
+                    content: commentInput.trim(),
+                  });
+                  setCommentInput("");
+                  refetchPhotoComments();
+                }
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
         </TabsContent>
         <TabsContent value="videos" className="mt-4">
           <p className="text-sm text-muted-foreground mb-2">I tuoi video salvati ({myVideos.length})</p>
