@@ -123,12 +123,12 @@ export default function ArtistProfile() {
   const [videoCommentInput, setVideoCommentInput] = useState("");
   const [videoLikeCount, setVideoLikeCount] = useState<Record<number, number>>({});
   const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
-    queryKey: ["/api/videos", selectedVideo?.id, "comments"],
-    queryFn: async () => {
-      if (!selectedVideo?.id) return [];
-      const res = await fetch(`/api/videos/${selectedVideo.id}/comments`);
-      return res.json();
-    },
+  queryKey: ["/api/videos", selectedVideo?.id, "comments", currentUserId],
+  queryFn: async () => {
+    if (!selectedVideo?.id) return [];
+    const res = await fetch(`/api/videos/${selectedVideo.id}/comments?userId=${currentUserId}`);
+    return res.json();
+  },
     enabled: !!selectedVideo,
   });
   const { data: videoLikeData, refetch: refetchVideoLike } = useQuery<{ liked: boolean }>({
@@ -820,16 +820,68 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                 </div>
                 <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
                   {videoCommentsList.map((c: any) => (
-                    <div key={c.id} className="flex gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
-                      </div>
-                      <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                        <p className="text-sm font-semibold">{c.display_name}</p>
-                        <p className="text-sm">{c.content}</p>
-                      </div>
-                    </div>
-                  ))}
+  <div key={c.id} className="flex gap-2">
+    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+      {c.avatar_url ? (
+        <img src={c.avatar_url} alt={c.display_name} className="w-full h-full object-cover" />
+      ) : (
+        <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
+      )}
+    </div>
+
+    <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+      <p className="text-sm font-semibold">{c.display_name}</p>
+      <p className="text-sm">{c.content}</p>
+
+      <div className="flex items-center justify-between mt-1">
+        <span className="text-xs text-muted-foreground">
+          {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+
+        <div className="flex items-center gap-2">
+          {(Number(c.author_id) === Number(currentUserId) || Number(artistId) === Number(currentUserId)) && (
+            <button
+              className="text-xs text-red-400 hover:text-red-600"
+              onClick={async () => {
+                await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`);
+                await refetchVideoComments();
+              }}
+            >
+              🗑️
+            </button>
+          )}
+
+          <button
+            className={`flex items-center gap-1 text-xs ${
+              Number(c.author_id) === Number(currentUserId)
+                ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                : c.likedByMe
+                  ? "text-red-500"
+                  : "text-muted-foreground hover:text-red-500"
+            }`}
+            disabled={Number(c.author_id) === Number(currentUserId)}
+            onClick={async () => {
+              if (c.likedByMe) {
+                await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/unlike`, { userId: currentUserId });
+              } else {
+                await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like`, { userId: currentUserId });
+              }
+              await refetchVideoComments();
+            }}
+          >
+            <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+            <span>{c.likes_count ?? 0}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+))}
                 </div>
                 <div className="flex gap-2">
                   <input
