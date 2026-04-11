@@ -137,7 +137,7 @@ export default function Points() {
   const [pendingVideoText, setPendingVideoText] = useState("");
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [videoCommentInput, setVideoCommentInput] = useState("");
-  const [videoLikes, setVideoLikes] = useState<Record<number, boolean>>({});
+  const [videoLikeCount, setVideoLikeCount] = useState<Record<number, number>>({});
   const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
     queryKey: ["/api/videos", selectedVideo?.id, "comments"],
     queryFn: async () => {
@@ -148,6 +148,18 @@ export default function Points() {
     enabled: !!selectedVideo?.id,
     staleTime: 0,
   });
+  const { data: videoLikeData, refetch: refetchVideoLike } = useQuery<{ liked: boolean }>({
+  queryKey: ["/api/videos", selectedVideo?.id, "liked", CURRENT_USER_ID],
+  queryFn: async () => {
+    if (!selectedVideo?.id) return { liked: false };
+    const res = await fetch(`/api/videos/${selectedVideo.id}/liked/${CURRENT_USER_ID}`);
+    return res.json();
+  },
+  enabled: !!selectedVideo?.id,
+  staleTime: 0,
+});
+
+const isVideoLiked = videoLikeData?.liked ?? false;
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   
@@ -158,7 +170,7 @@ export default function Points() {
   const { data: followedArtists = [] } = useQuery<User[]>({
     queryKey: ["/api/users", CURRENT_USER_ID, "following"],
   });
-const { data: followersData } = useQuery<{ count: number }>({
+  const { data: followersData } = useQuery<{ count: number }>({
     queryKey: [`/api/artists/${CURRENT_USER_ID}/followers/count`],
   });
   const { data: myPhotos = [] } = useQuery<ArtistPhoto[]>({
@@ -210,7 +222,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     staleTime: 0,
   });
   
-const { data: mySongs = [] } = useQuery<any[]>({
+  const { data: mySongs = [] } = useQuery<any[]>({
     queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`],
     enabled: true,
   });
@@ -809,7 +821,13 @@ const { data: mySongs = [] } = useQuery<any[]>({
           {myVideos.length > 0 ? (
             <div className="flex flex-col gap-3">
               {myVideos.map((video) => (
-                <Card key={video.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedVideo(video)} data-testid={`card-video-${video.id}`}>
+                <Card key={video.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => {
+  setSelectedVideo(video);
+  setVideoLikeCount(prev => ({
+    ...prev,
+    [video.id]: Number((video as any).likesCount ?? 0),
+  }));
+}}
                   <div className="relative">
                     {video.videoUrl ? (
                       <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
@@ -1258,12 +1276,34 @@ const { data: mySongs = [] } = useQuery<any[]>({
                 </p>
                 <div className="flex items-center gap-4 mb-4 border-b pb-3">
                   <button
-                    className={`flex items-center gap-1 text-sm ${videoLikes[selectedVideo.id] ? "text-red-500" : "text-muted-foreground"}`}
-                    onClick={() => setVideoLikes(prev => ({ ...prev, [selectedVideo.id]: !prev[selectedVideo.id] }))}
-                  >
-                    <Heart className={`w-5 h-5 ${videoLikes[selectedVideo.id] ? "fill-red-500" : ""}`} />
-                    {videoLikes[selectedVideo.id] ? "Mi piace" : "Like"}
-                  </button>
+  className={`flex items-center gap-1 text-sm ${isVideoLiked ? "text-red-500" : "text-muted-foreground"}`}
+  onClick={async () => {
+    const currentCount =
+      videoLikeCount[selectedVideo.id] ??
+      Number((selectedVideo as any).likesCount ?? 0);
+
+    if (isVideoLiked) {
+      await apiRequest("POST", `/api/videos/${selectedVideo.id}/unlike`, { userId: CURRENT_USER_ID });
+      setVideoLikeCount(prev => ({
+        ...prev,
+        [selectedVideo.id]: Math.max(0, currentCount - 1),
+      }));
+    } else {
+      await apiRequest("POST", `/api/videos/${selectedVideo.id}/like`, { userId: CURRENT_USER_ID });
+      setVideoLikeCount(prev => ({
+        ...prev,
+        [selectedVideo.id]: currentCount + 1,
+      }));
+    }
+
+    await refetchVideoLike();
+    queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+  }}
+>
+  <Heart className={`w-5 h-5 ${isVideoLiked ? "fill-red-500" : ""}`} />
+  <span>{videoLikeCount[selectedVideo.id] ?? Number((selectedVideo as any).likesCount ?? 0)}</span>
+</button>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
                     onClick={() => {
