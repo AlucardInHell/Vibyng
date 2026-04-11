@@ -1173,7 +1173,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       )}
 
       {/* Supporto — solo Artista e non il proprio profilo */}
-     {isArtist && !isOwnProfile && activeTab !== "songs" && (
+    {isArtist && !isOwnProfile && activeTab !== "songs" && activeTab !== "messages" && (
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
