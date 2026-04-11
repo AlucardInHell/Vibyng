@@ -820,35 +820,40 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           <p className="text-sm text-muted-foreground mb-2">I tuoi video salvati ({myVideos.length})</p>
           {myVideos.length > 0 ? (
             <div className="flex flex-col gap-3">
-              {myVideos.map((video) => (
-                <Card key={video.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => {
-  setSelectedVideo(video);
-  setVideoLikeCount(prev => ({
-    ...prev,
-    [video.id]: Number((video as any).likesCount ?? 0),
-  }));
-}}
-                  <div className="relative">
-                    {video.videoUrl ? (
-                      <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
-                    ) : (
-                      <>
-                        <img src={video.thumbnailUrl ?? undefined} alt={video.title} className="w-full h-40 object-cover" />
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                          <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                            <Play className="w-6 h-6 text-primary ml-1" />
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                 <CardContent className="p-3">
-                    {video.title && video.title !== "Video" && (
-                      <h4 className="font-medium" data-testid={`text-video-title-${video.id}`}>{video.title}</h4>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+     {myVideos.map((video) => (
+  <Card
+    key={video.id}
+    className="overflow-hidden hover-elevate cursor-pointer"
+    onClick={() => {
+      setSelectedVideo(video);
+      setVideoLikeCount(prev => ({
+        ...prev,
+        [video.id]: Number((video as any).likesCount ?? 0),
+      }));
+    }}
+    data-testid={`card-video-${video.id}`}
+  >
+    <div className="relative">
+      {video.videoUrl ? (
+        <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
+      ) : (
+        <>
+          <img src={video.thumbnailUrl ?? undefined} alt={video.title} className="w-full h-40 object-cover" />
+          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+              <Play className="w-6 h-6 text-primary ml-1" />
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+    <CardContent className="p-3">
+      {video.title && video.title !== "Video" && (
+        <h4 className="font-medium" data-testid={`text-video-title-${video.id}`}>{video.title}</h4>
+      )}
+    </CardContent>
+  </Card>
+))}
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">Nessun video. Usa l'icona video per caricare!</p>
