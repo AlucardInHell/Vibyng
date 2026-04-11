@@ -121,7 +121,7 @@ export default function ArtistProfile() {
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [videoCommentInput, setVideoCommentInput] = useState("");
-  const [videoLikes, setVideoLikes] = useState<Record<number, boolean>>({});
+  const [videoLikeCount, setVideoLikeCount] = useState<Record<number, number>>({});
   const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
     queryKey: ["/api/videos", selectedVideo?.id, "comments"],
     queryFn: async () => {
@@ -131,6 +131,18 @@ export default function ArtistProfile() {
     },
     enabled: !!selectedVideo,
   });
+  const { data: videoLikeData, refetch: refetchVideoLike } = useQuery<{ liked: boolean }>({
+  queryKey: ["/api/videos", selectedVideo?.id, "liked", currentUserId],
+  queryFn: async () => {
+    if (!selectedVideo?.id) return { liked: false };
+    const res = await fetch(`/api/videos/${selectedVideo.id}/liked/${currentUserId}`);
+    return res.json();
+  },
+  enabled: !!selectedVideo?.id,
+  staleTime: 0,
+});
+
+  const isVideoLiked = videoLikeData?.liked ?? false;
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
@@ -712,7 +724,13 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           <div className="flex flex-col gap-3">
             {videos && videos.length > 0 ? (
               videos.map((video) => (
-               <Card key={video.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedVideo(video)}>
+               <Card key={video.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => {
+  setSelectedVideo(video);
+  setVideoLikeCount(prev => ({
+    ...prev,
+    [video.id]: Number((video as any).likesCount ?? 0),
+  }));
+}}
                   <div className="relative">
                     {video.videoUrl ? (
                       <video src={video.videoUrl} controls className="w-full h-40 object-cover" />
@@ -748,17 +766,38 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
                 <div className="flex items-center gap-4 mb-4 border-b pb-3">
-                  <button
-                    className={`flex items-center gap-1 text-sm ${videoLikes[selectedVideo.id] ? "text-red-500" : "text-muted-foreground"}`}
-                    onClick={async () => {
-                      const isLiked = videoLikes[selectedVideo.id];
-                      setVideoLikes(prev => ({ ...prev, [selectedVideo.id]: !isLiked }));
-                      await apiRequest("POST", `/api/videos/${selectedVideo.id}/${isLiked ? "unlike" : "like"}`, { userId: currentUserId });
-                    }}
-                  >
-                    <Heart className={`w-5 h-5 ${videoLikes[selectedVideo.id] ? "fill-red-500" : ""}`} />
-                    <span>{videoLikes[selectedVideo.id] ? "Mi piace" : "Like"}</span>
-                  </button>
+                 <button
+  className={`flex items-center gap-1 text-sm ${isVideoLiked ? "text-red-500" : "text-muted-foreground"} ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
+  disabled={artistId === currentUserId}
+  onClick={async () => {
+    if (artistId === currentUserId) return;
+
+    const currentCount =
+      videoLikeCount[selectedVideo.id] ??
+      Number((selectedVideo as any).likesCount ?? 0);
+
+    if (isVideoLiked) {
+      await apiRequest("POST", `/api/videos/${selectedVideo.id}/unlike`, { userId: currentUserId });
+      setVideoLikeCount(prev => ({
+        ...prev,
+        [selectedVideo.id]: Math.max(0, currentCount - 1),
+      }));
+    } else {
+      await apiRequest("POST", `/api/videos/${selectedVideo.id}/like`, { userId: currentUserId });
+      setVideoLikeCount(prev => ({
+        ...prev,
+        [selectedVideo.id]: currentCount + 1,
+      }));
+    }
+
+    await refetchVideoLike();
+    queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "videos"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+  }}
+>
+  <Heart className={`w-5 h-5 ${isVideoLiked ? "fill-red-500" : ""}`} />
+  <span>{videoLikeCount[selectedVideo.id] ?? Number((selectedVideo as any).likesCount ?? 0)}</span>
+</button>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
                     onClick={() => {
