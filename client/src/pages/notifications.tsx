@@ -21,8 +21,29 @@ function getNotificationIcon(type: string) {
     case "like": return <Heart className="w-4 h-4 text-red-500" />;
     case "follow": return <UserPlus className="w-4 h-4 text-primary" />;
     case "comment": return <MessageCircle className="w-4 h-4 text-blue-500" />;
+    case "message": return <MessageCircle className="w-4 h-4 text-blue-500" />;
     case "new_post": return <Music className="w-4 h-4 text-primary" />;
     default: return <Bell className="w-4 h-4 text-muted-foreground" />;
+  }
+}
+
+type StoryReplyNotificationPayload = {
+  type: "story_reply_notification";
+  senderName: string;
+  storyId: number;
+  storyImageUrl: string;
+  storyContent: string;
+  reply: string;
+};
+
+function parseStoryReplyNotification(message: string | null | undefined): StoryReplyNotificationPayload | null {
+  if (!message || !message.startsWith("__STORY_REPLY_NOTIFICATION__")) return null;
+
+  try {
+    const parsed = JSON.parse(message.replace("__STORY_REPLY_NOTIFICATION__", ""));
+    return parsed?.type === "story_reply_notification" ? parsed : null;
+  } catch {
+    return null;
   }
 }
 
@@ -130,12 +151,48 @@ export default function Notifications() {
                   <div className="mt-1">
                     {getNotificationIcon(notification.type)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">{notification.message}</p>
-                    <span className="text-xs text-muted-foreground">
-                      {timeAgo(notification.createdAt)}
-                    </span>
-                  </div>
+                 <div className="flex-1 min-w-0">
+  {(() => {
+    const storyReplyNotification = parseStoryReplyNotification(notification.message);
+
+    if (storyReplyNotification) {
+      return (
+        <div className="space-y-2">
+          <p className="text-sm">
+            <span className="font-medium">{storyReplyNotification.senderName}</span> ha risposto alla tua storia
+          </p>
+
+          <div className="flex items-start gap-3">
+            {storyReplyNotification.storyImageUrl && (
+              <img
+                src={storyReplyNotification.storyImageUrl}
+                alt="Anteprima storia"
+                className="w-14 h-20 rounded-md object-cover flex-shrink-0"
+              />
+            )}
+
+            <div className="min-w-0">
+              {storyReplyNotification.storyContent && (
+                <p className="text-xs text-muted-foreground mb-1">
+                  {storyReplyNotification.storyContent}
+                </p>
+              )}
+              <p className="text-sm">
+                {storyReplyNotification.reply}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return <p className="text-sm">{notification.message}</p>;
+  })()}
+
+  <span className="text-xs text-muted-foreground">
+    {timeAgo(notification.createdAt)}
+  </span>
+</div>
                   {!notification.isRead && (
                     <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
                   )}
