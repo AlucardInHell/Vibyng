@@ -96,6 +96,20 @@ await db.execute(sql`
   CREATE UNIQUE INDEX IF NOT EXISTS video_comment_likes_comment_user_idx
   ON video_comment_likes (comment_id, user_id)
 `);
+
+ await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS story_likes (
+    id serial PRIMARY KEY,
+    story_id integer NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS story_likes_story_user_idx
+  ON story_likes (story_id, user_id)
+`);
   
   // === USERS ===
   app.get(api.users.artists.path, async (_req, res) => {
@@ -1126,11 +1140,42 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   });
   
   // === STORIES ===
-  app.get("/api/stories", async (_req, res) => {
+  app.get("/api/stories", async (req, res) => {
+  try {
+    const currentUserId = Number(req.query.userId) || 0;
     const activeStories = await storage.getActiveStories();
-    res.json(activeStories);
-  });
 
+    const storiesWithLikes = await Promise.all(
+      activeStories.map(async (story) => {
+        const likesResult = await db.execute(sql`
+          SELECT COUNT(*)::int AS count
+          FROM story_likes
+          WHERE story_id = ${story.id}
+        `);
+
+        const likedResult = currentUserId
+          ? await db.execute(sql`
+              SELECT id
+              FROM story_likes
+              WHERE story_id = ${story.id} AND user_id = ${currentUserId}
+              LIMIT 1
+            `)
+          : { rows: [] };
+
+        return {
+          ...story,
+          likesCount: Number(likesResult.rows[0]?.count ?? 0),
+          likedByMe: currentUserId ? likedResult.rows.length > 0 : false,
+        };
+      })
+    );
+
+    res.json(storiesWithLikes);
+  } catch (err: any) {
+    console.error("[stories-list]", err?.message);
+    res.status(400).json({ message: "Errore nel recupero delle storie", detail: err?.message });
+  }
+});
   app.get("/api/users/:userId/stories", async (req, res) => {
     const userStories = await storage.getStoriesByUser(Number(req.params.userId));
     res.json(userStories);
@@ -1166,6 +1211,67 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   } catch (err: any) {
     console.error("[delete-story]", err?.message);
     res.status(400).json({ message: "Errore nell'eliminazione della storia", detail: err?.message });
+  }
+});
+
+app.post("/api/stories/:storyId/like", async (req, res) => {
+  try {
+    const storyId = Number(req.params.storyId);
+    const { userId } = req.body;
+
+    if (!storyId || !userId) {
+      return res.status(400).json({ message: "storyId o userId mancanti" });
+    }
+
+    await db.execute(sql`
+      INSERT INTO story_likes (story_id, user_id)
+      VALUES (${storyId}, ${userId})
+      ON CONFLICT DO NOTHING
+    `);
+
+    const likesResult = await db.execute(sql`
+      SELECT COUNT(*)::int AS count
+      FROM story_likes
+      WHERE story_id = ${storyId}
+    `);
+
+    res.json({
+      success: true,
+      likesCount: Number(likesResult.rows[0]?.count ?? 0),
+    });
+  } catch (err: any) {
+    console.error("[story-like]", err?.message);
+    res.status(400).json({ message: "Errore nel like alla storia", detail: err?.message });
+  }
+});
+
+app.post("/api/stories/:storyId/unlike", async (req, res) => {
+  try {
+    const storyId = Number(req.params.storyId);
+    const { userId } = req.body;
+
+    if (!storyId || !userId) {
+      return res.status(400).json({ message: "storyId o userId mancanti" });
+    }
+
+    await db.execute(sql`
+      DELETE FROM story_likes
+      WHERE story_id = ${storyId} AND user_id = ${userId}
+    `);
+
+    const likesResult = await db.execute(sql`
+      SELECT COUNT(*)::int AS count
+      FROM story_likes
+      WHERE story_id = ${storyId}
+    `);
+
+    res.json({
+      success: true,
+      likesCount: Number(likesResult.rows[0]?.count ?? 0),
+    });
+  } catch (err: any) {
+    console.error("[story-unlike]", err?.message);
+    res.status(400).json({ message: "Errore nell'unlike alla storia", detail: err?.message });
   }
 });
   // === EVENTS ===
