@@ -1459,17 +1459,20 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
     }
   });
   app.post("/api/photos/:photoId/comments", async (req, res) => {
-    try {
-      const photoId = Number(req.params.photoId);
-      const { authorId, content } = req.body;
-      console.log(`[photo-comment] photoId=${photoId} authorId=${authorId} content=${content}`);
-      const comment = await storage.createPhotoComment({ photoId, authorId, content });
-      res.status(201).json(comment);
-    } catch (err: any) {
-      console.error(`[photo-comment] error:`, err?.message);
-      res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
-    }
-  });
+  try {
+    const photoId = Number(req.params.photoId);
+    const { authorId, content } = req.body;
+    console.log(`[photo-comment] photoId=${photoId} authorId=${authorId} content=${content}`);
+
+    const comment = await storage.createPhotoComment({ photoId, authorId, content });
+    await sendMentionNotifications(String(content ?? ""), Number(authorId));
+
+    res.status(201).json(comment);
+  } catch (err: any) {
+    console.error(`[photo-comment] error:`, err?.message);
+    res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
+  }
+});
 
   app.post("/api/photos/:photoId/comments/:commentId/like/:userId", async (req, res) => {
     try {
@@ -1581,7 +1584,10 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
   try {
     const videoId = Number(req.params.videoId);
     const { authorId, content } = req.body;
+
     const comment = await storage.createVideoComment({ videoId, authorId, content });
+    await sendMentionNotifications(String(content ?? ""), Number(authorId));
+
     res.status(201).json(comment);
   } catch (err: any) {
     res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
