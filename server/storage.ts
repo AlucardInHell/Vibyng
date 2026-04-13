@@ -59,9 +59,10 @@ export interface IStorage {
   getCommentsCount(postId: number): Promise<number>;
 
   // Stories
-  getActiveStories(): Promise<(Story & { user: User })[]>;
-  getStoriesByUser(userId: number): Promise<Story[]>;
-  createStory(story: InsertStory): Promise<Story>;
+getActiveStories(): Promise<(Story & { user: User })[]>;
+getStoriesByUser(userId: number): Promise<Story[]>;
+createStory(story: InsertStory): Promise<Story>;
+deleteStory(storyId: number, userId: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -639,10 +640,19 @@ async deleteVideo(videoId: number): Promise<void> {
       .orderBy(desc(stories.createdAt));
   }
 
-  async createStory(insertStory: InsertStory): Promise<Story> {
-    const [story] = await db.insert(stories).values(insertStory).returning();
-    return story;
-  }
+ async createStory(insertStory: InsertStory): Promise<Story> {
+  const [story] = await db.insert(stories).values(insertStory).returning();
+  return story;
+}
+
+async deleteStory(storyId: number, userId: number): Promise<boolean> {
+  const deleted = await db
+    .delete(stories)
+    .where(and(eq(stories.id, storyId), eq(stories.userId, userId)))
+    .returning({ id: stories.id });
+
+  return deleted.length > 0;
+}
 }
 
 export const storage = new DatabaseStorage();
