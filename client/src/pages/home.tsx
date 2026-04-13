@@ -103,6 +103,7 @@ function Stories() {
   const [isPaused, setIsPaused] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
   
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -226,13 +227,16 @@ function Stories() {
   };
 
   const closeStory = () => {
-    setActiveStory(null);
-    setActiveStoryIndex(0);
-    setProgress(0);
-    if (progressInterval.current) {
-      clearInterval(progressInterval.current);
-    }
-  };
+  setActiveStory(null);
+  setActiveStoryIndex(0);
+  setProgress(0);
+  setReplyText("");
+  setIsPaused(false);
+  setIsReplying(false);
+  if (progressInterval.current) {
+    clearInterval(progressInterval.current);
+  }
+};
 
   const nextStory = () => {
     if (!activeStory) return;
