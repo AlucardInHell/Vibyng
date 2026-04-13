@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus,import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus, X, ChevronLeft, ChevronRight, Search, ImageIcon, Loader2, Trash2 } from "lucide-react"; X, ChevronLeft, ChevronRight, Search, ImageIcon, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus,import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus, X, ChevronLeft, ChevronRight, Search, ImageIcon, Loader2, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
