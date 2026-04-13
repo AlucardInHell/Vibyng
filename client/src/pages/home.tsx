@@ -114,11 +114,33 @@ function Stories() {
   
   const storiesData = groupStoriesByUser(storiesFromDb);
   
- const createStoryMutation = useMutation({
+  const createStoryMutation = useMutation({
   mutationFn: async (data: { userId: number; imageUrl: string; content: string }) => {
     return await apiRequest("POST", "/api/stories", data);
   },
 });
+
+  const deleteStoryMutation = useMutation({
+  mutationFn: async (storyId: number) => {
+    return await apiRequest("DELETE", `/api/stories/${storyId}/${CURRENT_USER_ID}`);
+  },
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+    closeStory();
+    toast({
+      title: "Storia eliminata",
+      description: "La storia è stata rimossa con successo",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Errore",
+      description: "Impossibile eliminare la storia",
+      variant: "destructive",
+    });
+  },
+});
+  
   useEffect(() => {
     if (activeStory && !isPaused) {
       setProgress(0);
@@ -374,22 +396,11 @@ function Stories() {
   </Link>
 
   <div className="flex items-center gap-2">
-    {activeStory.userId === CURRENT_USER_ID && activeStory.stories[activeStoryIndex]?.id && (
-      <button
-        onClick={() => deleteStoryMutation.mutate(activeStory.stories[activeStoryIndex].id)}
-        className="text-white text-xs px-2 py-1 rounded bg-black/30 hover:bg-black/50"
-        data-testid="button-delete-story"
-      >
-        Elimina
-      </button>
-    )}
-
     <button onClick={closeStory} className="text-white p-1" data-testid="button-close-story">
       <X className="w-6 h-6" />
     </button>
   </div>
 </div>
-
               <div className="absolute bottom-24 left-0 right-0 px-4">
                 <p className="text-white text-lg font-medium drop-shadow-lg">
                   {activeStory.stories[activeStoryIndex]?.content}
@@ -443,15 +454,25 @@ function Stories() {
               )}
 
               <button
-                onClick={prevStory}
-                className="absolute left-0 top-16 bottom-20 w-1/3"
-                data-testid="button-prev-story"
-              />
-              <button
-                onClick={nextStory}
-                className="absolute right-0 top-16 bottom-20 w-2/3"
-                data-testid="button-next-story"
-              />
+  onClick={prevStory}
+  className="absolute left-0 top-16 bottom-20 w-1/3"
+  data-testid="button-prev-story"
+/>
+<button
+  onClick={nextStory}
+  className="absolute right-0 top-16 bottom-20 w-2/3"
+  data-testid="button-next-story"
+/>
+
+{activeStory.userId === CURRENT_USER_ID && activeStory.stories[activeStoryIndex]?.id && (
+  <button
+    onClick={() => deleteStoryMutation.mutate(activeStory.stories[activeStoryIndex].id)}
+    className="absolute bottom-4 right-4 z-20 text-white bg-black/40 hover:bg-black/60 rounded-full p-3"
+    data-testid="button-delete-story"
+  >
+    <Trash2 className="w-5 h-5" />
+  </button>
+)}
             </div>
           )}
         </DialogContent>
@@ -753,7 +774,7 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const [newComment, setNewComment] = useState("");
 
- const { data: comments, isLoading } = useQuery<CommentWithAuthor[]>({
+  const { data: comments, isLoading } = useQuery<CommentWithAuthor[]>({
     queryKey: ["/api/posts", postId, "comments"],
     queryFn: async () => {
       const res = await fetch(`/api/posts/${postId}/comments?userId=${CURRENT_USER_ID}`);
