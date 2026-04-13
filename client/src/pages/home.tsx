@@ -103,6 +103,7 @@ function Stories() {
   const [isPaused, setIsPaused] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
+  const [isReplyFocused, setIsReplyFocused] = useState(false);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
   
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -195,7 +196,7 @@ function Stories() {
 });
  
   useEffect(() => {
-    if (activeStory && !isPaused && !isReplying) {
+    if (activeStory && !isPaused && !isReplying && !isReplyFocused) {
       setProgress(0);
       const startTime = Date.now();
       
@@ -232,6 +233,7 @@ function Stories() {
   setReplyText("");
   setIsPaused(false);
   setIsReplying(false);
+  setIsReplyFocused(false);
   if (progressInterval.current) {
     clearInterval(progressInterval.current);
   }
@@ -418,6 +420,7 @@ function Stories() {
 
     setReplyText("");
     setIsReplying(false);
+    setIsReplyFocused(false);
     setIsPaused(false);
   } catch {
     toast({
@@ -541,9 +544,13 @@ function Stories() {
     setReplyText(value);
     setIsReplying(value.trim().length > 0);
   }}
-  onFocus={() => setIsPaused(true)}
+  onFocus={() => {
+    setIsPaused(true);
+    setIsReplyFocused(true);
+  }}
   onBlur={() => {
     setIsPaused(false);
+    setIsReplyFocused(false);
     setIsReplying(replyText.trim().length > 0);
   }}
   className="flex-1 bg-transparent border-white/30 text-white placeholder:text-white/50 rounded-full"
