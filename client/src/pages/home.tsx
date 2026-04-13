@@ -123,6 +123,17 @@ function Stories() {
 });
   
   const storiesData = groupStoriesByUser(storiesFromDb);
+  useEffect(() => {
+  if (!activeStory) return;
+
+  const refreshedStoryGroup = storiesData.find(
+    (story) => story.userId === activeStory.userId
+  );
+
+  if (refreshedStoryGroup) {
+    setActiveStory(refreshedStoryGroup);
+  }
+}, [storiesData, activeStory?.userId]);
   
   const createStoryMutation = useMutation({
   mutationFn: async (data: { userId: number; imageUrl: string; content: string }) => {
@@ -294,8 +305,27 @@ function Stories() {
   const currentStory = activeStory.stories[activeStoryIndex];
   if (!currentStory?.id) return;
 
+  const wasLiked = currentStory.likedByMe;
+
+  setActiveStory((prev) => {
+    if (!prev) return prev;
+
+    return {
+      ...prev,
+      stories: prev.stories.map((story, index) =>
+        index === activeStoryIndex
+          ? {
+              ...story,
+              likedByMe: !wasLiked,
+              likesCount: Math.max(0, (story.likesCount ?? 0) + (wasLiked ? -1 : 1)),
+            }
+          : story
+      ),
+    };
+  });
+
   try {
-    if (currentStory.likedByMe) {
+    if (wasLiked) {
       await apiRequest("POST", `/api/stories/${currentStory.id}/unlike`, {
         userId: CURRENT_USER_ID,
       });
@@ -307,6 +337,23 @@ function Stories() {
 
     await queryClient.invalidateQueries({ queryKey: ["/api/stories", CURRENT_USER_ID] });
   } catch {
+    setActiveStory((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        stories: prev.stories.map((story, index) =>
+          index === activeStoryIndex
+            ? {
+                ...story,
+                likedByMe: wasLiked,
+                likesCount: Math.max(0, (story.likesCount ?? 0) + (wasLiked ? 1 : -1)),
+              }
+            : story
+        ),
+      };
+    });
+
     toast({
       title: "Errore",
       description: "Non è stato possibile aggiornare il like",
