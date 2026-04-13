@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus, X, ChevronLeft, ChevronRight, Search, ImageIcon, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus,import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus, X, ChevronLeft, ChevronRight, Search, ImageIcon, Loader2, Trash2 } from "lucide-react"; X, ChevronLeft, ChevronRight, Search, ImageIcon, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -115,34 +115,8 @@ function Stories() {
   const storiesData = groupStoriesByUser(storiesFromDb);
   
   const createStoryMutation = useMutation({
-    mutationFn: async (data: { userId: number; imageUrl: string; content: string }) => {
-      return apiRequest('POST', '/api/stories', data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/stories'] });
-      toast({
-        title: "Storia pubblicata!",
-        description: "La tua storia sarà visibile per 24 ore",
-      });
-
-const deleteStoryMutation = useMutation({
-  mutationFn: async (storyId: number) => {
-    return apiRequest("DELETE", `/api/stories/${storyId}`, { userId: CURRENT_USER_ID });
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
-    closeStory();
-    toast({
-      title: "Storia eliminata",
-      description: "La storia è stata rimossa con successo",
-    });
-  },
-  onError: () => {
-    toast({
-      title: "Errore",
-      description: "Impossibile eliminare la storia",
-      variant: "destructive",
-    });
+  mutationFn: async (data: { userId: number; imageUrl: string; content: string }) => {
+    return await apiRequest("POST", "/api/stories", data);
   },
 });
       
@@ -249,17 +223,19 @@ const deleteStoryMutation = useMutation({
     }
   };
   
-  const handlePublishStory = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "Seleziona un'immagine",
-        description: "Devi selezionare un'immagine per la storia",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+ const handlePublishStory = async () => {
+  if (!selectedFile) {
+    toast({
+      title: "Seleziona un'immagine",
+      description: "Devi selezionare un'immagine per la storia",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
     const uploadResult = await uploadFile(selectedFile);
+
     if (!uploadResult) {
       toast({
         title: "Errore upload",
@@ -268,13 +244,32 @@ const deleteStoryMutation = useMutation({
       });
       return;
     }
-    
-    createStoryMutation.mutate({
+
+    await createStoryMutation.mutateAsync({
       userId: CURRENT_USER_ID,
       imageUrl: uploadResult.objectPath,
       content: storyContent,
     });
-  };
+
+    await queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+
+    toast({
+      title: "Storia pubblicata!",
+      description: "La tua storia sarà visibile per 24 ore",
+    });
+
+    setShowAddDialog(false);
+    setStoryContent("");
+    setPreviewImage(null);
+    setSelectedFile(null);
+  } catch {
+    toast({
+      title: "Errore",
+      description: "Impossibile pubblicare la storia",
+      variant: "destructive",
+    });
+  }
+};
 
   const handleLikeStory = (storyId: number) => {
     if (liked.has(storyId)) {
