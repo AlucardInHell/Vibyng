@@ -1146,6 +1146,28 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       res.status(400).json({ message: "Errore nella creazione della storia" });
     }
   });
+
+  app.delete("/api/stories/:storyId", async (req, res) => {
+  try {
+    const storyId = Number(req.params.storyId);
+    const { userId } = req.body;
+
+    if (!storyId || !userId) {
+      return res.status(400).json({ message: "storyId o userId mancanti" });
+    }
+
+    const deleted = await storage.deleteStory(storyId, Number(userId));
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Storia non trovata o non autorizzato" });
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error("[delete-story]", err?.message);
+    res.status(400).json({ message: "Errore nell'eliminazione della storia", detail: err?.message });
+  }
+});
   // === EVENTS ===
   app.get("/api/artists/:artistId/events", async (req, res) => {
     try {
