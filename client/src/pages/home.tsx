@@ -102,6 +102,7 @@ function Stories() {
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [replyText, setReplyText] = useState("");
+  const [isReplying, setIsReplying] = useState(false);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
   
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -192,9 +193,9 @@ function Stories() {
     });
   },
 });
-  
+ 
   useEffect(() => {
-    if (activeStory && !isPaused) {
+    if (activeStory && !isPaused && !isReplying) {
       setProgress(0);
       const startTime = Date.now();
       
@@ -413,6 +414,8 @@ function Stories() {
     });
 
     setReplyText("");
+    setIsReplying(false);
+    setIsPaused(false);
   } catch {
     toast({
       title: "Errore",
@@ -527,15 +530,22 @@ function Stories() {
 
              {activeStory.userId !== CURRENT_USER_ID && (
                 <div className="absolute bottom-4 left-0 right-0 px-3 flex items-center gap-2">
-                  <Input
-                    placeholder={`Rispondi a ${activeStory.displayName}...`}
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onFocus={() => setIsPaused(true)}
-                    onBlur={() => setIsPaused(false)}
-                    className="flex-1 bg-transparent border-white/30 text-white placeholder:text-white/50 rounded-full"
-                    data-testid="input-story-reply"
-                  />
+                 <Input
+  placeholder={`Rispondi a ${activeStory.displayName}...`}
+  value={replyText}
+  onChange={(e) => {
+    const value = e.target.value;
+    setReplyText(value);
+    setIsReplying(value.trim().length > 0);
+  }}
+  onFocus={() => setIsPaused(true)}
+  onBlur={() => {
+    setIsPaused(false);
+    setIsReplying(replyText.trim().length > 0);
+  }}
+  className="flex-1 bg-transparent border-white/30 text-white placeholder:text-white/50 rounded-full"
+  data-testid="input-story-reply"
+/>
                   {replyText.trim() ? (
                     <Button 
                       size="icon" 
