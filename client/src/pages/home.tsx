@@ -47,11 +47,13 @@ interface StoryUserGroup {
   avatarUrl: string | null;
   hasUnseenStory: boolean;
   stories: {
-    id: number;
-    content: string | null;
-    imageUrl: string;
-    timestamp: string;
-  }[];
+  id: number;
+  content: string | null;
+  imageUrl: string;
+  timestamp: string;
+  likesCount: number;
+  likedByMe: boolean;
+}[];
 }
 
 function formatStoryTime(date: Date): string {
@@ -78,11 +80,13 @@ function groupStoriesByUser(stories: StoryWithUser[]): StoryUserGroup[] {
       };
     }
     groups[story.userId].stories.push({
-      id: story.id,
-      content: story.content,
-      imageUrl: story.imageUrl,
-      timestamp: formatStoryTime(new Date(story.createdAt!)),
-    });
+  id: story.id,
+  content: story.content,
+  imageUrl: story.imageUrl,
+  timestamp: formatStoryTime(new Date(story.createdAt!)),
+  likesCount: Number((story as any).likesCount ?? 0),
+  likedByMe: Boolean((story as any).likedByMe),
+});
   }
   
   return Object.values(groups);
@@ -98,7 +102,6 @@ function Stories() {
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [replyText, setReplyText] = useState("");
-  const [liked, setLiked] = useState<Set<number>>(new Set());
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
   
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -109,9 +112,9 @@ function Stories() {
   const { uploadFile, isUploading } = useUpload();
   
   const { data: storiesFromDb = [] } = useQuery<StoryWithUser[]>({
-  queryKey: ["/api/stories"],
+  queryKey: ["/api/stories", CURRENT_USER_ID],
   queryFn: async () => {
-    const res = await fetch(`/api/stories?t=${Date.now()}`);
+    const res = await fetch(`/api/stories?userId=${CURRENT_USER_ID}&t=${Date.now()}`);
     return res.json();
   },
   refetchInterval: 5000,
@@ -285,21 +288,32 @@ function Stories() {
   }
 };
 
-  const handleLikeStory = (storyId: number) => {
-    if (liked.has(storyId)) {
-      setLiked(prev => {
-        const next = new Set(Array.from(prev));
-        next.delete(storyId);
-        return next;
+ const handleLikeStory = async () => {
+  if (!activeStory) return;
+
+  const currentStory = activeStory.stories[activeStoryIndex];
+  if (!currentStory?.id) return;
+
+  try {
+    if (currentStory.likedByMe) {
+      await apiRequest("POST", `/api/stories/${currentStory.id}/unlike`, {
+        userId: CURRENT_USER_ID,
       });
     } else {
-      setLiked(prev => new Set(Array.from(prev).concat(storyId)));
-      toast({
-        title: "Ti piace!",
-        description: "Hai messo mi piace alla storia",
+      await apiRequest("POST", `/api/stories/${currentStory.id}/like`, {
+        userId: CURRENT_USER_ID,
       });
     }
-  };
+
+    await queryClient.invalidateQueries({ queryKey: ["/api/stories", CURRENT_USER_ID] });
+  } catch {
+    toast({
+      title: "Errore",
+      description: "Non è stato possibile aggiornare il like",
+      variant: "destructive",
+    });
+  }
+};
 
   const handleSendReply = () => {
     if (replyText.trim() && activeStory) {
@@ -436,25 +450,22 @@ function Stories() {
                       <Send className="w-5 h-5" />
                     </Button>
                   ) : (
-                    <Button 
-  size="icon" 
-  variant="ghost" 
-  onClick={() => {
-    const storyId = activeStory?.stories[activeStoryIndex]?.id;
-    if (!storyId) return;
-    handleLikeStory(storyId);
-  }}
-  className="text-white"
+                    <Button
+  variant="ghost"
+  onClick={handleLikeStory}
+  className="text-white flex items-center gap-1 px-2"
   data-testid="button-like-story"
 >
   <Heart
     className={`w-6 h-6 ${
-      activeStory?.stories[activeStoryIndex]?.id &&
-      liked.has(activeStory.stories[activeStoryIndex].id)
+      activeStory?.stories[activeStoryIndex]?.likedByMe
         ? "fill-red-500 text-red-500"
         : ""
     }`}
   />
+  <span className="text-sm">
+    {activeStory?.stories[activeStoryIndex]?.likesCount ?? 0}
+  </span>
 </Button>
                   )}
                 </div>
