@@ -103,7 +103,6 @@ function Stories() {
   const [isPaused, setIsPaused] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isReplying, setIsReplying] = useState(false);
-  const [isReplying, setIsReplying] = useState(false);
   const progressInterval = useRef<NodeJS.Timeout | null>(null);
   
   const [showAddDialog, setShowAddDialog] = useState(false);
