@@ -114,26 +114,11 @@ function Stories() {
   
   const storiesData = groupStoriesByUser(storiesFromDb);
   
-  const createStoryMutation = useMutation({
+ const createStoryMutation = useMutation({
   mutationFn: async (data: { userId: number; imageUrl: string; content: string }) => {
     return await apiRequest("POST", "/api/stories", data);
   },
 });
-      
-      setShowAddDialog(false);
-      setStoryContent("");
-      setPreviewImage(null);
-      setSelectedFile(null);
-    },
-    onError: () => {
-      toast({
-        title: "Errore",
-        description: "Impossibile pubblicare la storia",
-        variant: "destructive",
-      });
-    },
-  });
-
   useEffect(() => {
     if (activeStory && !isPaused) {
       setProgress(0);
