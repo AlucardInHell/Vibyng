@@ -1140,10 +1140,22 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   });
   
   // === STORIES ===
-  app.get("/api/stories", async (req, res) => {
+app.get("/api/stories", async (req, res) => {
   try {
     const currentUserId = Number(req.query.userId) || 0;
     const activeStories = await storage.getActiveStories();
+
+    const likedRows = currentUserId
+      ? await db.execute(sql`
+          SELECT story_id
+          FROM story_likes
+          WHERE user_id = ${currentUserId}
+        `)
+      : { rows: [] };
+
+    const likedStoryIds = new Set(
+      (likedRows.rows || []).map((row: any) => Number(row.story_id))
+    );
 
     const storiesWithLikes = await Promise.all(
       activeStories.map(async (story) => {
@@ -1153,19 +1165,10 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
           WHERE story_id = ${story.id}
         `);
 
-        const likedResult = currentUserId
-          ? await db.execute(sql`
-              SELECT id
-              FROM story_likes
-              WHERE story_id = ${story.id} AND user_id = ${currentUserId}
-              LIMIT 1
-            `)
-          : { rows: [] };
-
         return {
           ...story,
           likesCount: Number(likesResult.rows[0]?.count ?? 0),
-          likedByMe: currentUserId ? likedResult.rows.length > 0 : false,
+          likedByMe: likedStoryIds.has(Number(story.id)),
         };
       })
     );
@@ -1176,6 +1179,7 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     res.status(400).json({ message: "Errore nel recupero delle storie", detail: err?.message });
   }
 });
+  
   app.get("/api/users/:userId/stories", async (req, res) => {
     const userStories = await storage.getStoriesByUser(Number(req.params.userId));
     res.json(userStories);
