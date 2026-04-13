@@ -372,7 +372,7 @@ function Stories() {
       });
     }
 
-    await queryClient.invalidateQueries({ queryKey: ["/api/stories", CURRENT_USER_ID] });
+    await queryClient.refetchQueries({ queryKey: ["/api/stories", CURRENT_USER_ID] });
   } catch {
     setActiveStory((prev) => {
       if (!prev) return prev;
