@@ -393,15 +393,34 @@ function Stories() {
   }
 };
 
-  const handleSendReply = () => {
-    if (replyText.trim() && activeStory) {
-      toast({
-        title: "Messaggio inviato",
-        description: `Hai risposto a ${activeStory.displayName}`,
-      });
-      setReplyText("");
-    }
-  };
+ const handleSendReply = async () => {
+  if (!activeStory) return;
+
+  const currentStory = activeStory.stories[activeStoryIndex];
+  const trimmedReply = replyText.trim();
+
+  if (!currentStory?.id || !trimmedReply) return;
+
+  try {
+    await apiRequest("POST", `/api/stories/${currentStory.id}/reply`, {
+      senderId: CURRENT_USER_ID,
+      content: trimmedReply,
+    });
+
+    toast({
+      title: "Messaggio inviato",
+      description: `Hai risposto a ${activeStory.displayName}`,
+    });
+
+    setReplyText("");
+  } catch {
+    toast({
+      title: "Errore",
+      description: "Non è stato possibile inviare la risposta",
+      variant: "destructive",
+    });
+  }
+};
 
   return (
     <>
