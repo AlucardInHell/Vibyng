@@ -124,6 +124,28 @@ function Stories() {
         title: "Storia pubblicata!",
         description: "La tua storia sarà visibile per 24 ore",
       });
+
+const deleteStoryMutation = useMutation({
+  mutationFn: async (storyId: number) => {
+    return apiRequest("DELETE", `/api/stories/${storyId}`, { userId: CURRENT_USER_ID });
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
+    closeStory();
+    toast({
+      title: "Storia eliminata",
+      description: "La storia è stata rimossa con successo",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Errore",
+      description: "Impossibile eliminare la storia",
+      variant: "destructive",
+    });
+  },
+});
+      
       setShowAddDialog(false);
       setStoryContent("");
       setPreviewImage(null);
@@ -357,23 +379,36 @@ function Stories() {
               </div>
 
               <div className="absolute top-7 left-0 right-0 flex items-center justify-between px-3 pt-2">
-                <Link href={`/artist/${activeStory.userId}`} onClick={closeStory}>
-                  <div className="flex items-center gap-2">
-                    <Avatar className="w-9 h-9 border-2 border-white">
-                      <AvatarFallback className="bg-white/20 text-white text-sm">
-                        {activeStory.displayName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-white text-sm font-semibold">{activeStory.displayName}</span>
-                      <span className="text-white/70 text-xs">{activeStory.stories[activeStoryIndex]?.timestamp}</span>
-                    </div>
-                  </div>
-                </Link>
-                <button onClick={closeStory} className="text-white p-1" data-testid="button-close-story">
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+  <Link href={`/artist/${activeStory.userId}`} onClick={closeStory}>
+    <div className="flex items-center gap-2">
+      <Avatar className="w-9 h-9 border-2 border-white">
+        <AvatarFallback className="bg-white/20 text-white text-sm">
+          {activeStory.displayName.charAt(0)}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex flex-col">
+        <span className="text-white text-sm font-semibold">{activeStory.displayName}</span>
+        <span className="text-white/70 text-xs">{activeStory.stories[activeStoryIndex]?.timestamp}</span>
+      </div>
+    </div>
+  </Link>
+
+  <div className="flex items-center gap-2">
+    {activeStory.userId === CURRENT_USER_ID && activeStory.stories[activeStoryIndex]?.id && (
+      <button
+        onClick={() => deleteStoryMutation.mutate(activeStory.stories[activeStoryIndex].id)}
+        className="text-white text-xs px-2 py-1 rounded bg-black/30 hover:bg-black/50"
+        data-testid="button-delete-story"
+      >
+        Elimina
+      </button>
+    )}
+
+    <button onClick={closeStory} className="text-white p-1" data-testid="button-close-story">
+      <X className="w-6 h-6" />
+    </button>
+  </div>
+</div>
 
               <div className="absolute bottom-24 left-0 right-0 px-4">
                 <p className="text-white text-lg font-medium drop-shadow-lg">
