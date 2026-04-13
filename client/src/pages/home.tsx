@@ -9,7 +9,7 @@ import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, Externa
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { Post, User, Comment, Story } from "@shared/schema";
 import {
   Dialog,
@@ -122,18 +122,49 @@ function Stories() {
   refetchOnWindowFocus: true,
 });
   
-  const storiesData = groupStoriesByUser(storiesFromDb);
+  const storiesData = useMemo(() => groupStoriesByUser(storiesFromDb), [storiesFromDb]);
   useEffect(() => {
   if (!activeStory) return;
+
+  const currentStoryId = activeStory.stories[activeStoryIndex]?.id;
+  if (!currentStoryId) return;
 
   const refreshedStoryGroup = storiesData.find(
     (story) => story.userId === activeStory.userId
   );
 
-  if (refreshedStoryGroup) {
-    setActiveStory(refreshedStoryGroup);
+  if (!refreshedStoryGroup) {
+    closeStory();
+    return;
   }
-}, [storiesData, activeStory?.userId]);
+
+  const refreshedIndex = refreshedStoryGroup.stories.findIndex(
+    (story) => story.id === currentStoryId
+  );
+
+  if (refreshedIndex === -1) {
+    setActiveStory(refreshedStoryGroup);
+    return;
+  }
+
+  const currentStory = activeStory.stories[activeStoryIndex];
+  const updatedStory = refreshedStoryGroup.stories[refreshedIndex];
+
+  const hasChanged =
+    currentStory?.likedByMe !== updatedStory?.likedByMe ||
+    currentStory?.likesCount !== updatedStory?.likesCount ||
+    currentStory?.content !== updatedStory?.content ||
+    currentStory?.imageUrl !== updatedStory?.imageUrl ||
+    activeStory.stories.length !== refreshedStoryGroup.stories.length;
+
+  if (hasChanged) {
+    setActiveStory(refreshedStoryGroup);
+
+    if (refreshedIndex !== activeStoryIndex) {
+      setActiveStoryIndex(refreshedIndex);
+    }
+  }
+}, [storiesData]);
   
   const createStoryMutation = useMutation({
   mutationFn: async (data: { userId: number; imageUrl: string; content: string }) => {
