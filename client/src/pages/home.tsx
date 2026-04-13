@@ -109,8 +109,15 @@ function Stories() {
   const { uploadFile, isUploading } = useUpload();
   
   const { data: storiesFromDb = [] } = useQuery<StoryWithUser[]>({
-    queryKey: ['/api/stories'],
-  });
+  queryKey: ["/api/stories"],
+  queryFn: async () => {
+    const res = await fetch(`/api/stories?t=${Date.now()}`);
+    return res.json();
+  },
+  refetchInterval: 5000,
+  staleTime: 0,
+  refetchOnWindowFocus: true,
+});
   
   const storiesData = groupStoriesByUser(storiesFromDb);
   
