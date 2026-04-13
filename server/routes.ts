@@ -1147,16 +1147,16 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     }
   });
 
-  app.delete("/api/stories/:storyId", async (req, res) => {
+  app.delete("/api/stories/:storyId/:userId", async (req, res) => {
   try {
     const storyId = Number(req.params.storyId);
-    const { userId } = req.body;
+    const userId = Number(req.params.userId);
 
     if (!storyId || !userId) {
       return res.status(400).json({ message: "storyId o userId mancanti" });
     }
 
-    const deleted = await storage.deleteStory(storyId, Number(userId));
+    const deleted = await storage.deleteStory(storyId, userId);
 
     if (!deleted) {
       return res.status(404).json({ message: "Storia non trovata o non autorizzato" });
