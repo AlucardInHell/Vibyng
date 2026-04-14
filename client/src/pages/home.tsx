@@ -20,6 +20,7 @@ import {
 import { useUpload } from "@/hooks/use-upload";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
+import { MentionText } from "@/components/mention-text";
 
 const studioImage = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80";
 const djImage = "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&q=80";
@@ -766,7 +767,9 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
               </Link>
               <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                 <p className="text-sm font-semibold">{c.display_name}</p>
-                <p className="text-sm">{c.content}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={c.content} />
+</p>
         <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-muted-foreground">
                     {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -878,7 +881,9 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
 
           <div className="flex-1 bg-muted rounded-lg px-3 py-2">
             <p className="text-sm font-semibold">{c.display_name}</p>
-            <p className="text-sm">{c.content}</p>
+            <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={c.content} />
+</p>
 
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-muted-foreground">
@@ -1025,7 +1030,9 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
               </Link>
               <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                 <p className="text-sm font-semibold">{comment.author.displayName}</p>
-                <p className="text-sm">{comment.content}</p>
+                <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={comment.content} />
+</p>
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-xs text-muted-foreground">
                     {comment.createdAt && new Date(comment.createdAt).toLocaleDateString("it-IT", {
@@ -1410,7 +1417,9 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
             )}
           </CardHeader>
             <CardContent className="pt-0">
-              <p className="text-sm mb-3" data-testid={`text-content-${post.id}`}>{post.content}</p>
+              <p className="text-sm mb-3 whitespace-pre-wrap break-words" data-testid={`text-content-${post.id}`}>
+  <MentionText text={post.content} />
+</p>
               {post.mediaUrl && (
                 <div className="mb-3 rounded-lg overflow-hidden">
                   {post.mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
