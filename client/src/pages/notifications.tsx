@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Bell, Heart, UserPlus, MessageCircle, Music, Check } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { MentionText } from "@/components/mention-text";
 import { useToast } from "@/hooks/use-toast";
 import type { Notification } from "@shared/schema";
 
@@ -172,21 +173,25 @@ export default function Notifications() {
             )}
 
             <div className="min-w-0">
-              {storyReplyNotification.storyContent && (
-                <p className="text-xs text-muted-foreground mb-1">
-                  {storyReplyNotification.storyContent}
-                </p>
-              )}
-              <p className="text-sm">
-                {storyReplyNotification.reply}
-              </p>
+             {storyReplyNotification.storyContent && (
+  <p className="text-xs text-muted-foreground mb-1 whitespace-pre-wrap break-words">
+    <MentionText text={storyReplyNotification.storyContent} />
+  </p>
+)}
+              <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={storyReplyNotification.reply} />
+</p>
             </div>
           </div>
         </div>
       );
     }
 
-    return <p className="text-sm">{notification.message}</p>;
+   return (
+  <p className="text-sm whitespace-pre-wrap break-words">
+    <MentionText text={notification.message} />
+  </p>
+);
   })()}
 
   <span className="text-xs text-muted-foreground">
