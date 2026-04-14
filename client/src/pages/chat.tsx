@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Send, MessageCircle } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { MentionText } from "@/components/mention-text";
 import type { User, Message } from "@shared/schema";
 
 function getCurrentUserId(): number {
@@ -181,21 +182,34 @@ useEffect(() => {
             </p>
 
             {storyReply.storyContent && (
-              <p className={`text-xs mb-2 ${isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                {storyReply.storyContent}
-              </p>
-            )}
+  <p className={`text-xs mb-2 whitespace-pre-wrap break-words ${isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+    <MentionText
+      text={storyReply.storyContent}
+      mentionClassName={isCurrentUser ? "underline font-semibold cursor-pointer text-primary-foreground" : "text-primary underline font-semibold cursor-pointer"}
+    />
+  </p>
+)}
 
-            <p className="text-sm">{storyReply.reply}</p>
+            <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText
+    text={storyReply.reply}
+    mentionClassName={isCurrentUser ? "underline font-semibold cursor-pointer text-primary-foreground" : "text-primary underline font-semibold cursor-pointer"}
+  />
+</p>
           </div>
         </div>
       );
     }
 
     return (
-      <div className="px-4 py-2">
-        <p className="text-sm">{msg.content}</p>
-      </div>
+     <div className="px-4 py-2">
+  <p className="text-sm whitespace-pre-wrap break-words">
+    <MentionText
+      text={msg.content}
+      mentionClassName={isCurrentUser ? "underline font-semibold cursor-pointer text-primary-foreground" : "text-primary underline font-semibold cursor-pointer"}
+    />
+  </p>
+</div>
     );
   })()}
 
