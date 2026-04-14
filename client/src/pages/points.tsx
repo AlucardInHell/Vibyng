@@ -100,7 +100,8 @@ export default function Points() {
   const { mentionQuery: commentMentionQuery, showMentions: showCommentMentions, handleTextChange: handleCommentTextChange, insertMention: insertCommentMention, closeMentions: closeCommentMentions } = useMention();
   const { mentionQuery: photoMentionQuery, showMentions: showPhotoMentions, handleTextChange: handlePhotoTextChange, insertMention: insertPhotoMention, closeMentions: closePhotoMentions } = useMention();
   const { mentionQuery: videoMentionQuery, showMentions: showVideoMentions, handleTextChange: handleVideoTextChange, insertMention: insertVideoMention, closeMentions: closeVideoMentions } = useMention();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { mentionQuery: photoCommentMentionQuery, showMentions: showPhotoCommentMentions, handleTextChange: handlePhotoCommentTextChange, insertMention: insertPhotoCommentMention, closeMentions: closePhotoCommentMentions } = useMention();
+  const { mentionQuery: videoCommentMentionQuery, showMentions: showVideoCommentMentions, handleTextChange: handleVideoCommentTextChange, insertMention: insertVideoCommentMention, closeMentions: closeVideoCommentMentions } = useMention();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
@@ -841,24 +842,38 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             ))}
           </div>
 
-          <div className="sticky bottom-0 mt-auto flex gap-2 pt-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] border-t bg-background shrink-0">
-            <input
-              className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
-              placeholder="Scrivi un commento..."
-              value={commentInput}
-              onChange={e => setCommentInput(e.target.value)}
-              onKeyDown={async e => {
-                if (e.key === "Enter" && commentInput.trim()) {
-                  await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-                    authorId: CURRENT_USER_ID,
-                    content: commentInput.trim(),
-                  });
-                  setCommentInput("");
-                  refetchPhotoComments();
-                }
-              }}
-            />
-          </div>
+          <div className="sticky bottom-0 mt-auto pt-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] border-t bg-background shrink-0">
+  <div className="relative">
+    <input
+      className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
+      placeholder="Scrivi un commento..."
+      value={commentInput}
+      onChange={e => {
+        setCommentInput(e.target.value);
+        handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+      }}
+      onKeyDown={async e => {
+        if (e.key === "Enter" && commentInput.trim()) {
+          await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+            authorId: CURRENT_USER_ID,
+            content: commentInput.trim(),
+          });
+          setCommentInput("");
+          closePhotoCommentMentions();
+          refetchPhotoComments();
+        }
+      }}
+    />
+    <MentionDropdown
+      query={photoCommentMentionQuery}
+      visible={showPhotoCommentMentions}
+      onSelect={(username) => {
+        setCommentInput(insertPhotoCommentMention(commentInput, username));
+        closePhotoCommentMentions();
+      }}
+    />
+  </div>
+</div>
         </div>
       </div>
     </div>
@@ -1412,21 +1427,36 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                     </div>
                   ))}
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
-                    placeholder="Scrivi un commento..."
-                    value={videoCommentInput}
-                    onChange={e => setVideoCommentInput(e.target.value)}
-                    onKeyDown={async e => {
-                      if (e.key === "Enter" && videoCommentInput.trim()) {
-                        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, { authorId: CURRENT_USER_ID, content: videoCommentInput.trim() });
-                        setVideoCommentInput("");
-                        refetchVideoComments();
-                      }
-                    }}
-                  />
-                </div>
+                <div className="relative">
+  <input
+    className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
+    placeholder="Scrivi un commento..."
+    value={videoCommentInput}
+    onChange={e => {
+      setVideoCommentInput(e.target.value);
+      handleVideoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+    }}
+    onKeyDown={async e => {
+      if (e.key === "Enter" && videoCommentInput.trim()) {
+        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
+          authorId: CURRENT_USER_ID,
+          content: videoCommentInput.trim(),
+        });
+        setVideoCommentInput("");
+        closeVideoCommentMentions();
+        refetchVideoComments();
+      }
+    }}
+  />
+  <MentionDropdown
+    query={videoCommentMentionQuery}
+    visible={showVideoCommentMentions}
+    onSelect={(username) => {
+      setVideoCommentInput(insertVideoCommentMention(videoCommentInput, username));
+      closeVideoCommentMentions();
+    }}
+  />
+</div>
               </div>
             </div>
           </div>
