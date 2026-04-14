@@ -438,23 +438,23 @@ app.post("/api/uploads/avatar", async (req, res) => {
 });
   
   app.post(api.posts.create.path, async (req, res) => {
-    try {
-      const input = api.posts.create.input.parse(req.body);
-      const post = await storage.createPost(input);
-      res.status(201).json(post);
-      res.status(201).json(post);
-await sendMentionNotifications(post.content, post.authorId);
-      
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
-        });
-      }
-      throw err;
+  try {
+    const input = api.posts.create.input.parse(req.body);
+    const post = await storage.createPost(input);
+
+    await sendMentionNotifications(String(post.content ?? ""), Number(post.authorId));
+
+    res.status(201).json(post);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        message: err.errors[0].message,
+        field: err.errors[0].path.join('.'),
+      });
     }
-  });
+    throw err;
+  }
+});
 app.get("/api/posts", async (req, res) => {
     try {
       const userId = req.query.userId ? Number(req.query.userId) : null;
@@ -652,20 +652,23 @@ app.get("/api/posts", async (req, res) => {
   });
 
   app.post(api.photos.create.path, async (req, res) => {
-    try {
-      const input = api.photos.create.input.parse(req.body);
-      const photo = await storage.createPhoto(input);
-      res.status(201).json(photo);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
-        });
-      }
-      throw err;
+  try {
+    const input = api.photos.create.input.parse(req.body);
+    const photo = await storage.createPhoto(input);
+
+    await sendMentionNotifications(String(input.title ?? ""), Number(input.artistId));
+
+    res.status(201).json(photo);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        message: err.errors[0].message,
+        field: err.errors[0].path.join('.'),
+      });
     }
-  });
+    throw err;
+  }
+});
 
 app.post("/api/photos/:photoId/like", async (req, res) => {
   try {
@@ -776,20 +779,23 @@ app.post("/api/photos/:photoId/like", async (req, res) => {
 });
 
   app.post(api.videos.create.path, async (req, res) => {
-    try {
-      const input = api.videos.create.input.parse(req.body);
-      const video = await storage.createVideo(input);
-      res.status(201).json(video);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
-        });
-      }
-      throw err;
+  try {
+    const input = api.videos.create.input.parse(req.body);
+    const video = await storage.createVideo(input);
+
+    await sendMentionNotifications(String(input.title ?? ""), Number(input.artistId));
+
+    res.status(201).json(video);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        message: err.errors[0].message,
+        field: err.errors[0].path.join('.'),
+      });
     }
-  });
+    throw err;
+  }
+});
 
 app.post("/api/videos/:videoId/like", async (req, res) => {
   try {
@@ -1011,18 +1017,31 @@ app.get("/api/users/:userId/followers", async (req, res) => {
     res.json(photos);
   });
 
- app.post("/api/users/:userId/photos", async (req, res) => {
-    try {
-      const { title, imageUrl, description } = req.body;
-      const photo = await storage.createPhoto({ artistId: Number(req.params.userId), title: title || null, imageUrl, description: description || null });
-      res.status(201).json(photo);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: err.errors[0].message });
-      }
-     res.status(400).json({ message: "Errore nel salvare la foto" });
+app.post("/api/users/:userId/photos", async (req, res) => {
+  try {
+    const { title, imageUrl, description } = req.body;
+    const userId = Number(req.params.userId);
+
+    const photo = await storage.createPhoto({
+      artistId: userId,
+      title: title || null,
+      imageUrl,
+      description: description || null,
+    });
+
+    await sendMentionNotifications(
+      [title, description].filter(Boolean).join(" "),
+      userId
+    );
+
+    res.status(201).json(photo);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: err.errors[0].message });
     }
-  });
+    res.status(400).json({ message: "Errore nel salvare la foto" });
+  }
+});
 app.delete("/api/posts/:postId", async (req, res) => {
     try {
       const postId = Number(req.params.postId);
@@ -1069,18 +1088,28 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   }
 });
 
-  app.post("/api/users/:userId/videos", async (req, res) => {
-    try {
-      const input = videoInputSchema.parse(req.body);
-      const video = await storage.createVideo({ artistId: Number(req.params.userId), title: input.title, videoUrl: input.videoUrl, thumbnailUrl: input.thumbnailUrl || null });
-      res.status(201).json(video);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: err.errors[0].message });
-      }
-      res.status(400).json({ message: "Errore nel salvare il video" });
+ app.post("/api/users/:userId/videos", async (req, res) => {
+  try {
+    const input = videoInputSchema.parse(req.body);
+    const userId = Number(req.params.userId);
+
+    const video = await storage.createVideo({
+      artistId: userId,
+      title: input.title,
+      videoUrl: input.videoUrl,
+      thumbnailUrl: input.thumbnailUrl || null,
+    });
+
+    await sendMentionNotifications(String(input.title ?? ""), userId);
+
+    res.status(201).json(video);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: err.errors[0].message });
     }
-  });
+    res.status(400).json({ message: "Errore nel salvare il video" });
+  }
+});
 
  // === MESSAGES ===
   app.get("/api/messages/unread/:userId", async (req, res) => {
