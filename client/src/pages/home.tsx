@@ -21,6 +21,7 @@ import { useUpload } from "@/hooks/use-upload";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
+import { MentionText } from "@/components/mention-text";
 
 const studioImage = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80";
 const djImage = "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&q=80";
@@ -529,11 +530,14 @@ function Stories() {
     </button>
   </div>
 </div>
-              <div className="absolute bottom-24 left-0 right-0 px-4">
-                <p className="text-white text-lg font-medium drop-shadow-lg">
-                  {activeStory.stories[activeStoryIndex]?.content}
-                </p>
-              </div>
+             <div className="absolute bottom-24 left-0 right-0 px-4">
+  <p className="text-white text-lg font-medium drop-shadow-lg whitespace-pre-wrap break-words">
+    <MentionText
+      text={activeStory.stories[activeStoryIndex]?.content}
+      mentionClassName="text-white underline font-semibold cursor-pointer"
+    />
+  </p>
+</div>
 
              {activeStory.userId !== CURRENT_USER_ID && (
                 <div className="absolute bottom-4 left-0 right-0 px-3 flex items-center gap-2">
