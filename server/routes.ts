@@ -17,7 +17,7 @@ function hashPassword(password: string): string {
 
 async function sendMentionNotifications(content: string, authorId: number) {
   try {
-    const mentions = content.match(/@(\w+)/g);
+    const mentions = content.match(/@[A-Za-z0-9._-]+/g);
     if (!mentions) return;
     for (const mention of mentions) {
       const username = mention.substring(1);
