@@ -538,22 +538,24 @@ app.get("/api/posts", async (req, res) => {
     res.json(commentsWithLikes);
   });
 
-  app.post("/api/posts/:postId/comments", async (req, res) => {
-    try {
-      const { authorId, content } = req.body;
-      const comment = await storage.createComment({
-        postId: Number(req.params.postId),
-        authorId,
-        content,
-      });
-      res.status(201).json(comment);
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel creare il commento" });
-      res.status(201).json(comment);
-      await sendMentionNotifications(content, authorId);
-    }
-  });
+ app.post("/api/posts/:postId/comments", async (req, res) => {
+  try {
+    const { authorId, content } = req.body;
 
+    const comment = await storage.createComment({
+      postId: Number(req.params.postId),
+      authorId,
+      content,
+    });
+
+    await sendMentionNotifications(String(content ?? ""), Number(authorId));
+
+    res.status(201).json(comment);
+  } catch (err) {
+    res.status(400).json({ message: "Errore nel creare il commento" });
+  }
+});
+  
   app.get("/api/posts/:postId/comments/count", async (req, res) => {
     const count = await storage.getCommentsCount(Number(req.params.postId));
     res.json({ count });
@@ -1431,18 +1433,7 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
       res.status(400).json({ message: "Errore" });
     }
   });
-
-  app.delete("/api/events/:eventId/attend", async (req, res) => {
-    try {
-      const eventId = Number(req.params.eventId);
-      const { userId } = req.body;
-      await storage.unattendEvent(eventId, userId);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(400).json({ message: "Errore" });
-    }
-  });
-
+  
   app.get("/api/users/:userId/events/attending", async (req, res) => {
     try {
       const userId = Number(req.params.userId);
@@ -1452,6 +1443,7 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
       res.status(400).json({ message: "Errore" });
     }
   });
+  
   app.get("/api/users/:userId/conversations", async (req, res) => {
     try {
       const userId = Number(req.params.userId);
@@ -1459,16 +1451,6 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
       res.json(conversations);
     } catch (err) {
       res.status(400).json({ message: "Errore" });
-    }
-  });
-  app.get("/api/messages/unread/:userId", async (req, res) => {
-    try {
-      const userId = Number(req.params.userId);
-      if (isNaN(userId)) return res.json(0);
-      const count = await storage.getUnreadMessagesCount(userId);
-      res.json(count);
-    } catch (err) {
-      res.json(0);
     }
   });
   // === PHOTO COMMENTS ===
