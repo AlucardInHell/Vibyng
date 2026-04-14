@@ -36,13 +36,13 @@ export function MentionText({
   }, [users]);
 
   const parts = useMemo(() => {
-    return safeText.split(/(@\w+)/g);
-  }, [safeText]);
+  return safeText.split(/(@[A-Za-z0-9._-]+)/g);
+}, [safeText]);
 
   return (
     <span className={className}>
       {parts.map((part, index) => {
-        if (/^@\w+$/.test(part)) {
+        if (/^@[A-Za-z0-9._-]+$/.test(part)) {
           const username = part.slice(1).toLowerCase();
           const userId = usernameToId.get(username);
 
