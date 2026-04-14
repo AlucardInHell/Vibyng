@@ -817,6 +817,7 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
 function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAuthorId: number }) {
   const [newComment, setNewComment] = useState("");
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
+  const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
 
   const { data: comments = [], refetch } = useQuery<any[]>({
   queryKey: ["/api/videos", videoId, "comments", CURRENT_USER_ID_LOCAL],
@@ -838,18 +839,31 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
 
   return (
     <div className="border-t pt-3 mt-3 space-y-3">
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Scrivi un commento..."
-          value={newComment}
-          onChange={e => setNewComment(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
-          className="flex-1"
-        />
-        <Button size="icon" onClick={handleSubmit} disabled={newComment.length === 0}>
-          <Send className="w-4 h-4" />
-        </Button>
-      </div>
+     <div className="flex items-center gap-2">
+  <div className="relative flex-1">
+    <Input
+      placeholder="Scrivi un commento..."
+      value={newComment}
+      onChange={e => {
+        setNewComment(e.target.value);
+        handleTextChange(e.target.value, e.target.selectionStart || 0);
+      }}
+      onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
+      className="w-full"
+    />
+    <MentionDropdown
+      query={mentionQuery}
+      visible={showMentions}
+      onSelect={(username) => {
+        setNewComment(insertMention(newComment, username));
+        closeMentions();
+      }}
+    />
+  </div>
+  <Button size="icon" onClick={handleSubmit} disabled={newComment.length === 0}>
+    <Send className="w-4 h-4" />
+  </Button>
+</div>
 
       {comments.map((c: any) => (
         <div key={c.id} className="flex gap-2">
