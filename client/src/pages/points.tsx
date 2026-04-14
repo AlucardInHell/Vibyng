@@ -707,10 +707,10 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 
         <div className="p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
-            <p className="font-medium">{se<p className="font-medium whitespace-pre-wrap break-words">
-  <MentionText text={selectedPhoto.title} />
-</p>lectedPhoto.title}</p>
-          )}
+  <p className="font-medium whitespace-pre-wrap break-words">
+    <MentionText text={selectedPhoto.title} />
+  </p>
+)}
 
           <p className="text-xs text-muted-foreground mb-3">
             {selectedPhoto.createdAt && (() => {
