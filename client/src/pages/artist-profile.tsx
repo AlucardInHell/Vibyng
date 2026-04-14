@@ -111,6 +111,8 @@ export default function ArtistProfile() {
   const { toast } = useToast();
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
+  const { mentionQuery: photoCommentMentionQuery, showMentions: showPhotoCommentMentions, handleTextChange: handlePhotoCommentTextChange, insertMention: insertPhotoCommentMention, closeMentions: closePhotoCommentMentions } = useMention();
+  const { mentionQuery: videoCommentMentionQuery, showMentions: showVideoCommentMentions, handleTextChange: handleVideoCommentTextChange, insertMention: insertVideoCommentMention, closeMentions: closeVideoCommentMentions } = useMention();
   const [supportAmount, setSupportAmount] = useState("5");
   const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
@@ -932,21 +934,36 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
   </div>
 ))}
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    className="flex-1 text-sm border rounded-lg px-3 py-1 bg-background"
-                    placeholder="Scrivi un commento..."
-                    value={videoCommentInput}
-                    onChange={e => setVideoCommentInput(e.target.value)}
-                    onKeyDown={async e => {
-                      if (e.key === "Enter" && videoCommentInput.trim()) {
-                        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, { authorId: currentUserId, content: videoCommentInput.trim() });
-                        setVideoCommentInput("");
-                        refetchVideoComments();
-                      }
-                    }}
-                  />
-                </div>
+                <div className="relative">
+  <input
+    className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
+    placeholder="Scrivi un commento..."
+    value={videoCommentInput}
+    onChange={e => {
+      setVideoCommentInput(e.target.value);
+      handleVideoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+    }}
+    onKeyDown={async e => {
+      if (e.key === "Enter" && videoCommentInput.trim()) {
+        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
+          authorId: currentUserId,
+          content: videoCommentInput.trim(),
+        });
+        setVideoCommentInput("");
+        closeVideoCommentMentions();
+        refetchVideoComments();
+      }
+    }}
+  />
+  <MentionDropdown
+    query={videoCommentMentionQuery}
+    visible={showVideoCommentMentions}
+    onSelect={(username) => {
+      setVideoCommentInput(insertVideoCommentMention(videoCommentInput, username));
+      closeVideoCommentMentions();
+    }}
+  />
+</div>
               </div>
             </div>
           </div>
@@ -1418,36 +1435,37 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           </div>
 
          <div className="sticky bottom-0 mt-auto pt-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] border-t bg-background shrink-0">
-            <div className="relative">
-              <input
-                className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
-                placeholder="Scrivi un commento..."
-                value={commentInput}
-                onChange={e => {
-                  setCommentInput(e.target.value);
-                  handleTextChange(e.target.value, e.target.selectionStart || 0);
-                }}
-                onKeyDown={async e => {
-                  if (e.key === "Enter" && commentInput.trim()) {
-                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-                      authorId: currentUserId,
-                      content: commentInput.trim(),
-                    });
-                    setCommentInput("");
-                    await refetchPhotoComments();
-                  }
-                }}
-              />
-              <MentionDropdown
-                query={mentionQuery}
-                visible={showMentions}
-                onSelect={(username) => {
-                  setCommentInput(insertMention(commentInput, username));
-                  closeMentions();
-                }}
-              />
-            </div>
-          </div>
+  <div className="relative">
+    <input
+      className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
+      placeholder="Scrivi un commento..."
+      value={commentInput}
+      onChange={e => {
+        setCommentInput(e.target.value);
+        handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+      }}
+      onKeyDown={async e => {
+        if (e.key === "Enter" && commentInput.trim()) {
+          await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+            authorId: currentUserId,
+            content: commentInput.trim(),
+          });
+          setCommentInput("");
+          closePhotoCommentMentions();
+          await refetchPhotoComments();
+        }
+      }}
+    />
+    <MentionDropdown
+      query={photoCommentMentionQuery}
+      visible={showPhotoCommentMentions}
+      onSelect={(username) => {
+        setCommentInput(insertPhotoCommentMention(commentInput, username));
+        closePhotoCommentMentions();
+      }}
+    />
+  </div>
+</div>
         </div>
       </div>
     </div>
