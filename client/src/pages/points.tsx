@@ -16,6 +16,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
+import { MentionText } from "@/components/mention-text";
 import type { User, ArtistPhoto, ArtistVideo, Post } from "@shared/schema";
 
 function getCurrentUserId(): number {
@@ -67,7 +68,9 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
           </Avatar>
           <div className="flex-1 bg-muted rounded-lg px-3 py-2">
             <p className="text-sm font-semibold">{comment.author?.displayName}</p>
-            <p className="text-sm">{comment.content}</p>
+            <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={comment.content} />
+</p>
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-muted-foreground">
                 {comment.createdAt && new Date(comment.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -677,7 +680,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                   <img src={photo.imageUrl ?? undefined} alt={photo.title} className="w-full h-32 object-cover" />
                {photo.title && photo.title !== "Foto" && (
                     <CardContent className="p-2">
-                      <p className="text-xs text-muted-foreground truncate">{photo.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+  <MentionText text={photo.title} />
+</p>
                     </CardContent>
                   )}
                 </Card>
@@ -702,7 +707,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 
         <div className="p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
-            <p className="font-medium">{selectedPhoto.title}</p>
+            <p className="font-medium">{se<p className="font-medium whitespace-pre-wrap break-words">
+  <MentionText text={selectedPhoto.title} />
+</p>lectedPhoto.title}</p>
           )}
 
           <p className="text-xs text-muted-foreground mb-3">
@@ -782,7 +789,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 
                 <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                   <p className="text-sm font-semibold">{c.display_name}</p>
-                  <p className="text-sm">{c.content}</p>
+                 <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={c.content} />
+</p>
 
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-muted-foreground">
@@ -914,7 +923,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     </div>
     <CardContent className="p-3">
       {video.title && video.title !== "Video" && (
-        <h4 className="font-medium" data-testid={`text-video-title-${video.id}`}>{video.title}</h4>
+        <h4 className="font-medium whitespace-pre-wrap break-words" data-testid={`text-video-title-${video.id}`}>
+  <MentionText text={video.title} />
+</h4>
       )}
     </CardContent>
   </Card>
@@ -944,7 +955,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                             {post.createdAt ? new Date(post.createdAt).toLocaleDateString("it-IT") : ""}
                           </span>
                         </div>
-                        <p className="text-sm mt-1" data-testid={`text-post-content-${post.id}`}>{post.content}</p>
+                        <p className="text-sm mt-1 whitespace-pre-wrap break-words" data-testid={`text-post-content-${post.id}`}>
+  <MentionText text={post.content} />
+</p>
                       <div className="flex items-center gap-4 mt-2 text-muted-foreground">
                         <button
                             className="flex items-center gap-1 text-xs text-muted-foreground opacity-50 cursor-not-allowed"
@@ -1340,7 +1353,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
               <video src={selectedVideo.videoUrl} controls className="w-full max-h-[40vh] object-contain bg-black" />
               <div className="p-4">
-                {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium">{selectedVideo.title}</p>}
+                {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium whitespace-pre-wrap break-words">
+  <MentionText text={selectedVideo.title} />
+</p>}
                 <p className="text-xs text-muted-foreground mb-3">
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
@@ -1392,7 +1407,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                       </Avatar>
                       <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                         <p className="text-sm font-semibold">{c.display_name}</p>
-                        <p className="text-sm">{c.content}</p>
+                        <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={c.content} />
+</p>
                         <div className="flex items-center justify-between mt-1">
                           <span className="text-xs text-muted-foreground">
                             {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
