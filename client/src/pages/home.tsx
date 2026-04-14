@@ -529,7 +529,7 @@ function Stories() {
     </button>
   </div>
 </div>
-             <div className="absolute bottom-24 left-0 right-0 px-4">
+             <div className="absolute bottom-24 left-0 right-0 px-4 z-30 pointer-events-auto">
   <p className="text-white text-lg font-medium drop-shadow-lg whitespace-pre-wrap break-words">
     <MentionText
       text={activeStory.stories[activeStoryIndex]?.content}
@@ -594,12 +594,12 @@ function Stories() {
 
               <button
   onClick={prevStory}
-  className="absolute left-0 top-16 bottom-20 w-1/3"
+  className="absolute left-0 top-16 bottom-20 w-1/3 z-10"
   data-testid="button-prev-story"
 />
 <button
   onClick={nextStory}
-  className="absolute right-0 top-16 bottom-20 w-2/3"
+  className="absolute right-0 top-16 bottom-20 w-2/3 z-10"
   data-testid="button-next-story"
 />
 
