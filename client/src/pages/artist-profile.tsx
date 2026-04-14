@@ -15,6 +15,7 @@ import { useState, useRef, useEffect } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
+import { MentionText } from "@/components/mention-text";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
 import type { User, ArtistGoal, ArtistPhoto, ArtistVideo, ArtistSong, Post, Event } from "@shared/schema";
@@ -82,7 +83,9 @@ function ArtistPostComments({ postId, postAuthorId }: { postId: number; postAuth
           </Link>
           <div className="flex-1 bg-muted rounded-lg px-3 py-2">
             <p className="text-sm font-semibold">{comment.author?.displayName}</p>
-            <p className="text-sm">{comment.content}</p>
+            <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={comment.content} />
+</p>
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-muted-foreground">
                 {comment.createdAt && new Date(comment.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -634,7 +637,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                             {post.createdAt ? new Date(post.createdAt).toLocaleDateString("it-IT") : ""}
                           </span>
                         </div>
-                        <p className="text-sm mt-1">{post.content}</p>
+                    <p className="text-sm mt-1 whitespace-pre-wrap break-words">
+  <MentionText text={post.content} />
+</p>
                         {post.mediaUrl && (
                           <img src={post.mediaUrl} alt="media" className="w-full mt-2 rounded-lg max-h-60 object-cover" />
                         )}
@@ -759,7 +764,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   <img src={photo.imageUrl ?? undefined} alt={photo.title || "Foto"} className="w-full h-32 object-cover" />
                   {photo.title && photo.title !== "Foto" && (
                     <CardContent className="p-2">
-                      <p className="text-xs text-muted-foreground truncate">{photo.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+  <MentionText text={photo.title} />
+</p>
                     </CardContent>
                   )}
                 </Card>
@@ -799,7 +806,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       </div>
       <CardContent className="p-3">
         {video.title && video.title !== "Video" && (
-          <h4 className="font-medium">{video.title}</h4>
+  <h4 className="font-medium whitespace-pre-wrap break-words">
+  <MentionText text={video.title} />
+</h4>
         )}
       </CardContent>
     </Card>
@@ -816,7 +825,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
               <video src={selectedVideo.videoUrl} controls className="w-full max-h-[40vh] object-contain bg-black" />
               <div className="p-4">
-                {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium">{selectedVideo.title}</p>}
+                {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium whitespace-pre-wrap break-words">
+  <MentionText text={selectedVideo.title} />
+</p>}
                 <p className="text-xs text-muted-foreground mb-3">
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
@@ -882,7 +893,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
     <div className="flex-1 bg-muted rounded-lg px-3 py-2">
       <p className="text-sm font-semibold">{c.display_name}</p>
-      <p className="text-sm">{c.content}</p>
+      <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={c.content} />
+</p>
 
       <div className="flex items-center justify-between mt-1">
         <span className="text-xs text-muted-foreground">
@@ -1297,7 +1310,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
         <div className="p-4 flex-1 min-h-0 flex flex-col">
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
-            <p className="font-medium">{selectedPhoto.title}</p>
+            <p className="font-medium whitespace-pre-wrap break-words">
+  <MentionText text={selectedPhoto.title} />
+</p>
           )}
 
           <p className="text-xs text-muted-foreground mb-3">
@@ -1380,7 +1395,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
                 <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                   <p className="text-sm font-semibold">{c.display_name}</p>
-                  <p className="text-sm">{c.content}</p>
+                  <p className="text-sm whitespace-pre-wrap break-words">
+  <MentionText text={c.content} />
+</p>
 
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-muted-foreground">
