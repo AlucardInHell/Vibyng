@@ -1,5 +1,4 @@
 import { Fragment, useMemo } from "react";
-import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
@@ -15,7 +14,6 @@ export function MentionText({
   mentionClassName,
 }: MentionTextProps) {
   const safeText = text ?? "";
-  const [, setLocation] = useLocation();
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -48,33 +46,29 @@ export function MentionText({
           const userId = usernameToId.get(username);
 
           if (userId) {
+            const href = `/artist/${userId}`;
+
             const goToProfile = (e: React.SyntheticEvent) => {
               e.preventDefault();
               e.stopPropagation();
-              setLocation(`/artist/${userId}`);
+              window.location.href = href;
             };
 
             return (
-              <span
+              <a
                 key={`${part}-${index}`}
-                role="link"
-                tabIndex={0}
+                href={href}
                 onClick={goToProfile}
                 onMouseDown={(e) => e.stopPropagation()}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchEnd={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    goToProfile(e);
-                  }
-                }}
                 className={
                   mentionClassName ??
-                  "text-primary hover:underline cursor-pointer"
+                  "text-primary underline cursor-pointer"
                 }
               >
                 {part}
-              </span>
+              </a>
             );
           }
         }
