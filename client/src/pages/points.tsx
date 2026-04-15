@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus } from "lucide-react";
 import { Link } from "wouter";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/App";
@@ -112,6 +112,21 @@ export default function Points() {
   const musicInputRef = useRef<HTMLInputElement>(null);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
+  const [selectedPhotoIsTall, setSelectedPhotoIsTall] = useState(false);
+
+useEffect(() => {
+  if (!selectedPhoto?.imageUrl) {
+    setSelectedPhotoIsTall(false);
+    return;
+  }
+
+  const img = new Image();
+  img.onload = () => {
+    const ratio = img.naturalHeight / img.naturalWidth;
+    setSelectedPhotoIsTall(ratio >= 1.55);
+  };
+  img.src = selectedPhoto.imageUrl;
+}, [selectedPhoto]);
   const [photoCommentsOpen, setPhotoCommentsOpen] = useState(false);
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
@@ -725,15 +740,31 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           ✕
         </button>
 
-        <div className="flex-1 flex items-center justify-center px-2 pt-12 pb-24">
+        <div
+  className={
+    selectedPhotoIsTall
+      ? "flex-1 flex items-center justify-center px-0 pt-12 pb-0"
+      : "flex-1 flex items-center justify-center px-2 pt-12 pb-24"
+  }
+>
           <img
             src={selectedPhoto.imageUrl ?? undefined}
             alt={selectedPhoto.title}
-            className="w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+            className={
+  selectedPhotoIsTall
+    ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
+    : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+}
           />
         </div>
 
-        <div className="px-4 pb-4">
+       <div
+  className={
+    selectedPhotoIsTall
+      ? "absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-4 pt-16 pb-4"
+      : "px-4 pb-4"
+  }
+>
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
             <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
               <MentionText text={selectedPhoto.title} />
