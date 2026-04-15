@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus } from "lucide-react";
 import { Link } from "wouter";
@@ -111,6 +112,7 @@ export default function Points() {
   const musicInputRef = useRef<HTMLInputElement>(null);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
+  const [photoCommentsOpen, setPhotoCommentsOpen] = useState(false);
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
@@ -676,7 +678,15 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           {myPhotos.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
               {myPhotos.map((photo) => (
-                <Card key={photo.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => setSelectedPhoto(photo)} data-testid={`card-photo-${photo.id}`}>
+                <Card
+  key={photo.id}
+  className="overflow-hidden hover-elevate cursor-pointer"
+  onClick={() => {
+    setSelectedPhoto(photo);
+    setPhotoCommentsOpen(false);
+  }}
+  data-testid={`card-photo-${photo.id}`}
+>
                   <img src={photo.imageUrl ?? undefined} alt={photo.title} className="w-full h-32 object-cover" />
                {photo.title && photo.title !== "Foto" && (
                     <CardContent className="p-2">
@@ -693,43 +703,62 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           )}
 
           {selectedPhoto && (
-  <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
-    <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
+  <>
+    <div
+      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
+      onClick={() => {
+        setSelectedPhoto(null);
+        setPhotoCommentsOpen(false);
+      }}
+    >
       <div
-        className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[100dvh] sm:h-auto sm:max-h-[90dvh] flex flex-col"
-        onClick={e => e.stopPropagation()}
+        className="relative flex-1 flex flex-col"
+        onClick={(e) => e.stopPropagation()}
       >
-        <img
-          src={selectedPhoto.imageUrl ?? undefined}
-          alt={selectedPhoto.title}
-          className="w-full max-h-[32dvh] sm:max-h-[40vh] object-contain bg-black flex-shrink-0"
-        />
+        <button
+          className="absolute top-4 right-4 z-20 text-white text-2xl"
+          onClick={() => {
+            setSelectedPhoto(null);
+            setPhotoCommentsOpen(false);
+          }}
+        >
+          ✕
+        </button>
 
-        <div className="p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex-1 flex items-center justify-center px-2 pt-12 pb-24">
+          <img
+            src={selectedPhoto.imageUrl ?? undefined}
+            alt={selectedPhoto.title}
+            className="w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+          />
+        </div>
+
+        <div className="px-4 pb-4">
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
-  <p className="font-medium whitespace-pre-wrap break-words">
-    <MentionText text={selectedPhoto.title} />
-  </p>
-)}
+            <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
+              <MentionText text={selectedPhoto.title} />
+            </p>
+          )}
 
-          <p className="text-xs text-muted-foreground mb-3">
-            {selectedPhoto.createdAt && (() => {
-              const dateStr =
-                selectedPhoto.createdAt.toString().replace(" ", "T") +
-                (selectedPhoto.createdAt.toString().includes("Z") ? "" : "Z");
-              return new Date(dateStr).toLocaleDateString("it-IT", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-            })()}
+          <p className="text-xs text-white/70 mb-3">
+            {selectedPhoto.createdAt &&
+              (() => {
+                const dateStr =
+                  selectedPhoto.createdAt.toString().replace(" ", "T") +
+                  (selectedPhoto.createdAt.toString().includes("Z") ? "" : "Z");
+                return new Date(dateStr).toLocaleDateString("it-IT", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+              })()}
           </p>
 
-          <div className="flex items-center gap-4 mb-4 border-b pb-3">
+          <div className="flex items-center gap-4 border-t border-white/10 pt-3">
             <button
-              className="flex items-center gap-1 text-sm text-muted-foreground opacity-50 cursor-not-allowed"
+              className="flex items-center gap-1 text-sm text-white/80 opacity-50 cursor-not-allowed"
               disabled={true}
             >
               <Heart className="w-5 h-5" />
@@ -737,10 +766,21 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             </button>
 
             <button
-              className="flex items-center gap-1 text-sm text-muted-foreground"
+              className="flex items-center gap-1 text-sm text-white/80"
+              onClick={() => setPhotoCommentsOpen(true)}
+            >
+              <MessageCircle className="w-5 h-5" />
+              Commenti
+            </button>
+
+            <button
+              className="flex items-center gap-1 text-sm text-white/80"
               onClick={() => {
                 if (navigator.share) {
-                  navigator.share({ title: selectedPhoto.title, text: "Guarda questa foto su Vibyng!" });
+                  navigator.share({
+                    title: selectedPhoto.title,
+                    text: "Guarda questa foto su Vibyng!",
+                  });
                 } else {
                   navigator.clipboard.writeText(window.location.href);
                   toast({ title: "Link copiato!" });
@@ -752,13 +792,14 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             </button>
 
             <button
-              className="flex items-center gap-1 text-sm text-red-500"
+              className="flex items-center gap-1 text-sm text-red-400 ml-auto"
               onClick={async () => {
                 try {
                   await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${selectedPhoto.id}`);
                   queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
                   queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
                   setSelectedPhoto(null);
+                  setPhotoCommentsOpen(false);
                   toast({ title: "Foto eliminata" });
                 } catch {
                   toast({
@@ -771,13 +812,19 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             >
               🗑️
             </button>
-
-            <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>
-              ✕
-            </button>
           </div>
+        </div>
+      </div>
+    </div>
 
-         <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
+    <Sheet open={photoCommentsOpen} onOpenChange={setPhotoCommentsOpen}>
+      <SheetContent side="bottom" className="h-[75vh] rounded-t-2xl">
+        <SheetHeader>
+          <SheetTitle>Commenti</SheetTitle>
+        </SheetHeader>
+
+        <div className="mt-4 flex flex-col h-[calc(75vh-5rem)]">
+          <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
             {photoCommentsList.map((c: any) => (
               <div key={c.id} className="flex gap-2">
                 <Avatar className="w-8 h-8 flex-shrink-0">
@@ -789,9 +836,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 
                 <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                   <p className="text-sm font-semibold">{c.display_name}</p>
-                 <p className="text-sm whitespace-pre-wrap break-words">
-  <MentionText text={c.content} />
-</p>
+                  <p className="text-sm whitespace-pre-wrap break-words">
+                    <MentionText text={c.content} />
+                  </p>
 
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-muted-foreground">
@@ -852,42 +899,42 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             ))}
           </div>
 
-          <div className="sticky bottom-0 mt-auto pt-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] border-t bg-background shrink-0">
-  <div className="relative">
-    <input
-      className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
-      placeholder="Scrivi un commento..."
-      value={commentInput}
-      onChange={e => {
-        setCommentInput(e.target.value);
-        handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
-      }}
-      onKeyDown={async e => {
-        if (e.key === "Enter" && commentInput.trim()) {
-          await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-            authorId: CURRENT_USER_ID,
-            content: commentInput.trim(),
-          });
-          setCommentInput("");
-          closePhotoCommentMentions();
-          refetchPhotoComments();
-        }
-      }}
-    />
-    <MentionDropdown
-      query={photoCommentMentionQuery}
-      visible={showPhotoCommentMentions}
-      onSelect={(username) => {
-        setCommentInput(insertPhotoCommentMention(commentInput, username));
-        closePhotoCommentMentions();
-      }}
-    />
-  </div>
-</div>
+          <div className="mt-3 pt-3 border-t bg-background shrink-0">
+            <div className="relative">
+              <input
+                className="w-full text-sm border rounded-lg px-3 py-2 bg-background"
+                placeholder="Scrivi un commento..."
+                value={commentInput}
+                onChange={(e) => {
+                  setCommentInput(e.target.value);
+                  handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+                }}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && commentInput.trim()) {
+                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+                      authorId: CURRENT_USER_ID,
+                      content: commentInput.trim(),
+                    });
+                    setCommentInput("");
+                    closePhotoCommentMentions();
+                    refetchPhotoComments();
+                  }
+                }}
+              />
+              <MentionDropdown
+                query={photoCommentMentionQuery}
+                visible={showPhotoCommentMentions}
+                onSelect={(username) => {
+                  setCommentInput(insertPhotoCommentMention(commentInput, username));
+                  closePhotoCommentMentions();
+                }}
+              />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+      </SheetContent>
+    </Sheet>
+  </>
 )}
         </TabsContent>
         <TabsContent value="videos" className="mt-4">
