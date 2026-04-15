@@ -526,26 +526,6 @@ function Stories() {
   </p>
 </div>
 
-  {storyMentions.length > 0 && (
-    <div className="mt-3 flex flex-wrap gap-2">
-      {storyMentions.map((mention) => (
-        <button
-          key={mention}
-          type="button"
-          className="rounded-full bg-black/45 text-white text-sm font-semibold px-3 py-1 underline"
-          onClick={async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            await handleStoryMentionClick(mention);
-          }}
-        >
-          {mention}
-        </button>
-      ))}
-    </div>
-  )}
-</div>
-
              {activeStory.userId !== CURRENT_USER_ID && (
                 <div className="absolute bottom-4 left-0 right-0 px-3 flex items-center gap-2">
                  <Input
