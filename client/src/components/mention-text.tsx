@@ -36,7 +36,7 @@ export function MentionText({
   }, [users]);
 
   const parts = useMemo(() => {
-  return safeText.split(/(@[A-Za-z0-9._-]+)/g);
+ return safeText.split(/(@[A-Za-z0-9._-]+)/g);
 }, [safeText]);
 
   return (
