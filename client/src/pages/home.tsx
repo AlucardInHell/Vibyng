@@ -414,50 +414,6 @@ function Stories() {
       content: trimmedReply,
     });
 
-const currentStoryContent = activeStory?.stories[activeStoryIndex]?.content ?? "";
-
-const storyMentions = Array.from(
-  new Set(currentStoryContent.match(/@[A-Za-z0-9._-]+/g) ?? [])
-);
-
-const handleStoryMentionClick = async (mention: string) => {
-  const username = mention.replace(/^@/, "").trim().toLowerCase();
-  if (!username) return;
-
-  try {
-    const res = await fetch(`/api/users/search?q=${encodeURIComponent(username)}&role=all`);
-    const users = await res.json();
-
-    const matchedUser = Array.isArray(users)
-      ? users.find(
-          (user: any) => String(user.username ?? "").toLowerCase() === username
-        )
-      : null;
-
-    if (matchedUser?.id) {
-      closeStory();
-      window.location.assign(`/artist/${matchedUser.id}`);
-    }
-  } catch {}
-}; 
-    toast({
-      title: "Messaggio inviato",
-      description: `Hai risposto a ${activeStory.displayName}`,
-    });
-
-    setReplyText("");
-    setIsReplying(false);
-    setIsReplyFocused(false);
-    setIsPaused(false);
-  } catch {
-    toast({
-      title: "Errore",
-      description: "Non è stato possibile inviare la risposta",
-      variant: "destructive",
-    });
-  }
-};
-
   return (
     <>
      <div className="flex gap-3 overflow-x-auto -mx-4 px-4 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{msOverflowStyle: "none", scrollbarWidth: "none"}} data-testid="stories-container">
@@ -555,18 +511,20 @@ const handleStoryMentionClick = async (mention: string) => {
     </button>
   </div>
 </div>
-           <div
+         <div
   className="absolute bottom-24 left-0 right-0 px-4 z-50 pointer-events-auto"
   onClick={(e) => e.stopPropagation()}
   onMouseDown={(e) => e.stopPropagation()}
   onTouchStart={(e) => e.stopPropagation()}
   onTouchEnd={(e) => e.stopPropagation()}
 >
-  {!!currentStoryContent && (
-    <p className="text-white text-lg font-medium drop-shadow-lg whitespace-pre-wrap break-words">
-      {currentStoryContent}
-    </p>
-  )}
+  <p className="text-white text-lg font-medium drop-shadow-lg whitespace-pre-wrap break-words">
+    <MentionText
+      text={activeStory.stories[activeStoryIndex]?.content}
+      mentionClassName="text-white underline font-semibold cursor-pointer"
+    />
+  </p>
+</div>
 
   {storyMentions.length > 0 && (
     <div className="mt-3 flex flex-wrap gap-2">
