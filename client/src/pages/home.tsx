@@ -414,6 +414,24 @@ function Stories() {
       content: trimmedReply,
     });
 
+    toast({
+      title: "Messaggio inviato",
+      description: `Hai risposto a ${activeStory.displayName}`,
+    });
+
+    setReplyText("");
+    setIsReplying(false);
+    setIsReplyFocused(false);
+    setIsPaused(false);
+  } catch {
+    toast({
+      title: "Errore",
+      description: "Non è stato possibile inviare la risposta",
+      variant: "destructive",
+    });
+  }
+};
+
   return (
     <>
      <div className="flex gap-3 overflow-x-auto -mx-4 px-4 scrollbar-hide [&::-webkit-scrollbar]:hidden" style={{msOverflowStyle: "none", scrollbarWidth: "none"}} data-testid="stories-container">
@@ -511,7 +529,8 @@ function Stories() {
     </button>
   </div>
 </div>
-         <div
+
+<div
   className="absolute bottom-24 left-0 right-0 px-4 z-50 pointer-events-auto"
   onClick={(e) => e.stopPropagation()}
   onMouseDown={(e) => e.stopPropagation()}
