@@ -529,8 +529,8 @@ function Stories() {
     </button>
   </div>
 </div>
-            <div
-  className="absolute bottom-24 left-0 right-0 px-4 z-40 pointer-events-auto"
+           <div
+  className="absolute bottom-24 left-0 right-0 px-4 z-50 pointer-events-auto"
   onClick={(e) => e.stopPropagation()}
   onMouseDown={(e) => e.stopPropagation()}
   onTouchStart={(e) => e.stopPropagation()}
@@ -598,7 +598,7 @@ function Stories() {
                 </div>
               )}
 
-             <button
+            <button
   onClick={prevStory}
   className="absolute left-0 top-16 bottom-36 w-1/3 z-10"
   data-testid="button-prev-story"
