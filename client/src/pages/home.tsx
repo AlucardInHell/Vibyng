@@ -109,6 +109,13 @@ function Stories() {
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [storyContent, setStoryContent] = useState("");
+  const {
+  mentionQuery: storyMentionQuery,
+  showMentions: showStoryMentions,
+  handleTextChange: handleStoryTextChange,
+  insertMention: insertStoryMention,
+  closeMentions: closeStoryMentions,
+} = useMention();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -671,14 +678,27 @@ function Stories() {
               </button>
             )}
             
-            <Textarea
-              placeholder="Scrivi qualcosa per la tua storia..."
-              value={storyContent}
-              onChange={(e) => setStoryContent(e.target.value)}
-              className="resize-none"
-              rows={3}
-              data-testid="input-story-content"
-            />
+            <div className="relative">
+  <Textarea
+    placeholder="Scrivi qualcosa per la tua storia..."
+    value={storyContent}
+    onChange={(e) => {
+      setStoryContent(e.target.value);
+      handleStoryTextChange(e.target.value, e.target.selectionStart || 0);
+    }}
+    className="resize-none"
+    rows={3}
+    data-testid="input-story-content"
+  />
+  <MentionDropdown
+    query={storyMentionQuery}
+    visible={showStoryMentions}
+    onSelect={(username) => {
+      setStoryContent(insertStoryMention(storyContent, username));
+      closeStoryMentions();
+    }}
+  />
+</div>
             
             <div className="flex gap-2">
               <Button
