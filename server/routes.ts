@@ -1217,15 +1217,19 @@ app.get("/api/stories", async (req, res) => {
   });
 
   app.post("/api/stories", async (req, res) => {
-    try {
-      const { userId, imageUrl, content } = req.body;
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 ore
-      const story = await storage.createStory({ userId, imageUrl, content, expiresAt });
-      res.status(201).json(story);
-    } catch (err) {
-      res.status(400).json({ message: "Errore nella creazione della storia" });
-    }
-  });
+  try {
+    const { userId, imageUrl, content } = req.body;
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const story = await storage.createStory({ userId, imageUrl, content, expiresAt });
+
+    await sendMentionNotifications(String(content ?? ""), Number(userId));
+
+    res.status(201).json(story);
+  } catch (err) {
+    res.status(400).json({ message: "Errore nella creazione della storia" });
+  }
+});
 
   app.delete("/api/stories/:storyId/:userId", async (req, res) => {
   try {
