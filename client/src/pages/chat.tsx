@@ -9,6 +9,8 @@ import { ArrowLeft, Send, MessageCircle } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MentionText } from "@/components/mention-text";
+import { useMention } from "@/hooks/use-mention";
+import { MentionDropdown } from "@/components/mention-dropdown";
 import type { User, Message } from "@shared/schema";
 
 function getCurrentUserId(): number {
@@ -45,6 +47,13 @@ export default function Chat() {
   const artistId = Number(params.artistId);
   const CURRENT_USER_ID = getCurrentUserId();
   const [newMessage, setNewMessage] = useState("");
+  const {
+  mentionQuery,
+  showMentions,
+  handleTextChange,
+  insertMention,
+  closeMentions,
+} = useMention();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: artist, isLoading: artistLoading } = useQuery<User>({
@@ -95,11 +104,13 @@ useEffect(() => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  if (showMentions) return;
+
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    handleSend();
+  }
+};
 
   if (artistLoading || messagesLoading) {
     return (
@@ -241,23 +252,37 @@ useEffect(() => {
 
         <div className="p-4 border-t">
           <div className="flex items-center gap-2">
-            <Input
-              placeholder="Scrivi un messaggio..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={handleKeyPress}
-              className="flex-1"
-              data-testid="input-message"
-            />
-            <Button
-              size="icon"
-              onClick={handleSend}
-              disabled={!newMessage.trim() || sendMessageMutation.isPending}
-              data-testid="button-send"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
+  <div className="relative flex-1">
+    <Input
+      placeholder="Scrivi un messaggio..."
+      value={newMessage}
+      onChange={(e) => {
+        setNewMessage(e.target.value);
+        handleTextChange(e.target.value, e.target.selectionStart || 0);
+      }}
+      onKeyDown={handleKeyPress}
+      className="w-full"
+      data-testid="input-message"
+    />
+    <MentionDropdown
+      query={mentionQuery}
+      visible={showMentions}
+      onSelect={(username) => {
+        setNewMessage(insertMention(newMessage, username));
+        closeMentions();
+      }}
+    />
+  </div>
+
+  <Button
+    size="icon"
+    onClick={handleSend}
+    disabled={!newMessage.trim() || sendMessageMutation.isPending}
+    data-testid="button-send"
+  >
+    <Send className="w-4 h-4" />
+  </Button>
+</div>
         </div>
       </Card>
     </div>
