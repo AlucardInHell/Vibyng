@@ -836,12 +836,13 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             >
               🗑️
             </button>
-</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
-        
+</div>
+      
     <Sheet open={photoCommentsOpen} onOpenChange={setPhotoCommentsOpen}>
       <SheetContent side="bottom" className="h-[75vh] rounded-t-2xl">
         <SheetHeader>
