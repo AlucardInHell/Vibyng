@@ -414,6 +414,32 @@ function Stories() {
       content: trimmedReply,
     });
 
+const currentStoryContent = activeStory?.stories[activeStoryIndex]?.content ?? "";
+
+const storyMentions = Array.from(
+  new Set(currentStoryContent.match(/@[A-Za-z0-9._-]+/g) ?? [])
+);
+
+const handleStoryMentionClick = async (mention: string) => {
+  const username = mention.replace(/^@/, "").trim().toLowerCase();
+  if (!username) return;
+
+  try {
+    const res = await fetch(`/api/users/search?q=${encodeURIComponent(username)}&role=all`);
+    const users = await res.json();
+
+    const matchedUser = Array.isArray(users)
+      ? users.find(
+          (user: any) => String(user.username ?? "").toLowerCase() === username
+        )
+      : null;
+
+    if (matchedUser?.id) {
+      closeStory();
+      window.location.assign(`/artist/${matchedUser.id}`);
+    }
+  } catch {}
+}; 
     toast({
       title: "Messaggio inviato",
       description: `Hai risposto a ${activeStory.displayName}`,
@@ -536,12 +562,30 @@ function Stories() {
   onTouchStart={(e) => e.stopPropagation()}
   onTouchEnd={(e) => e.stopPropagation()}
 >
-  <p className="text-white text-lg font-medium drop-shadow-lg whitespace-pre-wrap break-words">
-    <MentionText
-      text={activeStory.stories[activeStoryIndex]?.content}
-      mentionClassName="text-white underline font-semibold cursor-pointer"
-    />
-  </p>
+  {!!currentStoryContent && (
+    <p className="text-white text-lg font-medium drop-shadow-lg whitespace-pre-wrap break-words">
+      {currentStoryContent}
+    </p>
+  )}
+
+  {storyMentions.length > 0 && (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {storyMentions.map((mention) => (
+        <button
+          key={mention}
+          type="button"
+          className="rounded-full bg-black/45 text-white text-sm font-semibold px-3 py-1 underline"
+          onClick={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            await handleStoryMentionClick(mention);
+          }}
+        >
+          {mention}
+        </button>
+      ))}
+    </div>
+  )}
 </div>
 
              {activeStory.userId !== CURRENT_USER_ID && (
