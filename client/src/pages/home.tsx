@@ -116,6 +116,13 @@ function Stories() {
   insertMention: insertStoryMention,
   closeMentions: closeStoryMentions,
 } = useMention();
+  const {
+  mentionQuery: storyReplyMentionQuery,
+  showMentions: showStoryReplyMentions,
+  handleTextChange: handleStoryReplyTextChange,
+  insertMention: insertStoryReplyMention,
+  closeMentions: closeStoryReplyMentions,
+} = useMention();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -554,26 +561,37 @@ function Stories() {
 
              {activeStory.userId !== CURRENT_USER_ID && (
                 <div className="absolute bottom-4 left-0 right-0 px-3 flex items-center gap-2">
-                 <Input
-  placeholder={`Rispondi a ${activeStory.displayName}...`}
-  value={replyText}
-  onChange={(e) => {
-    const value = e.target.value;
-    setReplyText(value);
-    setIsReplying(value.trim().length > 0);
-  }}
-  onFocus={() => {
-    setIsPaused(true);
-    setIsReplyFocused(true);
-  }}
-  onBlur={() => {
-    setIsPaused(false);
-    setIsReplyFocused(false);
-    setIsReplying(replyText.trim().length > 0);
-  }}
-  className="flex-1 bg-transparent border-white/30 text-white placeholder:text-white/50 rounded-full"
-  data-testid="input-story-reply"
-/>
+                 <div className="relative flex-1">
+  <Input
+    placeholder={`Rispondi a ${activeStory.displayName}...`}
+    value={replyText}
+    onChange={(e) => {
+      const value = e.target.value;
+      setReplyText(value);
+      setIsReplying(value.trim().length > 0);
+      handleStoryReplyTextChange(value, e.target.selectionStart || 0);
+    }}
+    onFocus={() => {
+      setIsPaused(true);
+      setIsReplyFocused(true);
+    }}
+    onBlur={() => {
+      setIsPaused(false);
+      setIsReplyFocused(false);
+      setIsReplying(replyText.trim().length > 0);
+    }}
+    className="w-full bg-transparent border-white/30 text-white placeholder:text-white/50 rounded-full"
+    data-testid="input-story-reply"
+  />
+  <MentionDropdown
+    query={storyReplyMentionQuery}
+    visible={showStoryReplyMentions}
+    onSelect={(username) => {
+      setReplyText(insertStoryReplyMention(replyText, username));
+      closeStoryReplyMentions();
+    }}
+  />
+</div>
                   {replyText.trim() ? (
                     <Button 
                       size="icon" 
