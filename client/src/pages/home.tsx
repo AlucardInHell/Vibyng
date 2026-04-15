@@ -529,7 +529,12 @@ function Stories() {
     </button>
   </div>
 </div>
-             <div className="absolute bottom-24 left-0 right-0 px-4 z-30 pointer-events-auto">
+            <div
+  className="absolute bottom-24 left-0 right-0 px-4 z-30 pointer-events-auto"
+  onClick={(e) => e.stopPropagation()}
+  onTouchStart={(e) => e.stopPropagation()}
+  onTouchEnd={(e) => e.stopPropagation()}
+>
   <p className="text-white text-lg font-medium drop-shadow-lg whitespace-pre-wrap break-words">
     <MentionText
       text={activeStory.stories[activeStoryIndex]?.content}
