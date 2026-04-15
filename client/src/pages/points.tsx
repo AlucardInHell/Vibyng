@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus } from "lucide-react";
 import { Link } from "wouter";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/App";
@@ -112,6 +112,20 @@ export default function Points() {
   const musicInputRef = useRef<HTMLInputElement>(null);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
+  const [selectedPhotoIsTall, setSelectedPhotoIsTall] = useState(false);
+  useEffect(() => {
+  if (!selectedPhoto?.imageUrl) {
+    setSelectedPhotoIsTall(false);
+    return;
+  }
+
+  const img = new Image();
+  img.onload = () => {
+    const ratio = img.naturalHeight / img.naturalWidth;
+    setSelectedPhotoIsTall(ratio >= 1.45);
+  };
+  img.src = selectedPhoto.imageUrl;
+}, [selectedPhoto]);
   const [photoCommentsOpen, setPhotoCommentsOpen] = useState(false);
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
@@ -729,9 +743,19 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           <img
             src={selectedPhoto.imageUrl ?? undefined}
             alt={selectedPhoto.title}
-            className="w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+            className={
+  selectedPhotoIsTall
+    ? "max-w-full max-h-full object-contain"
+    : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+}
           />
-        </div>
+       <div
+  className={
+    selectedPhotoIsTall
+      ? "absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-4 pt-16 pb-4"
+      : "p-4 flex-1 min-h-0 flex flex-col overflow-hidden"
+  }
+>
 
         <div className="px-4 pb-4">
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
@@ -960,7 +984,13 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
       ) : (
         <>
           <img src={video.thumbnailUrl ?? undefined} alt={video.title} className="w-full h-40 object-cover" />
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+          <div
+  className={
+    selectedPhotoIsTall
+      ? "absolute inset-0 flex items-center justify-center"
+      : "flex-1 flex items-center justify-center px-2 pt-12 pb-24"
+  }
+>
             <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
               <Play className="w-6 h-6 text-primary ml-1" />
             </div>
