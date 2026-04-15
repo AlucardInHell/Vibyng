@@ -1,5 +1,5 @@
 import { Fragment, useMemo } from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
 
@@ -15,6 +15,7 @@ export function MentionText({
   mentionClassName,
 }: MentionTextProps) {
   const safeText = text ?? "";
+  const [, setLocation] = useLocation();
 
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"],
@@ -36,8 +37,8 @@ export function MentionText({
   }, [users]);
 
   const parts = useMemo(() => {
- return safeText.split(/(@[A-Za-z0-9._-]+)/g);
-}, [safeText]);
+    return safeText.split(/(@[A-Za-z0-9._-]+)/g);
+  }, [safeText]);
 
   return (
     <span className={className}>
@@ -47,17 +48,33 @@ export function MentionText({
           const userId = usernameToId.get(username);
 
           if (userId) {
+            const goToProfile = (e: React.SyntheticEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setLocation(`/artist/${userId}`);
+            };
+
             return (
-              <Link key={`${part}-${index}`} href={`/artist/${userId}`}>
-                <span
-                  className={
-                    mentionClassName ??
-                    "text-primary hover:underline cursor-pointer"
+              <span
+                key={`${part}-${index}`}
+                role="link"
+                tabIndex={0}
+                onClick={goToProfile}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    goToProfile(e);
                   }
-                >
-                  {part}
-                </span>
-              </Link>
+                }}
+                className={
+                  mentionClassName ??
+                  "text-primary hover:underline cursor-pointer"
+                }
+              >
+                {part}
+              </span>
             );
           }
         }
