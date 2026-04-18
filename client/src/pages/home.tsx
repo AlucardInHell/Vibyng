@@ -1491,12 +1491,12 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                   variant="ghost" 
                   size="sm" 
                   onClick={() => handleLike(String(post.id))}
-                  className={likedPosts.has(String(post.id) as any) ? "text-red-500" : ""}
+                 className={(String(post.id).startsWith("photo_") || String(post.id).startsWith("video_")) ? (likedPosts.has(String(post.id) as any) ? "text-red-500" : "") : (likedPosts.has(Number(post.id)) ? "text-red-500" : "")}
                   data-testid={`button-like-${post.id}`}
                   key={`like-${post.id}-${likeCounts[String(post.id)] ?? post.likesCount}`}
                   disabled={post.authorId === CURRENT_USER_ID}
                 >
-                <Heart className={`w-4 h-4 ${likedPosts.has(String(post.id) as any) ? "fill-red-500 text-red-500" : ""}`} />
+                <Heart className={`w-4 h-4 ${(String(post.id).startsWith("photo_") || String(post.id).startsWith("video_")) ? (likedPosts.has(String(post.id) as any) ? "fill-red-500 text-red-500" : "") : (likedPosts.has(Number(post.id)) ? "fill-red-500 text-red-500" : "")}`} />
               <span className="text-xs ml-1">{likeCounts[String(post.id)] ?? post.likesCount ?? 0}</span>
                 </Button>
                 <Button 
