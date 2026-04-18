@@ -124,7 +124,24 @@ export default function ArtistProfile() {
   const [openComments, setOpenComments] = useState<Set<number>>(new Set());
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
+  const [selectedPhotoIsTall, setSelectedPhotoIsTall] = useState(false);
+  const [photoCommentsOpen, setPhotoCommentsOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
+
+useEffect(() => {
+  if (!selectedPhoto?.imageUrl) {
+    setSelectedPhotoIsTall(false);
+    return;
+  }
+
+  const img = new Image();
+  img.onload = () => {
+    const ratio = img.naturalHeight / img.naturalWidth;
+    setSelectedPhotoIsTall(ratio >= 1.55);
+  };
+  img.src = selectedPhoto.imageUrl;
+}, [selectedPhoto]);
+  
   const [videoCommentInput, setVideoCommentInput] = useState("");
   const [videoLikeCount, setVideoLikeCount] = useState<Record<number, number>>({});
   const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
@@ -168,7 +185,7 @@ export default function ArtistProfile() {
     queryFn: async () => {
       if (!selectedPhoto?.id) return { liked: false };
       const res = await fetch(`/api/photos/${selectedPhoto.id}/liked/${currentUserId}`);
-      return res.json();
+      return res.json();  
     },
     enabled: !!selectedPhoto?.id,
     staleTime: 0,
@@ -760,7 +777,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           <div className="grid grid-cols-2 gap-2">
             {photos && photos.length > 0 ? (
               photos.map((photo) => (
-                <Card key={photo.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => { setSelectedPhoto(photo); setPhotoLikeCount(prev => ({ ...prev, [photo.id]: photo.likesCount ?? 0 })); }}>
+                <Card key={photo.id} className="overflow-hidden hover-elevate cursor-pointer" onClick={() => {
+  setSelectedPhoto(photo);
+  setPhotoCommentsOpen(false);
+  setPhotoLikeCount(prev => ({ ...prev, [photo.id]: photo.likesCount ?? 0 }));
+}}
                   <img src={photo.imageUrl ?? undefined} alt={photo.title || "Foto"} className="w-full h-32 object-cover" />
                   {photo.title && photo.title !== "Foto" && (
                     <CardContent className="p-2">
@@ -1299,23 +1320,60 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       )}
    
      {selectedPhoto && (
-  <div className="fixed inset-0 z-[80] bg-black/90 flex flex-col" onClick={() => setSelectedPhoto(null)}>
-    <div className="flex-1 flex items-start justify-center p-2 sm:p-4" onClick={e => e.stopPropagation()}>
-      <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-1rem)] sm:h-auto sm:max-h-[90dvh] flex flex-col">
-        <img
-          src={selectedPhoto.imageUrl ?? undefined}
-          alt={selectedPhoto.title}
-          className="w-full max-h-[32dvh] sm:max-h-[40vh] object-contain bg-black flex-shrink-0"
-        />
+  <>
+    <div
+      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
+      onClick={() => {
+        setSelectedPhoto(null);
+        setPhotoCommentsOpen(false);
+      }}
+    >
+      <div
+        className="relative flex-1 flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="absolute top-4 right-4 z-20 text-white text-2xl"
+          onClick={() => {
+            setSelectedPhoto(null);
+            setPhotoCommentsOpen(false);
+          }}
+        >
+          ✕
+        </button>
 
-        <div className="p-4 flex-1 min-h-0 flex flex-col">
+        <div
+          className={
+            selectedPhotoIsTall
+              ? "flex-1 flex items-center justify-center px-0 pt-12 pb-0"
+              : "flex-1 flex items-center justify-center px-2 pt-12 pb-24"
+          }
+        >
+          <img
+            src={selectedPhoto.imageUrl ?? undefined}
+            alt={selectedPhoto.title}
+            className={
+              selectedPhotoIsTall
+                ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
+                : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+            }
+          />
+        </div>
+
+        <div
+          className={
+            selectedPhotoIsTall
+              ? "absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-4 pt-16 pb-4"
+              : "px-4 pb-4"
+          }
+        >
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
-            <p className="font-medium whitespace-pre-wrap break-words">
-  <MentionText text={selectedPhoto.title} />
-</p>
+            <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
+              <MentionText text={selectedPhoto.title} />
+            </p>
           )}
 
-          <p className="text-xs text-muted-foreground mb-3">
+          <p className="text-xs text-white/70 mb-3">
             {selectedPhoto.createdAt &&
               new Date(selectedPhoto.createdAt).toLocaleDateString("it-IT", {
                 day: "numeric",
@@ -1326,9 +1384,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               })}
           </p>
 
-          <div className="flex items-center gap-4 mb-4 border-b pb-3">
+          <div className="flex items-center gap-4 border-t border-white/10 pt-3">
             <button
-              className={`flex items-center gap-1 text-sm ${isPhotoLiked ? "text-red-500" : "text-muted-foreground"} ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
+              className={`flex items-center gap-1 text-sm ${
+                isPhotoLiked ? "text-red-500" : "text-white/80"
+              } ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
               disabled={artistId === currentUserId}
               onClick={async () => {
                 const currentCount =
@@ -1338,14 +1398,18 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   0;
 
                 if (isPhotoLiked) {
-                  await apiRequest("POST", `/api/photos/${selectedPhoto.id}/unlike`, { userId: currentUserId });
-                  setPhotoLikeCount(prev => ({
+                  await apiRequest("POST", `/api/photos/${selectedPhoto.id}/unlike`, {
+                    userId: currentUserId,
+                  });
+                  setPhotoLikeCount((prev) => ({
                     ...prev,
                     [selectedPhoto.id]: Math.max(0, currentCount - 1),
                   }));
                 } else {
-                  await apiRequest("POST", `/api/photos/${selectedPhoto.id}/like`, { userId: currentUserId });
-                  setPhotoLikeCount(prev => ({
+                  await apiRequest("POST", `/api/photos/${selectedPhoto.id}/like`, {
+                    userId: currentUserId,
+                  });
+                  setPhotoLikeCount((prev) => ({
                     ...prev,
                     [selectedPhoto.id]: currentCount + 1,
                   }));
@@ -1363,10 +1427,21 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             </button>
 
             <button
-              className="flex items-center gap-1 text-sm text-muted-foreground"
+              className="flex items-center gap-1 text-sm text-white/80"
+              onClick={() => setPhotoCommentsOpen(true)}
+            >
+              <MessageCircle className="w-5 h-5" />
+              Commenti
+            </button>
+
+            <button
+              className="flex items-center gap-1 text-sm text-white/80"
               onClick={() => {
                 if (navigator.share) {
-                  navigator.share({ title: selectedPhoto.title, text: "Guarda questa foto su Vibyng!" });
+                  navigator.share({
+                    title: selectedPhoto.title,
+                    text: "Guarda questa foto su Vibyng!",
+                  });
                 } else {
                   navigator.clipboard.writeText(window.location.href);
                   toast({ title: "Link copiato!" });
@@ -1376,28 +1451,36 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               <Share2 className="w-5 h-5" />
               Condividi
             </button>
-
-            <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedPhoto(null)}>
-              ✕
-            </button>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <div className="space-y-2 flex-1 min-h-0 overflow-y-auto mb-3">
+    <Sheet open={photoCommentsOpen} onOpenChange={setPhotoCommentsOpen}>
+      <SheetContent side="bottom" className="h-[75vh] rounded-t-2xl">
+        <SheetHeader>
+          <SheetTitle>Commenti</SheetTitle>
+        </SheetHeader>
+
+        <div className="mt-4 flex flex-col h-[calc(75vh-5rem)]">
+          <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
             {photoCommentsList.map((c: any) => (
               <div key={c.id} className="flex gap-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   {c.avatar_url ? (
                     <img src={c.avatar_url} alt={c.display_name} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
+                    <span className="text-xs text-primary font-medium">
+                      {c.display_name?.charAt(0)}
+                    </span>
                   )}
                 </div>
 
                 <div className="flex-1 bg-muted rounded-lg px-3 py-2">
                   <p className="text-sm font-semibold">{c.display_name}</p>
                   <p className="text-sm whitespace-pre-wrap break-words">
-  <MentionText text={c.content} />
-</p>
+                    <MentionText text={c.content} />
+                  </p>
 
                   <div className="flex items-center justify-between mt-1">
                     <span className="text-xs text-muted-foreground">
@@ -1411,7 +1494,8 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     </span>
 
                     <div className="flex items-center gap-2">
-                      {(Number(c.author_id) === Number(currentUserId) || Number(artistId) === Number(currentUserId)) && (
+                      {(Number(c.author_id) === Number(currentUserId) ||
+                        Number(artistId) === Number(currentUserId)) && (
                         <button
                           className="text-xs text-red-400 hover:text-red-600"
                           onClick={async () => {
@@ -1434,9 +1518,15 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         disabled={Number(c.author_id) === Number(currentUserId)}
                         onClick={async () => {
                           if (c.likedByMe) {
-                            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${currentUserId}`);
+                            await apiRequest(
+                              "POST",
+                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${currentUserId}`
+                            );
                           } else {
-                            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${currentUserId}`);
+                            await apiRequest(
+                              "POST",
+                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${currentUserId}`
+                            );
                           }
                           await refetchPhotoComments();
                         }}
@@ -1451,42 +1541,42 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             ))}
           </div>
 
-         <div className="sticky bottom-0 mt-auto pt-3 pb-[calc(env(safe-area-inset-bottom)+4.5rem)] border-t bg-background shrink-0">
-  <div className="relative">
-    <input
-      className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
-      placeholder="Scrivi un commento..."
-      value={commentInput}
-      onChange={e => {
-        setCommentInput(e.target.value);
-        handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
-      }}
-      onKeyDown={async e => {
-        if (e.key === "Enter" && commentInput.trim()) {
-          await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-            authorId: currentUserId,
-            content: commentInput.trim(),
-          });
-          setCommentInput("");
-          closePhotoCommentMentions();
-          await refetchPhotoComments();
-        }
-      }}
-    />
-    <MentionDropdown
-      query={photoCommentMentionQuery}
-      visible={showPhotoCommentMentions}
-      onSelect={(username) => {
-        setCommentInput(insertPhotoCommentMention(commentInput, username));
-        closePhotoCommentMentions();
-      }}
-    />
-  </div>
-</div>
+          <div className="mt-3 pt-3 border-t bg-background shrink-0">
+            <div className="relative">
+              <input
+                className="w-full text-sm border rounded-lg px-3 py-2 bg-background"
+                placeholder="Scrivi un commento..."
+                value={commentInput}
+                onChange={(e) => {
+                  setCommentInput(e.target.value);
+                  handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+                }}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter" && commentInput.trim()) {
+                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+                      authorId: currentUserId,
+                      content: commentInput.trim(),
+                    });
+                    setCommentInput("");
+                    closePhotoCommentMentions();
+                    await refetchPhotoComments();
+                  }
+                }}
+              />
+              <MentionDropdown
+                query={photoCommentMentionQuery}
+                visible={showPhotoCommentMentions}
+                onSelect={(username) => {
+                  setCommentInput(insertPhotoCommentMention(commentInput, username));
+                  closePhotoCommentMentions();
+                }}
+              />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
+      </SheetContent>
+    </Sheet>
+  </>
 )}
    <Dialog open={connectionsOpen} onOpenChange={setConnectionsOpen}>
         <DialogContent className="max-w-sm">
