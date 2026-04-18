@@ -1496,7 +1496,7 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                   key={`like-${post.id}-${likeCounts[String(post.id)] ?? post.likesCount}`}
                   disabled={post.authorId === CURRENT_USER_ID}
                 >
-                 <Heart className={`w-4 h-4 ${likedPosts.has(String(post.id) as any) ? "fill-red-500 text-red-500" : ""}`} />
+                <Heart className={`w-4 h-4 ${likedPosts.has(String(post.id) as any) ? "fill-red-500 text-red-500" : ""}`} />
               <span className="text-xs ml-1">{likeCounts[String(post.id)] ?? post.likesCount ?? 0}</span>
                 </Button>
                 <Button 
