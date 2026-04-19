@@ -1365,7 +1365,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
       : "w-full h-full max-h-[62dvh] sm:max-h-[68vh] object-contain"
   }
-/>
           />
         </div>
 
