@@ -428,23 +428,32 @@ async getUnreadFromSender(senderId: number, receiverId: number): Promise<number>
       .where(and(eq(messages.receiverId, userId), eq(messages.senderId, senderId)));
   }
  async getConversations(userId: number) {
-    if (!userId || isNaN(userId)) return [];
-    try {
-      const sent = await db.selectDistinct({ user: users })
-        .from(messages)
-        .innerJoin(users, eq(users.id, messages.receiverId))
-        .where(eq(messages.senderId, userId));
-      const received = await db.selectDistinct({ user: users })
-        .from(messages)
-        .innerJoin(users, eq(users.id, messages.senderId))
-        .where(eq(messages.receiverId, userId));
-      const all = [...sent, ...received].map(r => r.user);
-      const unique = Array.from(new Map(all.map(u => [u.id, u])).values());
-      return unique;
-    } catch {
-      return [];
-    }
+  if (!userId || isNaN(userId)) return [];
+
+  try {
+    const result = await db.execute(sql`
+      SELECT *
+      FROM (
+        SELECT DISTINCT ON (other_user.id)
+          other_user.*,
+          m.created_at AS last_message_at
+        FROM messages m
+        JOIN users other_user
+          ON other_user.id = CASE
+            WHEN m.sender_id = ${userId} THEN m.receiver_id
+            ELSE m.sender_id
+          END
+        WHERE m.sender_id = ${userId} OR m.receiver_id = ${userId}
+        ORDER BY other_user.id, m.created_at DESC
+      ) conversations
+      ORDER BY conversations.last_message_at DESC
+    `);
+
+    return Array.isArray(result.rows) ? result.rows : [];
+  } catch {
+    return [];
   }
+}
   async getNotifications(userId: number) {
     return await db.select().from(notifications)
       .where(eq(notifications.userId, userId))
