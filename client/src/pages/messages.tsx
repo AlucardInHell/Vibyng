@@ -44,7 +44,14 @@ export default function Messages() {
     refetchInterval: 5000,
   });
 
-  const filtered = conversations.filter(u =>
+  const filtered = conversations
+  .map((u: any) => ({
+    ...u,
+    displayName: u.displayName ?? u.display_name ?? "",
+    username: u.username ?? "",
+    avatarUrl: u.avatarUrl ?? u.avatar_url ?? "",
+  }))
+  .filter((u) =>
     u.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
