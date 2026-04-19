@@ -1358,14 +1358,14 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           }
         >
           <img
-            src={selectedPhoto.imageUrl ?? undefined}
-            alt={selectedPhoto.title}
-            className={
-              className={
-  selectedPhotoIsTall
-    ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
-    : "w-full h-full max-h-[62dvh] sm:max-h-[68vh] object-contain"
-}
+  src={selectedPhoto.imageUrl ?? undefined}
+  alt={selectedPhoto.title}
+  className={
+    selectedPhotoIsTall
+      ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
+      : "w-full h-full max-h-[62dvh] sm:max-h-[68vh] object-contain"
+  }
+/>
           />
         </div>
 
