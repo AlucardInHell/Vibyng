@@ -95,6 +95,8 @@ export default function Notifications() {
 const [swipingId, setSwipingId] = useState<number | null>(null);
 const [swipeStartX, setSwipeStartX] = useState(0);
 const [swipeOffsets, setSwipeOffsets] = useState<Record<number, number>>({});
+const [swipeStartY, setSwipeStartY] = useState(0);
+const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
 
 const deleteNotificationMutation = useMutation({
   mutationFn: async (notificationId: number) => {
@@ -105,22 +107,39 @@ const deleteNotificationMutation = useMutation({
   },
 });
 
-const handleSwipeStart = (notificationId: number, clientX: number) => {
+const handleSwipeStart = (notificationId: number, clientX: number, clientY: number) => {
   setSwipingId(notificationId);
   setSwipeStartX(clientX);
+  setSwipeStartY(clientY);
+  setIsHorizontalSwipe(false);
 };
-
-const handleSwipeMove = (clientX: number) => {
+  
+const handleSwipeMove = (clientX: number, clientY: number) => {
   if (swipingId === null) return;
-  const delta = clientX - swipeStartX;
-  const nextOffset = Math.max(Math.min(delta, 0), -96);
+
+  const deltaX = clientX - swipeStartX;
+  const deltaY = clientY - swipeStartY;
+
+  if (!isHorizontalSwipe) {
+    if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
+      return;
+    }
+
+    if (Math.abs(deltaX) < 12 || Math.abs(deltaX) < Math.abs(deltaY)) {
+      return;
+    }
+
+    setIsHorizontalSwipe(true);
+  }
+
+  const nextOffset = Math.max(Math.min(deltaX, 0), -96);
   setSwipeOffsets((prev) => ({ ...prev, [swipingId]: nextOffset }));
 };
 
-const handleSwipeEnd = (notificationId: number) => {
+  const handleSwipeEnd = (notificationId: number) => {
   const currentOffset = swipeOffsets[notificationId] ?? 0;
 
-  if (currentOffset <= -72) {
+  if (isHorizontalSwipe && currentOffset <= -72) {
     setSwipeOffsets((prev) => ({ ...prev, [notificationId]: -96 }));
     deleteNotificationMutation.mutate(notificationId);
   } else {
@@ -129,8 +148,9 @@ const handleSwipeEnd = (notificationId: number) => {
 
   setSwipingId(null);
   setSwipeStartX(0);
+  setSwipeStartY(0);
+  setIsHorizontalSwipe(false);
 };
-
 useEffect(() => {
   setSwipeOffsets({});
   setSwipingId(null);
@@ -198,8 +218,8 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
           transform: `translateX(${offset}px)`,
           transition: swipingId === notification.id ? "none" : "transform 0.2s ease",
         }}
-        onTouchStart={(e) => handleSwipeStart(notification.id, e.touches[0].clientX)}
-        onTouchMove={(e) => handleSwipeMove(e.touches[0].clientX)}
+        onTouchStart={(e) => handleSwipeStart(notification.id, e.touches[0].clientX, e.touches[0].clientY)}
+        onTouchMove={(e) => handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY)}
         onTouchEnd={() => handleSwipeEnd(notification.id)}
         onTouchCancel={() => handleSwipeEnd(notification.id)}
       >
