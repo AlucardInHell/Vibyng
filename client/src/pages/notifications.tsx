@@ -8,7 +8,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MentionText } from "@/components/mention-text";
 import { useToast } from "@/hooks/use-toast";
 import type { Notification } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function getCurrentUserId(): number {
   try {
@@ -131,6 +131,12 @@ const handleSwipeEnd = (notificationId: number) => {
   setSwipeStartX(0);
 };
 
+useEffect(() => {
+  setSwipeOffsets({});
+  setSwipingId(null);
+  setSwipeStartX(0);
+}, [notifications]);
+  
 const unreadCount = notifications.filter(n => !n.isRead).length;
 
   if (isLoading) {
