@@ -10,6 +10,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { shareVibyngContent } from "@/lib/share-content";
 import type { Post, User, Comment, Story } from "@shared/schema";
 import {
   Dialog,
@@ -1286,26 +1287,21 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     pendingLikesRef.current.delete(key);
   };
   const handleShare = async (post: PostWithAuthor) => {
-    const shareData = {
-      title: `Post di ${post.author.displayName}`,
-      text: post.content,
-      url: window.location.origin,
-    };
+  const result = await shareVibyngContent({
+    title: `Post di ${post.author.displayName}`,
+    text: post.content || `Contenuto di ${post.author.displayName} su Vibyng`,
+    mediaUrl: post.mediaUrl ?? undefined,
+    fallbackUrl: post.mediaUrl ?? undefined,
+    fileName: `post-${post.id}`,
+  });
 
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        // User cancelled or error
-      }
-    } else {
-      await navigator.clipboard.writeText(`${post.content} - ${post.author.displayName} su Vibyng`);
-      toast({
-        title: "Link copiato!",
-        description: "Il contenuto è stato copiato negli appunti.",
-      });
-    }
-  };
+  if (result === "copied") {
+    toast({
+      title: "Contenuto copiato!",
+      description: "Il contenuto è stato copiato negli appunti.",
+    });
+  }
+};
 
   if (isLoading) {
     return (
