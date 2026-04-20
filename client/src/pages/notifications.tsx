@@ -97,8 +97,6 @@ const [swipeStartX, setSwipeStartX] = useState(0);
 const [swipeOffsets, setSwipeOffsets] = useState<Record<number, number>>({});
 const [swipeStartY, setSwipeStartY] = useState(0);
 const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
-const [swipeStartY, setSwipeStartY] = useState(0);
-const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
 
 const deleteNotificationMutation = useMutation({
   mutationFn: async (notificationId: number) => {
