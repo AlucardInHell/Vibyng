@@ -18,7 +18,7 @@ import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
 import { useToast } from "@/hooks/use-toast";
-import { shareVibyngContent } from "@/lib/share-content";
+import { shareVibyngContent, buildContentShareUrl } from "@/lib/share-content";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
 import type { User, ArtistGoal, ArtistPhoto, ArtistVideo, ArtistSong, Post, Event } from "@shared/schema";
 
@@ -695,19 +695,22 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                           >
                             <MessageCircle className={`w-3 h-3 ${openComments.has(post.id) ? "fill-current" : ""}`} />
                           </button>
-                          <button
+                         <button
   className="flex items-center gap-1 text-xs text-muted-foreground"
   onClick={async () => {
+    const shareUrl = buildContentShareUrl("post", post.id);
+
     const result = await shareVibyngContent({
       title: `Post di ${post.author.displayName}`,
       text: post.content,
       mediaUrl: post.mediaUrl ?? undefined,
-      fallbackUrl: post.mediaUrl ?? undefined,
+      fallbackUrl: shareUrl,
+      shareUrl,
       fileName: `post-${post.id}`,
     });
 
     if (result === "copied") {
-      toast({ title: "Contenuto copiato!" });
+      toast({ title: "Link copiato!" });
     }
   }}
 >
@@ -913,24 +916,27 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
   <span>{videoLikeCount[selectedVideo.id] ?? Number((selectedVideo as any).likesCount ?? 0)}</span>
 </button>
                   <button
-                    className="flex items-center gap-1 text-sm text-muted-foreground"
-                    onClick={async () => {
-  const result = await shareVibyngContent({
-    title: selectedVideo.title || "Video",
-    text: selectedVideo.title || "Video su Vibyng",
-    mediaUrl: selectedVideo.videoUrl ?? undefined,
-    fallbackUrl: selectedVideo.videoUrl ?? undefined,
-    fileName: `video-${selectedVideo.id}`,
-  });
+  className="flex items-center gap-1 text-sm text-muted-foreground"
+  onClick={async () => {
+    const shareUrl = buildContentShareUrl("video", selectedVideo.id);
 
-  if (result === "copied") {
-    toast({ title: "Contenuto copiato!" });
-  }
-}}
-                  >
-                    <Share2 className="w-5 h-5" />
-                    Condividi
-                  </button>
+    const result = await shareVibyngContent({
+      title: selectedVideo.title || "Video",
+      text: selectedVideo.title || "Video su Vibyng",
+      mediaUrl: selectedVideo.videoUrl ?? undefined,
+      fallbackUrl: shareUrl,
+      shareUrl,
+      fileName: `video-${selectedVideo.id}`,
+    });
+
+    if (result === "copied") {
+      toast({ title: "Link copiato!" });
+    }
+  }}
+>
+  <Share2 className="w-5 h-5" />
+  Condividi
+</button>
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
                 <div className="space-y-2 max-h-32 overflow-y-auto mb-3">
@@ -1467,24 +1473,27 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             </button>
 
             <button
-              className="flex items-center gap-1 text-sm text-white/80"
-              onClick={async () => {
-  const result = await shareVibyngContent({
-    title: selectedPhoto.title || "Foto",
-    text: selectedPhoto.title || "Foto su Vibyng",
-    mediaUrl: selectedPhoto.imageUrl ?? undefined,
-    fallbackUrl: selectedPhoto.imageUrl ?? undefined,
-    fileName: `foto-${selectedPhoto.id}`,
-  });
+  className="flex items-center gap-1 text-sm text-white/80"
+  onClick={async () => {
+    const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
 
-  if (result === "copied") {
-    toast({ title: "Contenuto copiato!" });
-  }
-}}
-            >
-              <Share2 className="w-5 h-5" />
-              Condividi
-            </button>
+    const result = await shareVibyngContent({
+      title: selectedPhoto.title || "Foto",
+      text: selectedPhoto.title || "Foto su Vibyng",
+      mediaUrl: selectedPhoto.imageUrl ?? undefined,
+      fallbackUrl: shareUrl,
+      shareUrl,
+      fileName: `foto-${selectedPhoto.id}`,
+    });
+
+    if (result === "copied") {
+      toast({ title: "Link copiato!" });
+    }
+  }}
+>
+  <Share2 className="w-5 h-5" />
+  Condividi
+</button>
           </div>
         </div>
       </div>
