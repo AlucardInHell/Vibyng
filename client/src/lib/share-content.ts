@@ -3,6 +3,7 @@ type ShareVibyngContentInput = {
   text?: string | null;
   mediaUrl?: string | null;
   fallbackUrl?: string | null;
+  shareUrl?: string | null;
   fileName?: string;
 };
 
@@ -34,19 +35,30 @@ async function fileFromUrl(mediaUrl: string, fileName?: string): Promise<File> {
   });
 }
 
+export function buildContentShareUrl(
+  type: "post" | "photo" | "video",
+  id: string | number
+): string {
+  const path = `/content/${type}/${id}`;
+  return typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
+}
+
 export async function shareVibyngContent({
   title,
   text,
   mediaUrl,
   fallbackUrl,
+  shareUrl,
   fileName,
 }: ShareVibyngContentInput): Promise<"shared" | "copied" | "cancelled"> {
   const nav = navigator as Navigator & {
     canShare?: (data?: ShareData) => boolean;
   };
 
-  const normalizedText = text?.trim() || title;
-  const fallbackText = [normalizedText, fallbackUrl || mediaUrl].filter(Boolean).join("\n\n");
+const normalizedText = text?.trim() || title;
+const permalink = shareUrl?.trim() || fallbackUrl || mediaUrl;
+const shareText = [normalizedText, shareUrl].filter(Boolean).join("\n\n");
+const fallbackText = [normalizedText, permalink].filter(Boolean).join("\n\n");
 
   if (typeof navigator !== "undefined" && "share" in navigator && mediaUrl) {
     try {
@@ -55,7 +67,7 @@ export async function shareVibyngContent({
       if (!nav.canShare || nav.canShare({ files: [file] })) {
         await navigator.share({
           title,
-          text: normalizedText,
+          text: shareText || normalizedText,
           files: [file],
         });
         return "shared";
