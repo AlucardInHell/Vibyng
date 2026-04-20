@@ -151,6 +151,13 @@ const handleSwipeMove = (clientX: number, clientY: number) => {
   setSwipeStartY(0);
   setIsHorizontalSwipe(false);
 };
+  useEffect(() => {
+  setSwipeOffsets({});
+  setSwipingId(null);
+  setSwipeStartX(0);
+  setSwipeStartY(0);
+  setIsHorizontalSwipe(false);
+}, [notifications]);
   
 const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -199,7 +206,7 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
       ) : (
         <div className="flex flex-col gap-2">
          {notifications.map((notification) => {
-  const offset = swipeOffsets[notification.id] ?? 0;
+  const offset = swipingId === notification.id ? (swipeOffsets[notification.id] ?? 0) : 0;
 
   return (
     <div key={notification.id} className="relative overflow-hidden rounded-xl">
