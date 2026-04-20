@@ -10,7 +10,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { shareVibyngContent } from "@/lib/share-content";
+import { shareVibyngContent, buildContentShareUrl } from "@/lib/share-content";
 import type { Post, User, Comment, Story } from "@shared/schema";
 import {
   Dialog,
@@ -1287,18 +1287,37 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     pendingLikesRef.current.delete(key);
   };
   const handleShare = async (post: PostWithAuthor) => {
+  const rawId = String(post.id);
+  const shareType =
+    rawId.startsWith("photo_")
+      ? "photo"
+      : rawId.startsWith("video_")
+        ? "video"
+        : "post";
+
+  const shareId = shareType === "post" ? rawId : rawId.split("_")[1];
+  const shareUrl = buildContentShareUrl(shareType, shareId);
+
+  const shareTitle =
+    shareType === "photo"
+      ? `Foto di ${post.author.displayName}`
+      : shareType === "video"
+        ? `Video di ${post.author.displayName}`
+        : `Post di ${post.author.displayName}`;
+
   const result = await shareVibyngContent({
-    title: `Post di ${post.author.displayName}`,
-    text: post.content || `Contenuto di ${post.author.displayName} su Vibyng`,
+    title: shareTitle,
+    text: post.content || `${shareTitle} su Vibyng`,
     mediaUrl: post.mediaUrl ?? undefined,
-    fallbackUrl: post.mediaUrl ?? undefined,
-    fileName: `post-${post.id}`,
+    fallbackUrl: shareUrl,
+    shareUrl,
+    fileName: `${shareType}-${shareId}`,
   });
 
   if (result === "copied") {
     toast({
       title: "Contenuto copiato!",
-      description: "Il contenuto è stato copiato negli appunti.",
+      description: "Il link diretto è stato copiato negli appunti.",
     });
   }
 };
