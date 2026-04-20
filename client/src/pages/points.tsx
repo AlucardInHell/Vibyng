@@ -1060,19 +1060,22 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                           >
                             <MessageCircle className={`w-3 h-3 ${openCommentsPosts.has(post.id) ? "fill-current" : ""}`} />
                           </button>
-                        <button
+                       <button
   className="flex items-center gap-1 text-xs text-muted-foreground"
   onClick={async () => {
+    const shareUrl = buildContentShareUrl("post", post.id);
+
     const result = await shareVibyngContent({
       title: `Post di ${post.author.displayName}`,
       text: post.content,
       mediaUrl: post.mediaUrl ?? undefined,
-      fallbackUrl: post.mediaUrl ?? undefined,
+      fallbackUrl: shareUrl,
+      shareUrl,
       fileName: `post-${post.id}`,
     });
 
     if (result === "copied") {
-      toast({ title: "Contenuto copiato!" });
+      toast({ title: "Link copiato!" });
     }
   }}
 >
@@ -1470,24 +1473,27 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   <span>{videoLikeCount[selectedVideo.id] ?? Number((selectedVideo as any).likesCount ?? 0)}</span>
 </button>
                   <button
-                    className="flex items-center gap-1 text-sm text-muted-foreground"
-                    onClick={async () => {
-  const result = await shareVibyngContent({
-    title: selectedVideo.title || "Video",
-    text: selectedVideo.title || "Video su Vibyng",
-    mediaUrl: selectedVideo.videoUrl ?? undefined,
-    fallbackUrl: selectedVideo.videoUrl ?? undefined,
-    fileName: `video-${selectedVideo.id}`,
-  });
+  className="flex items-center gap-1 text-sm text-muted-foreground"
+  onClick={async () => {
+    const shareUrl = buildContentShareUrl("video", selectedVideo.id);
 
-  if (result === "copied") {
-    toast({ title: "Contenuto copiato!" });
-  }
-}}
-                  >
-                    <Share2 className="w-5 h-5" />
-                    Condividi
-                  </button>
+    const result = await shareVibyngContent({
+      title: selectedVideo.title || "Video",
+      text: selectedVideo.title || "Video su Vibyng",
+      mediaUrl: selectedVideo.videoUrl ?? undefined,
+      fallbackUrl: shareUrl,
+      shareUrl,
+      fileName: `video-${selectedVideo.id}`,
+    });
+
+    if (result === "copied") {
+      toast({ title: "Link copiato!" });
+    }
+  }}
+>
+  <Share2 className="w-5 h-5" />
+  Condividi
+</button>
                   <button
                     className="flex items-center gap-1 text-sm text-red-500"
                     onClick={async () => {
