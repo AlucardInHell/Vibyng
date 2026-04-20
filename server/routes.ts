@@ -1721,6 +1721,26 @@ app.delete("/api/videos/:videoId/comments/:commentId", async (req, res) => {
       res.status(400).json({ message: "Errore" });
     }
   });
+
+  app.delete("/api/notifications/:notificationId", async (req, res) => {
+  try {
+    const notificationId = Number(req.params.notificationId);
+    const userId = Number(req.query.userId);
+
+    if (!notificationId || !userId) {
+      return res.status(400).json({ message: "notificationId o userId mancanti" });
+    }
+
+    await db.execute(sql`
+      DELETE FROM notifications
+      WHERE id = ${notificationId} AND user_id = ${userId}
+    `);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ message: "Errore nell'eliminazione della notifica" });
+  }
+});
   // === SEED DATABASE ===
   await seedDatabase();
 
