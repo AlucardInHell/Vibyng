@@ -1112,7 +1112,136 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
     res.status(400).json({ message: "Errore nel salvare il video" });
   }
 });
+app.get("/api/content/:type/:id", async (req, res) => {
+  try {
+    const type = String(req.params.type);
+    const id = Number(req.params.id);
 
+    if (!["post", "photo", "video"].includes(type) || !id) {
+      return res.status(400).json({ message: "Tipo contenuto non valido" });
+    }
+
+    if (type === "post") {
+      const post = await storage.getPost(id);
+
+      if (!post) {
+        return res.status(404).json({ message: "Contenuto non trovato" });
+      }
+
+      const author = await storage.getUser(Number(post.authorId));
+
+      return res.json({
+        type: "post",
+        id: post.id,
+        authorId: post.authorId,
+        content: post.content ?? "",
+        mediaUrl: post.mediaUrl ?? null,
+        createdAt: post.createdAt,
+        likesCount: post.likesCount ?? 0,
+        author: author
+          ? {
+              id: author.id,
+              displayName: author.displayName,
+              username: author.username,
+              avatarUrl: author.avatarUrl,
+              role: author.role,
+            }
+          : null,
+      });
+    }
+
+    if (type === "photo") {
+      const result = await db.execute(sql`
+        SELECT
+          p.id,
+          p.artist_id AS "authorId",
+          COALESCE(NULLIF(p.description, ''), NULLIF(p.title, 'Foto'), '') AS content,
+          p.image_url AS "mediaUrl",
+          p.created_at AS "createdAt",
+          COALESCE(p.likes_count, 0) AS "likesCount",
+          u.id AS "userId",
+          u.display_name AS "displayName",
+          u.username AS username,
+          u.avatar_url AS "avatarUrl",
+          u.role AS role
+        FROM artist_photos p
+        JOIN users u ON u.id = p.artist_id
+        WHERE p.id = ${id}
+        LIMIT 1
+      `);
+
+      const row = result.rows[0] as any;
+
+      if (!row) {
+        return res.status(404).json({ message: "Contenuto non trovato" });
+      }
+
+      return res.json({
+        type: "photo",
+        id: row.id,
+        authorId: row.authorId,
+        content: row.content ?? "",
+        mediaUrl: row.mediaUrl,
+        createdAt: row.createdAt,
+        likesCount: Number(row.likesCount ?? 0),
+        author: {
+          id: row.userId,
+          displayName: row.displayName,
+          username: row.username,
+          avatarUrl: row.avatarUrl,
+          role: row.role,
+        },
+      });
+    }
+
+    const result = await db.execute(sql`
+      SELECT
+        v.id,
+        v.artist_id AS "authorId",
+        COALESCE(NULLIF(v.title, 'Video'), '') AS content,
+        v.video_url AS "mediaUrl",
+        v.created_at AS "createdAt",
+        COALESCE(v.likes_count, 0) AS "likesCount",
+        u.id AS "userId",
+        u.display_name AS "displayName",
+        u.username AS username,
+        u.avatar_url AS "avatarUrl",
+        u.role AS role
+      FROM artist_videos v
+      JOIN users u ON u.id = v.artist_id
+      WHERE v.id = ${id}
+      LIMIT 1
+    `);
+
+    const row = result.rows[0] as any;
+
+    if (!row) {
+      return res.status(404).json({ message: "Contenuto non trovato" });
+    }
+
+    return res.json({
+      type: "video",
+      id: row.id,
+      authorId: row.authorId,
+      content: row.content ?? "",
+      mediaUrl: row.mediaUrl,
+      createdAt: row.createdAt,
+      likesCount: Number(row.likesCount ?? 0),
+      author: {
+        id: row.userId,
+        displayName: row.displayName,
+        username: row.username,
+        avatarUrl: row.avatarUrl,
+        role: row.role,
+      },
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      message: "Errore nel recupero contenuto",
+      detail: err?.message,
+    });
+  }
+});
  // === MESSAGES ===
   app.get("/api/messages/unread/:userId", async (req, res) => {
     try {
