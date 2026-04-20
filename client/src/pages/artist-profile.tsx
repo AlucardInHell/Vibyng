@@ -719,6 +719,24 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     </CardContent>
                   )}
               </Card>
+    <button
+  className="flex items-center gap-1 text-xs text-muted-foreground"
+  onClick={async () => {
+    const result = await shareVibyngContent({
+      title: `Post di ${post.author.displayName}`,
+      text: post.content,
+      mediaUrl: post.mediaUrl ?? undefined,
+      fallbackUrl: post.mediaUrl ?? undefined,
+      fileName: `post-${post.id}`,
+    });
+
+    if (result === "copied") {
+      toast({ title: "Contenuto copiato!" });
+    }
+  }}
+>
+  <Share2 className="w-3 h-3" />
+</button>
 
 {isArtist && !isOwnProfile && index === 0 && (
   <Card className="mt-3">
@@ -895,14 +913,19 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 </button>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({ title: selectedVideo.title, text: "Guarda questo video su Vibyng!" });
-                      } else {
-                        navigator.clipboard.writeText(window.location.href);
-                        toast({ title: "Link copiato!" });
-                      }
-                    }}
+                    onClick={async () => {
+  const result = await shareVibyngContent({
+    title: selectedVideo.title || "Video",
+    text: selectedVideo.title || "Video su Vibyng",
+    mediaUrl: selectedVideo.videoUrl ?? undefined,
+    fallbackUrl: selectedVideo.videoUrl ?? undefined,
+    fileName: `video-${selectedVideo.id}`,
+  });
+
+  if (result === "copied") {
+    toast({ title: "Contenuto copiato!" });
+  }
+}}
                   >
                     <Share2 className="w-5 h-5" />
                     Condividi
@@ -1444,17 +1467,19 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
             <button
               className="flex items-center gap-1 text-sm text-white/80"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: selectedPhoto.title,
-                    text: "Guarda questa foto su Vibyng!",
-                  });
-                } else {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast({ title: "Link copiato!" });
-                }
-              }}
+              onClick={async () => {
+  const result = await shareVibyngContent({
+    title: selectedPhoto.title || "Foto",
+    text: selectedPhoto.title || "Foto su Vibyng",
+    mediaUrl: selectedPhoto.imageUrl ?? undefined,
+    fallbackUrl: selectedPhoto.imageUrl ?? undefined,
+    fileName: `foto-${selectedPhoto.id}`,
+  });
+
+  if (result === "copied") {
+    toast({ title: "Contenuto copiato!" });
+  }
+}}
             >
               <Share2 className="w-5 h-5" />
               Condividi
