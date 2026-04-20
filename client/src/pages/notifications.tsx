@@ -8,6 +8,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MentionText } from "@/components/mention-text";
 import { useToast } from "@/hooks/use-toast";
 import type { Notification } from "@shared/schema";
+import { useState } from "react";
 
 function getCurrentUserId(): number {
   try {
@@ -91,7 +92,46 @@ export default function Notifications() {
     },
   });
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+const [swipingId, setSwipingId] = useState<number | null>(null);
+const [swipeStartX, setSwipeStartX] = useState(0);
+const [swipeOffsets, setSwipeOffsets] = useState<Record<number, number>>({});
+
+const deleteNotificationMutation = useMutation({
+  mutationFn: async (notificationId: number) => {
+    return apiRequest("DELETE", `/api/notifications/${notificationId}?userId=${userId}`);
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/notifications", userId] });
+  },
+});
+
+const handleSwipeStart = (notificationId: number, clientX: number) => {
+  setSwipingId(notificationId);
+  setSwipeStartX(clientX);
+};
+
+const handleSwipeMove = (clientX: number) => {
+  if (swipingId === null) return;
+  const delta = clientX - swipeStartX;
+  const nextOffset = Math.max(Math.min(delta, 0), -96);
+  setSwipeOffsets((prev) => ({ ...prev, [swipingId]: nextOffset }));
+};
+
+const handleSwipeEnd = (notificationId: number) => {
+  const currentOffset = swipeOffsets[notificationId] ?? 0;
+
+  if (currentOffset <= -72) {
+    setSwipeOffsets((prev) => ({ ...prev, [notificationId]: -96 }));
+    deleteNotificationMutation.mutate(notificationId);
+  } else {
+    setSwipeOffsets((prev) => ({ ...prev, [notificationId]: 0 }));
+  }
+
+  setSwipingId(null);
+  setSwipeStartX(0);
+};
+
+const unreadCount = notifications.filter(n => !n.isRead).length;
 
   if (isLoading) {
     return (
@@ -137,16 +177,34 @@ export default function Notifications() {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {notifications.map((notification) => (
-            <Card
-              key={notification.id}
-              className={`hover-elevate cursor-pointer transition-colors ${!notification.isRead ? "border-primary/30 bg-primary/5" : ""}`}
-              onClick={() => {
-                if (!notification.isRead) {
-                  markReadMutation.mutate(notification.id);
-                }
-              }}
-            >
+         {notifications.map((notification) => {
+  const offset = swipeOffsets[notification.id] ?? 0;
+
+  return (
+    <div key={notification.id} className="relative overflow-hidden rounded-xl">
+      <div className="absolute inset-y-0 right-0 w-24 bg-red-500 flex items-center justify-center text-white text-sm font-medium">
+        Elimina
+      </div>
+
+      <div
+        className="relative z-10"
+        style={{
+          transform: `translateX(${offset}px)`,
+          transition: swipingId === notification.id ? "none" : "transform 0.2s ease",
+        }}
+        onTouchStart={(e) => handleSwipeStart(notification.id, e.touches[0].clientX)}
+        onTouchMove={(e) => handleSwipeMove(e.touches[0].clientX)}
+        onTouchEnd={() => handleSwipeEnd(notification.id)}
+        onTouchCancel={() => handleSwipeEnd(notification.id)}
+      >
+        <Card
+          className={`hover-elevate cursor-pointer transition-colors ${!notification.isRead ? "border-primary/30 bg-primary/5" : ""}`}
+          onClick={() => {
+            if (!notification.isRead) {
+              markReadMutation.mutate(notification.id);
+            }
+          }}
+        >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
@@ -203,8 +261,11 @@ export default function Notifications() {
                   )}
                 </div>
               </CardContent>
-            </Card>
-          ))}
+           </Card>
+      </div>
+    </div>
+  );
+})}
         </div>
       )}
     </div>
