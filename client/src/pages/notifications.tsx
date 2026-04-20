@@ -158,6 +158,24 @@ const handleSwipeMove = (clientX: number, clientY: number) => {
   setSwipeStartY(0);
   setIsHorizontalSwipe(false);
 }, [notifications]);
+useEffect(() => {
+  
+  const handleGlobalTouchEnd = () => {
+    setSwipeOffsets({});
+    setSwipingId(null);
+    setSwipeStartX(0);
+    setSwipeStartY(0);
+    setIsHorizontalSwipe(false);
+  };
+
+  window.addEventListener("touchend", handleGlobalTouchEnd);
+  window.addEventListener("touchcancel", handleGlobalTouchEnd);
+
+  return () => {
+    window.removeEventListener("touchend", handleGlobalTouchEnd);
+    window.removeEventListener("touchcancel", handleGlobalTouchEnd);
+  };
+}, []);
   
 const unreadCount = notifications.filter(n => !n.isRead).length;
 
