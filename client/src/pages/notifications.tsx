@@ -228,9 +228,11 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
     <div key={notification.id} className="relative overflow-hidden rounded-xl">
-      <div className="absolute inset-y-0 right-0 w-24 bg-red-500 flex items-center justify-center text-white text-sm font-medium">
-        Elimina
-      </div>
+      {swipingId === notification.id && (
+  <div className="absolute inset-y-0 right-0 w-24 bg-red-500 flex items-center justify-center text-white text-sm font-medium">
+    Elimina
+  </div>
+)}
 
       <div
         className="relative z-10"
