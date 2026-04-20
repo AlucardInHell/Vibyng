@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Artists from "@/pages/artists";
 import ArtistProfile from "@/pages/artist-profile";
+import ContentPage from "@/pages/content";
 import Points from "@/pages/points";
 import Messages from "@/pages/messages";
 import Chat from "@/pages/chat";
@@ -184,6 +185,7 @@ function Router() {
       <Route path="/search" component={SearchPage} />
       <Route path="/artists" component={Artists} />
       <Route path="/artist/:id" component={ArtistProfile} />
+      <Route path="/content/:type/:id" component={ContentPage} />
       <Route path="/messages" component={Messages} />
       <Route path="/chat/:artistId" component={Chat} />
       <Route path="/me" component={Points} />
