@@ -97,6 +97,7 @@ const [swipeStartX, setSwipeStartX] = useState(0);
 const [swipeOffsets, setSwipeOffsets] = useState<Record<number, number>>({});
 const [swipeStartY, setSwipeStartY] = useState(0);
 const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
+const [swipeEnabled, setSwipeEnabled] = useState(false);
 
 const deleteNotificationMutation = useMutation({
   mutationFn: async (notificationId: number) => {
@@ -108,6 +109,8 @@ const deleteNotificationMutation = useMutation({
 });
 
 const handleSwipeStart = (notificationId: number, clientX: number, clientY: number) => {
+  if (!swipeEnabled) return;
+
   setSwipingId(notificationId);
   setSwipeStartX(clientX);
   setSwipeStartY(clientY);
@@ -115,7 +118,7 @@ const handleSwipeStart = (notificationId: number, clientX: number, clientY: numb
 };
   
 const handleSwipeMove = (clientX: number, clientY: number) => {
-  if (swipingId === null) return;
+ if (!swipeEnabled || swipingId === null) return;
 
   const deltaX = clientX - swipeStartX;
   const deltaY = clientY - swipeStartY;
@@ -158,7 +161,17 @@ const handleSwipeMove = (clientX: number, clientY: number) => {
   setSwipeStartY(0);
   setIsHorizontalSwipe(false);
 }, [notifications]);
-useEffect(() => {
+  useEffect(() => {
+  setSwipeEnabled(false);
+
+  const timer = window.setTimeout(() => {
+    setSwipeEnabled(true);
+  }, 250);
+
+  return () => window.clearTimeout(timer);
+}, [notifications]);
+
+  useEffect(() => {
   
   const handleGlobalTouchEnd = () => {
     setSwipeOffsets({});
