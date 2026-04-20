@@ -18,6 +18,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
+import { shareVibyngContent } from "@/lib/share-content";
 import type { User, ArtistPhoto, ArtistVideo, Post } from "@shared/schema";
 
 function getCurrentUserId(): number {
@@ -806,17 +807,19 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 
             <button
               className="flex items-center gap-1 text-sm text-white/80"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: selectedPhoto.title,
-                    text: "Guarda questa foto su Vibyng!",
-                  });
-                } else {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast({ title: "Link copiato!" });
-                }
-              }}
+              onClick={async () => {
+  const result = await shareVibyngContent({
+    title: selectedPhoto.title || "Foto",
+    text: selectedPhoto.title || "Foto su Vibyng",
+    mediaUrl: selectedPhoto.imageUrl ?? undefined,
+    fallbackUrl: selectedPhoto.imageUrl ?? undefined,
+    fileName: `foto-${selectedPhoto.id}`,
+  });
+
+  if (result === "copied") {
+    toast({ title: "Contenuto copiato!" });
+  }
+}}
             >
               <Share2 className="w-5 h-5" />
               Condividi
@@ -1054,6 +1057,24 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                           >
                             <MessageCircle className={`w-3 h-3 ${openCommentsPosts.has(post.id) ? "fill-current" : ""}`} />
                           </button>
+                        <button
+  className="flex items-center gap-1 text-xs text-muted-foreground"
+  onClick={async () => {
+    const result = await shareVibyngContent({
+      title: `Post di ${post.author.displayName}`,
+      text: post.content,
+      mediaUrl: post.mediaUrl ?? undefined,
+      fallbackUrl: post.mediaUrl ?? undefined,
+      fileName: `post-${post.id}`,
+    });
+
+    if (result === "copied") {
+      toast({ title: "Contenuto copiato!" });
+    }
+  }}
+>
+  <Share2 className="w-3 h-3" />
+</button>
                          {post.isExclusive && (
                             <Badge variant="secondary" className="text-xs">Esclusivo</Badge>
                           )}
@@ -1447,14 +1468,19 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 </button>
                   <button
                     className="flex items-center gap-1 text-sm text-muted-foreground"
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({ title: selectedVideo.title, text: "Guarda questo video su Vibyng!" });
-                      } else {
-                        navigator.clipboard.writeText(window.location.href);
-                        toast({ title: "Link copiato!" });
-                      }
-                    }}
+                    onClick={async () => {
+  const result = await shareVibyngContent({
+    title: selectedVideo.title || "Video",
+    text: selectedVideo.title || "Video su Vibyng",
+    mediaUrl: selectedVideo.videoUrl ?? undefined,
+    fallbackUrl: selectedVideo.videoUrl ?? undefined,
+    fileName: `video-${selectedVideo.id}`,
+  });
+
+  if (result === "copied") {
+    toast({ title: "Contenuto copiato!" });
+  }
+}}
                   >
                     <Share2 className="w-5 h-5" />
                     Condividi
