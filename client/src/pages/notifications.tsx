@@ -164,29 +164,16 @@ const handleSwipeMove = (clientX: number, clientY: number) => {
   useEffect(() => {
   setSwipeEnabled(false);
 
-  const timer = window.setTimeout(() => {
-    setSwipeEnabled(true);
-  }, 250);
+  const enableSwipe = () => setSwipeEnabled(true);
+  const timer = window.setTimeout(enableSwipe, 300);
 
-  return () => window.clearTimeout(timer);
-}, [notifications]);
-
-  useEffect(() => {
-  
-  const handleGlobalTouchEnd = () => {
-    setSwipeOffsets({});
-    setSwipingId(null);
-    setSwipeStartX(0);
-    setSwipeStartY(0);
-    setIsHorizontalSwipe(false);
-  };
-
-  window.addEventListener("touchend", handleGlobalTouchEnd);
-  window.addEventListener("touchcancel", handleGlobalTouchEnd);
+  window.addEventListener("touchend", enableSwipe, { once: true });
+  window.addEventListener("touchcancel", enableSwipe, { once: true });
 
   return () => {
-    window.removeEventListener("touchend", handleGlobalTouchEnd);
-    window.removeEventListener("touchcancel", handleGlobalTouchEnd);
+    window.clearTimeout(timer);
+    window.removeEventListener("touchend", enableSwipe);
+    window.removeEventListener("touchcancel", enableSwipe);
   };
 }, []);
   
