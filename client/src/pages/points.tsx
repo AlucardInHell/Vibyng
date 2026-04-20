@@ -18,7 +18,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
-import { shareVibyngContent } from "@/lib/share-content";
+import { shareVibyngContent, buildContentShareUrl } from "@/lib/share-content";
 import type { User, ArtistPhoto, ArtistVideo, Post } from "@shared/schema";
 
 function getCurrentUserId(): number {
@@ -806,24 +806,27 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             </button>
 
             <button
-              className="flex items-center gap-1 text-sm text-white/80"
-              onClick={async () => {
-  const result = await shareVibyngContent({
-    title: selectedPhoto.title || "Foto",
-    text: selectedPhoto.title || "Foto su Vibyng",
-    mediaUrl: selectedPhoto.imageUrl ?? undefined,
-    fallbackUrl: selectedPhoto.imageUrl ?? undefined,
-    fileName: `foto-${selectedPhoto.id}`,
-  });
+  className="flex items-center gap-1 text-sm text-white/80"
+  onClick={async () => {
+    const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
 
-  if (result === "copied") {
-    toast({ title: "Contenuto copiato!" });
-  }
-}}
-            >
-              <Share2 className="w-5 h-5" />
-              Condividi
-            </button>
+    const result = await shareVibyngContent({
+      title: selectedPhoto.title || "Foto",
+      text: selectedPhoto.title || "Foto su Vibyng",
+      mediaUrl: selectedPhoto.imageUrl ?? undefined,
+      fallbackUrl: shareUrl,
+      shareUrl,
+      fileName: `foto-${selectedPhoto.id}`,
+    });
+
+    if (result === "copied") {
+      toast({ title: "Link copiato!" });
+    }
+  }}
+>
+  <Share2 className="w-5 h-5" />
+  Condividi
+</button>
 
             <button
               className="flex items-center gap-1 text-sm text-red-400 ml-auto"
