@@ -18,6 +18,7 @@ import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
 import { useToast } from "@/hooks/use-toast";
+import { shareVibyngContent } from "@/lib/share-content";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
 import type { User, ArtistGoal, ArtistPhoto, ArtistVideo, ArtistSong, Post, Event } from "@shared/schema";
 
@@ -694,6 +695,24 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                           >
                             <MessageCircle className={`w-3 h-3 ${openComments.has(post.id) ? "fill-current" : ""}`} />
                           </button>
+                          <button
+  className="flex items-center gap-1 text-xs text-muted-foreground"
+  onClick={async () => {
+    const result = await shareVibyngContent({
+      title: `Post di ${post.author.displayName}`,
+      text: post.content,
+      mediaUrl: post.mediaUrl ?? undefined,
+      fallbackUrl: post.mediaUrl ?? undefined,
+      fileName: `post-${post.id}`,
+    });
+
+    if (result === "copied") {
+      toast({ title: "Contenuto copiato!" });
+    }
+  }}
+>
+  <Share2 className="w-3 h-3" />
+</button>
                           {isOwnProfile && (
                             <button
                               className="text-xs text-red-400 hover:text-red-600 ml-auto"
@@ -719,24 +738,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     </CardContent>
                   )}
               </Card>
-    <button
-  className="flex items-center gap-1 text-xs text-muted-foreground"
-  onClick={async () => {
-    const result = await shareVibyngContent({
-      title: `Post di ${post.author.displayName}`,
-      text: post.content,
-      mediaUrl: post.mediaUrl ?? undefined,
-      fallbackUrl: post.mediaUrl ?? undefined,
-      fileName: `post-${post.id}`,
-    });
-
-    if (result === "copied") {
-      toast({ title: "Contenuto copiato!" });
-    }
-  }}
->
-  <Share2 className="w-3 h-3" />
-</button>
 
 {isArtist && !isOwnProfile && index === 0 && (
   <Card className="mt-3">
