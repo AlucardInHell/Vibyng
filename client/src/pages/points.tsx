@@ -805,19 +805,19 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
               Commenti
             </button>
 <button
-  className="flex items-center gap-1 text-sm text-white/80"
+  className="flex items-center gap-1 text-sm text-muted-foreground"
   onClick={async (e) => {
     e.stopPropagation();
 
-    const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
+    const shareUrl = buildContentShareUrl("video", selectedVideo.id);
 
     const result = await shareVibyngContent({
-      title: selectedPhoto.title || "Foto",
-      text: selectedPhoto.title || "Foto su Vibyng",
-      mediaUrl: selectedPhoto.imageUrl ?? undefined,
+      title: selectedVideo.title || "Video",
+      text: selectedVideo.title || "Video su Vibyng",
+      mediaUrl: selectedVideo.videoUrl ?? undefined,
       fallbackUrl: shareUrl,
       shareUrl,
-      fileName: `foto-${selectedPhoto.id}`,
+      fileName: `video-${selectedVideo.id}`,
     });
 
     if (result === "copied") {
