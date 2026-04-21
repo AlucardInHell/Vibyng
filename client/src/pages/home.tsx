@@ -1622,13 +1622,17 @@ const openInternalShare = () => {
       </DialogHeader>
 
       <div className="space-y-2">
-        <Button
-          className="w-full justify-start"
-          onClick={openInternalShare}
-        >
-          <Send className="w-4 h-4 mr-2" />
-          Invia su Vibyng
-        </Button>
+       <Button
+  className="w-full justify-start"
+  onClick={() => {
+    if (!shareOptionsPost) return;
+    setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
+    setShareDialogStep("internal");
+  }}
+>
+  <Send className="w-4 h-4 mr-2" />
+  Invia su Vibyng
+</Button>
 
         <Button
           variant="outline"
