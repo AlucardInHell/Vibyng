@@ -1147,10 +1147,9 @@ const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
 const searchInputRef = useRef<HTMLInputElement>(null);
 const [shareOptionsPost, setShareOptionsPost] = useState<PostWithAuthor | null>(null);
-const skipNextShareDialogCloseRef = useRef(false);  
 const [internalSharePayload, setInternalSharePayload] = useState<SharedContentMessagePayload | null>(null);
 const [shareDialogStep, setShareDialogStep] = useState<"options" | "internal" | null>(null);
-const suppressShareDialogCloseRef = useRef(false);
+const ignoreInitialShareOverlayClickRef = useRef(false);
 
 const filteredUsers = searchResults;
 
@@ -1571,23 +1570,20 @@ const openInternalShare = () => {
                 >
                   <MessageCircle className={`w-4 h-4 ${openComments.has(post.id) ? "fill-current" : ""}`} />
                 </Button>
-             <Button 
+            <Button 
   variant="ghost" 
   size="sm"
-  onMouseDown={(e) => {
-    e.preventDefault();
-  }}
   onClick={(e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    skipNextShareDialogCloseRef.current = true;
+    ignoreInitialShareOverlayClickRef.current = true;
     setShareOptionsPost(post);
     setShareDialogStep("options");
 
-    requestAnimationFrame(() => {
-      skipNextShareDialogCloseRef.current = false;
-    });
+    window.setTimeout(() => {
+      ignoreInitialShareOverlayClickRef.current = false;
+    }, 250);
   }}
   data-testid={`button-share-${post.id}`}
 >
@@ -1616,17 +1612,21 @@ const openInternalShare = () => {
       ))}
      {!!shareOptionsPost && !!shareDialogStep && (
         <div
-          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
-          onClick={() => {
-            setShareOptionsPost(null);
-            setInternalSharePayload(null);
-            setShareDialogStep(null);
-          }}
-        >
           <div
-            className="w-full max-w-sm rounded-lg border bg-background p-6 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
+  className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+  onClick={() => {
+    if (ignoreInitialShareOverlayClickRef.current) return;
+
+    setShareOptionsPost(null);
+    setInternalSharePayload(null);
+    setShareDialogStep(null);
+  }}
+>
+          <div
+  className="w-full max-w-sm rounded-lg border bg-background p-6 shadow-lg"
+  onPointerDown={(e) => e.stopPropagation()}
+  onClick={(e) => e.stopPropagation()}
+>
             {shareDialogStep === "options" ? (
               <>
                 <div className="flex items-center justify-between mb-4">
