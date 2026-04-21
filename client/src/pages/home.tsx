@@ -1354,6 +1354,13 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     fileName: `${shareType}-${shareId}`,
   });
 
+const openInternalShare = () => {
+  if (!shareOptionsPost) return;
+
+  setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
+  setShareDialogStep("internal");
+};
+    
   if (result === "copied") {
     toast({
       title: "Contenuto copiato!",
@@ -1608,43 +1615,49 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
   }}
 >
   <DialogContent className="max-w-sm">
-    {shareDialogStep === "options" ? (
-      <>
-        <DialogHeader>
-          <DialogTitle>Condividi contenuto</DialogTitle>
-        </DialogHeader>
+  {shareDialogStep === "options" ? (
+    <>
+      <DialogHeader>
+        <DialogTitle>Condividi contenuto</DialogTitle>
+      </DialogHeader>
 
-        <div className="space-y-2">
-          setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
+      <div className="space-y-2">
+        <Button
+          className="w-full justify-start"
+          onClick={openInternalShare}
+        >
+          <Send className="w-4 h-4 mr-2" />
+          Invia su Vibyng
+        </Button>
 
-          <Button
-            variant="outline"
-            className="w-full justify-start"
-            onClick={async () => {
-              if (!shareOptionsPost) return;
-              await handleShare(shareOptionsPost);
-              setShareOptionsPost(null);
-              setInternalSharePayload(null);
-              setShareDialogStep(null);
-            }}
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            Condividi fuori da Vibyng
-          </Button>
-        </div>
-      </>
-    ) : (
-      <ShareToVibyngDialog
-        payload={internalSharePayload}
-        onBack={() => setShareDialogStep("options")}
-        onClose={() => {
-          setShareOptionsPost(null);
-          setInternalSharePayload(null);
-          setShareDialogStep(null);
-        }}
-      />
-    )}
-  </DialogContent>
+        <Button
+          variant="outline"
+          className="w-full justify-start"
+          onClick={async () => {
+            if (!shareOptionsPost) return;
+            await handleShare(shareOptionsPost);
+            setShareOptionsPost(null);
+            setInternalSharePayload(null);
+            setShareDialogStep(null);
+          }}
+        >
+          <Share2 className="w-4 h-4 mr-2" />
+          Condividi fuori da Vibyng
+        </Button>
+      </div>
+    </>
+  ) : (
+    <ShareToVibyngDialog
+      payload={internalSharePayload}
+      onBack={() => setShareDialogStep("options")}
+      onClose={() => {
+        setShareOptionsPost(null);
+        setInternalSharePayload(null);
+        setShareDialogStep(null);
+      }}
+    />
+  )}
+</DialogContent>
 </Dialog>
 </div>
   );
