@@ -1147,7 +1147,8 @@ const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
 const searchInputRef = useRef<HTMLInputElement>(null);
 const [shareOptionsPost, setShareOptionsPost] = useState<PostWithAuthor | null>(null);
-const [internalSharePayload, setInternalSharePayload] = useState<SharedContentMessagePayload | null>(null);  
+const [internalSharePayload, setInternalSharePayload] = useState<SharedContentMessagePayload | null>(null);
+const [shareDialogStep, setShareDialogStep] = useState<"options" | "internal" | null>(null);
 
 const filteredUsers = searchResults;
 
@@ -1561,10 +1562,13 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                 >
                   <MessageCircle className={`w-4 h-4 ${openComments.has(post.id) ? "fill-current" : ""}`} />
                 </Button>
-               <Button 
+              <Button 
   variant="ghost" 
   size="sm" 
-  onClick={() => setShareOptionsPost(post)}
+  onClick={() => {
+    setShareOptionsPost(post);
+    setShareDialogStep("options");
+  }}
   data-testid={`button-share-${post.id}`}
 >
   <Share2 className="w-4 h-4" />
@@ -1591,57 +1595,61 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
         </div>
       ))}
       <Dialog
-        open={!!shareOptionsPost}
-        onOpenChange={(open) => {
-          if (!open) setShareOptionsPost(null);
-        }}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Condividi contenuto</DialogTitle>
-          </DialogHeader>
+  open={!!shareOptionsPost && !!shareDialogStep}
+  onOpenChange={(open) => {
+    if (!open) {
+      setShareOptionsPost(null);
+      setInternalSharePayload(null);
+      setShareDialogStep(null);
+    }
+  }}
+>
+  <DialogContent className="max-w-sm">
+    {shareDialogStep === "options" ? (
+      <>
+        <DialogHeader>
+          <DialogTitle>Condividi contenuto</DialogTitle>
+        </DialogHeader>
 
-          <div className="space-y-2">
-            <Button
-              className="w-full justify-start"
-             onClick={() => {
-  if (!shareOptionsPost) return;
+        <div className="space-y-2">
+          <Button
+            className="w-full justify-start"
+            onClick={() => {
+              if (!shareOptionsPost) return;
+              setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
+              setShareDialogStep("internal");
+            }}
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Invia su Vibyng
+          </Button>
 
-  const payload = buildInternalSharePayload(shareOptionsPost);
-  setShareOptionsPost(null);
-
-  setTimeout(() => {
-    setInternalSharePayload(payload);
-  }, 0);
-}}
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Invia su Vibyng
-            </Button>
-
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={async () => {
-                if (!shareOptionsPost) return;
-                await handleShare(shareOptionsPost);
-                setShareOptionsPost(null);
-              }}
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              Condividi fuori da Vibyng
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={async () => {
+              if (!shareOptionsPost) return;
+              await handleShare(shareOptionsPost);
+              setShareOptionsPost(null);
+              setInternalSharePayload(null);
+              setShareDialogStep(null);
+            }}
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Condividi fuori da Vibyng
+          </Button>
+        </div>
+      </>
+    ) : (
       <ShareToVibyngDialog
-        open={!!internalSharePayload}
-        onOpenChange={(open) => {
-          if (!open) setInternalSharePayload(null);
-        }}
         payload={internalSharePayload}
+        onBack={() => setShareDialogStep("options")}
+        onClose={() => {
+          setShareOptionsPost(null);
+          setInternalSharePayload(null);
+          setShareDialogStep(null);
+        }}
       />
-    </div>
-  );
-}
+    )}
+  </DialogContent>
+</Dialog>
