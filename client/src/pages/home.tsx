@@ -1136,19 +1136,20 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
 const searchableUsers: { id: number; username: string; displayName: string; genre: string | null; role: string }[] = [];
 
 export default function Home() {
-  const { toast } = useToast();
-  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
-  const pendingLikesRef = useRef<Set<string>>(new Set());
-  const likedPostsRef = useRef<Set<any>>(new Set());
-  const [openComments, setOpenComments] = useState<Set<string | number>>(new Set());
-  const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-  const [searchOpen, setSearchOpen] = useState(false);
+const { toast } = useToast();
+const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+const pendingLikesRef = useRef<Set<string>>(new Set());
+const likedPostsRef = useRef<Set<any>>(new Set());
+const [openComments, setOpenComments] = useState<Set<string | number>>(new Set());
+const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+const [searchOpen, setSearchOpen] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
 const searchInputRef = useRef<HTMLInputElement>(null);
 const [shareOptionsPost, setShareOptionsPost] = useState<PostWithAuthor | null>(null);
 const [internalSharePayload, setInternalSharePayload] = useState<SharedContentMessagePayload | null>(null);
 const [shareDialogStep, setShareDialogStep] = useState<"options" | "internal" | null>(null);
+const suppressShareDialogCloseRef = useRef(false);
 
 const filteredUsers = searchResults;
 
@@ -1594,10 +1595,12 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
          </Card>
         </div>
       ))}
-      <Dialog
+     <Dialog
   open={!!shareOptionsPost && !!shareDialogStep}
   onOpenChange={(open) => {
     if (!open) {
+      if (suppressShareDialogCloseRef.current) return;
+
       setShareOptionsPost(null);
       setInternalSharePayload(null);
       setShareDialogStep(null);
@@ -1612,17 +1615,7 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
         </DialogHeader>
 
         <div className="space-y-2">
-          <Button
-            className="w-full justify-start"
-            onClick={() => {
-              if (!shareOptionsPost) return;
-              setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
-              setShareDialogStep("internal");
-            }}
-          >
-            <Send className="w-4 h-4 mr-2" />
-            Invia su Vibyng
-          </Button>
+          setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
 
           <Button
             variant="outline"
