@@ -1667,3 +1667,6 @@ const openInternalShare = () => {
     </div>,
     document.body
   )}
+</div>
+  );
+}
