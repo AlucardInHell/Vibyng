@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MentionText } from "@/components/mention-text";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
+import { parseSharedContentMessage } from "@/lib/shared-content-message";
 import type { User, Message } from "@shared/schema";
 
 function getCurrentUserId(): number {
@@ -39,6 +40,17 @@ function parseStoryReplyMessage(content: string | null | undefined): StoryReplyM
     return parsed?.type === "story_reply" ? parsed : null;
   } catch {
     return null;
+  }
+}
+
+function getInternalShareHref(shareUrl: string): string {
+  if (!shareUrl) return "/";
+
+  try {
+    const url = new URL(shareUrl);
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return shareUrl.replace(window.location.origin, "");
   }
 }
 
@@ -212,6 +224,59 @@ useEffect(() => {
       );
     }
 
+const sharedContent = parseSharedContentMessage(msg.content);
+
+    if (sharedContent) {
+      const href = getInternalShareHref(sharedContent.shareUrl);
+      const isImage = !!sharedContent.mediaUrl?.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+
+      return (
+        <div>
+          {isImage && sharedContent.mediaUrl && (
+            <img
+              src={sharedContent.mediaUrl}
+              alt={sharedContent.title}
+              className="w-full h-32 object-cover"
+            />
+          )}
+
+          <div className="px-4 py-3 space-y-2">
+            <p className={`text-xs ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+              Contenuto condiviso
+            </p>
+
+            <p className="text-sm font-semibold whitespace-pre-wrap break-words">
+              {sharedContent.title}
+            </p>
+
+            {!!sharedContent.text && (
+              <p className={`text-xs whitespace-pre-wrap break-words ${isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                <MentionText
+                  text={sharedContent.text}
+                  mentionClassName={
+                    isCurrentUser
+                      ? "underline font-semibold cursor-pointer text-primary-foreground"
+                      : "text-primary underline font-semibold cursor-pointer"
+                  }
+                />
+              </p>
+            )}
+
+            <Link href={href}>
+              <button
+                className={`inline-flex items-center gap-1 text-xs font-medium ${
+                  isCurrentUser ? "text-primary-foreground" : "text-primary"
+                }`}
+              >
+                Apri contenuto
+                <ExternalLink className="w-3 h-3" />
+              </button>
+            </Link>
+          </div>
+        </div>
+      );
+    }
+  
     return (
      <div className="px-4 py-2">
   <p className="text-sm whitespace-pre-wrap break-words">
