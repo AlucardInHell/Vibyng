@@ -804,10 +804,11 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
               <MessageCircle className="w-5 h-5" />
               Commenti
             </button>
-
-            <button
+<button
   className="flex items-center gap-1 text-sm text-white/80"
-  onClick={async () => {
+  onClick={async (e) => {
+    e.stopPropagation();
+
     const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
 
     const result = await shareVibyngContent({
@@ -1472,9 +1473,11 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   <Heart className="w-5 h-5" />
   <span>{videoLikeCount[selectedVideo.id] ?? Number((selectedVideo as any).likesCount ?? 0)}</span>
 </button>
-                  <button
+                 <button
   className="flex items-center gap-1 text-sm text-muted-foreground"
-  onClick={async () => {
+  onClick={async (e) => {
+    e.stopPropagation();
+
     const shareUrl = buildContentShareUrl("video", selectedVideo.id);
 
     const result = await shareVibyngContent({
@@ -1493,7 +1496,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 >
   <Share2 className="w-5 h-5" />
   Condividi
-</button>
+</button>>
                   <button
                     className="flex items-center gap-1 text-sm text-red-500"
                     onClick={async () => {
