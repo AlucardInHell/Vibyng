@@ -1346,22 +1346,15 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
         : `Post di ${post.author.displayName}`;
 
   const result = await shareVibyngContent({
-    title: shareTitle,
-    text: post.content || `${shareTitle} su Vibyng`,
-    mediaUrl: post.mediaUrl ?? undefined,
-    fallbackUrl: shareUrl,
-    shareUrl,
-    fileName: `${shareType}-${shareId}`,
-  });
+  title: shareTitle,
+  text: post.content || `${shareTitle} su Vibyng`,
+  mediaUrl: post.mediaUrl ?? undefined,
+  fallbackUrl: shareUrl,
+  shareUrl,
+  fileName: `${shareType}-${shareId}`,
+});
 
-const openInternalShare = () => {
-  if (!shareOptionsPost) return;
-
-  setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
-  setShareDialogStep("internal");
-};
-    
-  if (result === "copied") {
+if (result === "copied") {
     toast({
       title: "Contenuto copiato!",
       description: "Il link diretto è stato copiato negli appunti.",
@@ -1369,6 +1362,13 @@ const openInternalShare = () => {
   }
 };
 
+const openInternalShare = () => {
+  if (!shareOptionsPost) return;
+
+  setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
+  setShareDialogStep("internal");
+};
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -1553,7 +1553,7 @@ const openInternalShare = () => {
                   variant="ghost" 
                   size="sm" 
                   onClick={() => handleLike(String(post.id))}
-                 className={(String(post.id).startsWith("photo_") || String(post.id).startsWith("video_")) ? (likedPosts.has(String(post.id) as any) ? "text-red-500" : "") : (likedPosts.has(Number(post.id)) ? "text-red-500" : "")}
+                  className={(String(post.id).startsWith("photo_") || String(post.id).startsWith("video_")) ? (likedPosts.has(String(post.id) as any) ? "text-red-500" : "") : (likedPosts.has(Number(post.id)) ? "text-red-500" : "")}
                   data-testid={`button-like-${post.id}`}
                   key={`like-${post.id}-${likeCounts[String(post.id)] ?? post.likesCount}`}
                   disabled={post.authorId === CURRENT_USER_ID}
@@ -1611,82 +1611,74 @@ const openInternalShare = () => {
         </div>
       ))}
      {!!shareOptionsPost && !!shareDialogStep && (
-        <div
-          <div
-  className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
-  onClick={() => {
-    if (ignoreInitialShareOverlayClickRef.current) return;
+  <div
+    className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+    onClick={() => {
+      if (ignoreInitialShareOverlayClickRef.current) return;
 
-    setShareOptionsPost(null);
-    setInternalSharePayload(null);
-    setShareDialogStep(null);
-  }}
->
-          <div
-  className="w-full max-w-sm rounded-lg border bg-background p-6 shadow-lg"
-  onPointerDown={(e) => e.stopPropagation()}
-  onClick={(e) => e.stopPropagation()}
->
-            {shareDialogStep === "options" ? (
-              <>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold">Condividi contenuto</h2>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setShareOptionsPost(null);
-                      setInternalSharePayload(null);
-                      setShareDialogStep(null);
-                    }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <Button
-                    className="w-full justify-start"
-                    onClick={() => {
-                      if (!shareOptionsPost) return;
-                      setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
-                      setShareDialogStep("internal");
-                    }}
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Invia su Vibyng
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={async () => {
-                      if (!shareOptionsPost) return;
-                      await handleShare(shareOptionsPost);
-                      setShareOptionsPost(null);
-                      setInternalSharePayload(null);
-                      setShareDialogStep(null);
-                    }}
-                  >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Condividi fuori da Vibyng
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <ShareToVibyngDialog
-                payload={internalSharePayload}
-                onBack={() => setShareDialogStep("options")}
-                onClose={() => {
-                  setShareOptionsPost(null);
-                  setInternalSharePayload(null);
-                  setShareDialogStep(null);
-                }}
-              />
-            )}
+      setShareOptionsPost(null);
+      setInternalSharePayload(null);
+      setShareDialogStep(null);
+    }}
+  >
+    <div
+      className="w-full max-w-sm rounded-lg border bg-background p-6 shadow-lg"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {shareDialogStep === "options" ? (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Condividi contenuto</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setShareOptionsPost(null);
+                setInternalSharePayload(null);
+                setShareDialogStep(null);
+              }}
+            >
+              <X className="w-4 h-4" />
+            </Button>
           </div>
-        </div>
+
+          <div className="space-y-2">
+            <Button
+              className="w-full justify-start"
+              onClick={openInternalShare}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Invia su Vibyng
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={async () => {
+                if (!shareOptionsPost) return;
+                await handleShare(shareOptionsPost);
+                setShareOptionsPost(null);
+                setInternalSharePayload(null);
+                setShareDialogStep(null);
+              }}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Condividi fuori da Vibyng
+            </Button>
+          </div>
+        </>
+      ) : (
+        <ShareToVibyngDialog
+          payload={internalSharePayload}
+          onBack={() => setShareDialogStep("options")}
+          onClose={() => {
+            setShareOptionsPost(null);
+            setInternalSharePayload(null);
+            setShareDialogStep(null);
+          }}
+        />
       )}
     </div>
-  );
-}
+  </div>
+)}
