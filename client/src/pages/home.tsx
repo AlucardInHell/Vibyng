@@ -1604,11 +1604,16 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
           <div className="space-y-2">
             <Button
               className="w-full justify-start"
-              onClick={() => {
-                if (!shareOptionsPost) return;
-                setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
-                setShareOptionsPost(null);
-              }}
+             onClick={() => {
+  if (!shareOptionsPost) return;
+
+  const payload = buildInternalSharePayload(shareOptionsPost);
+  setShareOptionsPost(null);
+
+  setTimeout(() => {
+    setInternalSharePayload(payload);
+  }, 0);
+}}
             >
               <Send className="w-4 h-4 mr-2" />
               Invia su Vibyng
