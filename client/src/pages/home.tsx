@@ -1147,6 +1147,7 @@ const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
 const searchInputRef = useRef<HTMLInputElement>(null);
 const [shareOptionsPost, setShareOptionsPost] = useState<PostWithAuthor | null>(null);
+const skipNextShareDialogCloseRef = useRef(false);  
 const [internalSharePayload, setInternalSharePayload] = useState<SharedContentMessagePayload | null>(null);
 const [shareDialogStep, setShareDialogStep] = useState<"options" | "internal" | null>(null);
 const suppressShareDialogCloseRef = useRef(false);
@@ -1570,12 +1571,23 @@ const openInternalShare = () => {
                 >
                   <MessageCircle className={`w-4 h-4 ${openComments.has(post.id) ? "fill-current" : ""}`} />
                 </Button>
-              <Button 
+             <Button 
   variant="ghost" 
-  size="sm" 
-  onClick={() => {
+  size="sm"
+  onMouseDown={(e) => {
+    e.preventDefault();
+  }}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    skipNextShareDialogCloseRef.current = true;
     setShareOptionsPost(post);
     setShareDialogStep("options");
+
+    requestAnimationFrame(() => {
+      skipNextShareDialogCloseRef.current = false;
+    });
   }}
   data-testid={`button-share-${post.id}`}
 >
@@ -1606,7 +1618,7 @@ const openInternalShare = () => {
   open={!!shareOptionsPost && !!shareDialogStep}
   onOpenChange={(open) => {
     if (!open) {
-      if (suppressShareDialogCloseRef.current) return;
+      if (skipNextShareDialogCloseRef.current) return;
 
       setShareOptionsPost(null);
       setInternalSharePayload(null);
