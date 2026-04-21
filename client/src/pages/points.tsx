@@ -1496,7 +1496,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 >
   <Share2 className="w-5 h-5" />
   Condividi
-</button>>
+</button>
                   <button
                     className="flex items-center gap-1 text-sm text-red-500"
                     onClick={async () => {
