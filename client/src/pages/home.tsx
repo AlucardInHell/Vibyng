@@ -1682,3 +1682,6 @@ const openInternalShare = () => {
     </div>
   </div>
 )}
+</div>
+  );
+}
