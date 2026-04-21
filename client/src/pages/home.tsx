@@ -22,6 +22,8 @@ import { useUpload } from "@/hooks/use-upload";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
+import { ShareToVibyngDialog } from "@/components/share-to-vibyng-dialog";
+import type { SharedContentMessagePayload } from "@/lib/shared-content-message";
 
 const studioImage = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80";
 const djImage = "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&q=80";
@@ -1144,6 +1146,8 @@ export default function Home() {
 const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
 const searchInputRef = useRef<HTMLInputElement>(null);
+const [shareOptionsPost, setShareOptionsPost] = useState<PostWithAuthor | null>(null);
+const [internalSharePayload, setInternalSharePayload] = useState<SharedContentMessagePayload | null>(null);  
 
 const filteredUsers = searchResults;
 
@@ -1231,6 +1235,40 @@ useEffect(() => {
   setLikedPosts(likedSet as Set<any>);
   likedPostsRef.current = likedSet as Set<any>;
 }, [likedPostIds]);
+
+const buildInternalSharePayload = (post: PostWithAuthor): SharedContentMessagePayload => {
+  const rawId = String(post.id);
+  const contentType =
+    rawId.startsWith("photo_")
+      ? "photo"
+      : rawId.startsWith("video_")
+        ? "video"
+        : "post";
+
+  const contentId = contentType === "post" ? Number(rawId) : Number(rawId.split("_")[1]);
+  const shareUrl = buildContentShareUrl(contentType, contentId);
+
+  const title =
+    contentType === "photo"
+      ? `Foto di ${post.author.displayName}`
+      : contentType === "video"
+        ? `Video di ${post.author.displayName}`
+        : `Post di ${post.author.displayName}`;
+
+  return {
+    type: "shared_content",
+    contentType,
+    contentId,
+    shareUrl,
+    title,
+    text: post.content || "",
+    mediaUrl: post.mediaUrl ?? null,
+    thumbnailUrl: (post as any).thumbnailUrl ?? null,
+    authorId: post.authorId,
+    authorDisplayName: post.author.displayName,
+  };
+};
+  
 const toggleComments = (postId: number) => {
     const newOpen = new Set(openComments);
     if (newOpen.has(postId)) {
@@ -1523,14 +1561,14 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                 >
                   <MessageCircle className={`w-4 h-4 ${openComments.has(post.id) ? "fill-current" : ""}`} />
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleShare(post)}
-                  data-testid={`button-share-${post.id}`}
-                >
-                  <Share2 className="w-4 h-4" />
-                </Button>
+               <Button 
+  variant="ghost" 
+  size="sm" 
+  onClick={() => setShareOptionsPost(post)}
+  data-testid={`button-share-${post.id}`}
+>
+  <Share2 className="w-4 h-4" />
+</Button>
               </div>
 
              {openComments.has(post.id) && (
@@ -1552,6 +1590,53 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
          </Card>
         </div>
       ))}
+      <Dialog
+        open={!!shareOptionsPost}
+        onOpenChange={(open) => {
+          if (!open) setShareOptionsPost(null);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Condividi contenuto</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Button
+              className="w-full justify-start"
+              onClick={() => {
+                if (!shareOptionsPost) return;
+                setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
+                setShareOptionsPost(null);
+              }}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              Invia su Vibyng
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={async () => {
+                if (!shareOptionsPost) return;
+                await handleShare(shareOptionsPost);
+                setShareOptionsPost(null);
+              }}
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Condividi fuori da Vibyng
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ShareToVibyngDialog
+        open={!!internalSharePayload}
+        onOpenChange={(open) => {
+          if (!open) setInternalSharePayload(null);
+        }}
+        payload={internalSharePayload}
+      />
     </div>
   );
 }
