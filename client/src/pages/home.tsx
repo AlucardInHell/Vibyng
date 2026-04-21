@@ -1626,7 +1626,11 @@ const openInternalShare = () => {
     }
   }}
 >
-  <DialogContent className="max-w-sm">
+  <DialogContent
+  className="max-w-sm"
+  onPointerDownOutside={(e) => e.preventDefault()}
+  onInteractOutside={(e) => e.preventDefault()}
+>
   {shareDialogStep === "options" ? (
     <>
       <DialogHeader>
