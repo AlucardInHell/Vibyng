@@ -1653,3 +1653,6 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
     )}
   </DialogContent>
 </Dialog>
+</div>
+  );
+}
