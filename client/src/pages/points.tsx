@@ -754,16 +754,16 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             className={
  className={
   selectedPhotoIsTall
-    ? "w-full h-full max-h-[calc(100dvh-11rem)] object-contain"
+    ? "w-full h-full max-h-[calc(100dvh-9rem)] object-contain"
     : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
 }
           />
         </div>
 
        <div
-  className={
+ className={
   selectedPhotoIsTall
-    ? "absolute inset-x-0 bottom-0 z-20 bg-black/88 backdrop-blur-md border-t border-white/10 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_32px_rgba(0,0,0,0.45)]"
+    ? "absolute inset-x-0 bottom-0 z-20 bg-black/90 px-4 pt-4 pb-4"
     : "px-4 pb-4"
 }
 >
@@ -789,7 +789,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
               })()}
           </p>
 
-          <div className="mt-3 flex items-center gap-4 rounded-xl bg-white/10 px-3 py-3 backdrop-blur-sm">
+          <div className="mt-3 flex items-center gap-4 border-t border-white/10 pt-3">
             <button
               className="flex items-center gap-1 text-sm text-white/80 opacity-50 cursor-not-allowed"
               disabled={true}
