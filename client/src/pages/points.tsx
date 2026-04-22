@@ -752,8 +752,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             src={selectedPhoto.imageUrl ?? undefined}
             alt={selectedPhoto.title}
             className={
+ className={
   selectedPhotoIsTall
-    ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
+    ? "w-full h-full max-h-[calc(100dvh-11rem)] object-contain"
     : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
 }
           />
@@ -761,10 +762,10 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 
        <div
   className={
-    selectedPhotoIsTall
-      ? "absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-4 pt-16 pb-4"
-      : "px-4 pb-4"
-  }
+  selectedPhotoIsTall
+    ? "absolute inset-x-0 bottom-0 z-20 bg-black/88 backdrop-blur-md border-t border-white/10 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_32px_rgba(0,0,0,0.45)]"
+    : "px-4 pb-4"
+}
 >
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
             <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
@@ -788,7 +789,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
               })()}
           </p>
 
-          <div className="flex items-center gap-4 border-t border-white/10 pt-3">
+          <div className="mt-3 flex items-center gap-4 rounded-xl bg-white/10 px-3 py-3 backdrop-blur-sm">
             <button
               className="flex items-center gap-1 text-sm text-white/80 opacity-50 cursor-not-allowed"
               disabled={true}
