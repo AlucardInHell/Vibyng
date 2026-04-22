@@ -75,44 +75,89 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
   });
 
   const handleSubmit = async () => {
-  if (!newComment.trim()) return;
-  await apiRequest("POST", `/api/posts/${postId}/comments`, {
-    authorId: CURRENT_USER_ID,
-    content: newComment.trim(),
-  });
-  setNewComment("");
-  await refetch();
-  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
-  await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
-};
+    if (!newComment.trim()) return;
+    await apiRequest("POST", `/api/posts/${postId}/comments`, {
+      authorId: CURRENT_USER_ID,
+      content: newComment.trim(),
+    });
+    setNewComment("");
+    await refetch();
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+  };
+
+  return (
     <div className="border-t pt-3 mt-2 space-y-3">
       <div className="flex items-center gap-2">
-       <div className="relative flex-1">
-          <Input placeholder="Scrivi un commento..." value={newComment} onChange={e => { setNewComment(e.target.value); }} className="flex-1 w-full" onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} />
+        <div className="relative flex-1">
+          <Input
+            placeholder="Scrivi un commento..."
+            value={newComment}
+            onChange={(e) => {
+              setNewComment(e.target.value);
+            }}
+            className="flex-1 w-full"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSubmit();
+            }}
+          />
         </div>
-        <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}><Send className="w-4 h-4" /></Button>
+        <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}>
+          <Send className="w-4 h-4" />
+        </Button>
       </div>
+
       {comments.map((comment: any) => (
         <div key={comment.id} className="flex gap-2">
           <Avatar className="w-8 h-8">
-            {comment.author?.avatarUrl && <AvatarImage src={comment.author.avatarUrl} alt={comment.author.displayName} />}
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">{comment.author?.displayName?.charAt(0)}</AvatarFallback>
+            {comment.author?.avatarUrl && (
+              <AvatarImage src={comment.author.avatarUrl} alt={comment.author.displayName} />
+            )}
+            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+              {comment.author?.displayName?.charAt(0)}
+            </AvatarFallback>
           </Avatar>
+
           <div className="flex-1 bg-muted rounded-lg px-3 py-2">
             <p className="text-sm font-semibold">{comment.author?.displayName}</p>
             <p className="text-sm whitespace-pre-wrap break-words">
-  <MentionText text={comment.content} />
-</p>
+              <MentionText text={comment.content} />
+            </p>
+
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-muted-foreground">
-                {comment.createdAt && new Date(comment.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                {comment.createdAt &&
+                  new Date(comment.createdAt).toLocaleDateString("it-IT", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
               </span>
+
               <div className="flex items-center gap-2">
-                {(Number(comment.authorId) === Number(CURRENT_USER_ID) || Number(postAuthorId) === Number(CURRENT_USER_ID)) && (
-                  <button className="text-xs text-red-400 hover:text-red-600" onClick={async () => { await apiRequest("DELETE", `/api/comments/${comment.id}`); refetch(); }}>🗑️</button>
+                {(Number(comment.authorId) === Number(CURRENT_USER_ID) ||
+                  Number(postAuthorId) === Number(CURRENT_USER_ID)) && (
+                  <button
+                    className="text-xs text-red-400 hover:text-red-600"
+                    onClick={async () => {
+                      await apiRequest("DELETE", `/api/comments/${comment.id}`);
+                      await refetch();
+                    }}
+                  >
+                    🗑️
+                  </button>
                 )}
-                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500" onClick={async () => { await apiRequest("POST", `/api/comments/${comment.id}/like`); refetch(); }}>
-                  <Heart className="w-3 h-3" /><span>{comment.likesCount ?? 0}</span>
+
+                <button
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
+                  onClick={async () => {
+                    await apiRequest("POST", `/api/comments/${comment.id}/like`);
+                    await refetch();
+                  }}
+                >
+                  <Heart className="w-3 h-3" />
+                  <span>{comment.likesCount ?? 0}</span>
                 </button>
               </div>
             </div>
@@ -122,7 +167,6 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
     </div>
   );
 }
-
 export default function Points() {
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const { toast } = useToast();
