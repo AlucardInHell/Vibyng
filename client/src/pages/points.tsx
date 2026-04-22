@@ -1459,66 +1459,116 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             </Card>
 
             <Card data-testid="card-rewards">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-primary" />
-                  Premi e riscatti
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Gift className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">Contenuto esclusivo</span>
-                    <p className="text-xs text-muted-foreground">Demo, backstage o contenuti riservati</p>
-                  </div>
-                  <Badge variant="outline">500 pts</Badge>
-                </div>
+  <CardHeader className="pb-2">
+    <CardTitle className="text-lg flex items-center gap-2">
+      <Gift className="w-5 h-5 text-primary" />
+      {currentUser?.role === "artist" ? "Premi artista" : "Premi fan"}
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    {currentUser?.role === "artist" ? (
+      <>
+        <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Gift className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Profilo sponsorizzato nel feed</span>
+            <p className="text-xs text-muted-foreground">Boost gratuito del profilo nel feed</p>
+          </div>
+          <Badge variant="outline">500 pts</Badge>
+        </div>
 
-                <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Trophy className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">Badge Supporter</span>
-                    <p className="text-xs text-muted-foreground">Badge reputazionale visibile nella community</p>
-                  </div>
-                  <Badge variant="outline">1000 pts</Badge>
-                </div>
+        <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Video className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Video sponsorizzato in Flow</span>
+            <p className="text-xs text-muted-foreground">Promozione di un video nella sezione Flow</p>
+          </div>
+          <Badge variant="outline">1000 pts</Badge>
+        </div>
 
-                <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Star className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">Early access</span>
-                    <p className="text-xs text-muted-foreground">Accesso anticipato a release o live private</p>
-                  </div>
-                  <Badge variant="outline">1500 pts</Badge>
-                </div>
+        <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Gift className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Sconto partner 25%</span>
+            <p className="text-xs text-muted-foreground">Valido per un solo acquisto presso partner aderenti</p>
+          </div>
+          <Badge variant="outline">1500 pts</Badge>
+        </div>
 
-                <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
-                  <div className="p-2 rounded-full bg-primary/10">
-                    <Gift className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">Vantaggio partner</span>
-                    <p className="text-xs text-muted-foreground">Coupon o vantaggi dedicati presso partner selezionati</p>
-                  </div>
-                  <Badge variant="outline">2500 pts</Badge>
-                </div>
+        <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Trophy className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Registrazione singolo</span>
+            <p className="text-xs text-muted-foreground">Presso partner aderenti, previa disponibilità</p>
+          </div>
+          <Badge variant="outline">2500 pts</Badge>
+        </div>
+      </>
+    ) : (
+      <>
+        <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Gift className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Contenuto esclusivo</span>
+            <p className="text-xs text-muted-foreground">Demo, backstage o contenuti riservati</p>
+          </div>
+          <Badge variant="outline">500 pts</Badge>
+        </div>
 
-                <div className="pt-2">
-                  <Link href="/vpoints">
-                    <Button variant="outline" className="w-full">
-                      Vai alla sezione riscatti
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Trophy className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Badge Supporter</span>
+            <p className="text-xs text-muted-foreground">Badge reputazionale visibile nella community</p>
+          </div>
+          <Badge variant="outline">1000 pts</Badge>
+        </div>
+
+        <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Star className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Early access</span>
+            <p className="text-xs text-muted-foreground">Accesso anticipato a release o live private</p>
+          </div>
+          <Badge variant="outline">1500 pts</Badge>
+        </div>
+
+        <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+          <div className="p-2 rounded-full bg-primary/10">
+            <Gift className="w-4 h-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm">Vantaggio partner</span>
+            <p className="text-xs text-muted-foreground">Coupon o vantaggi dedicati presso partner selezionati</p>
+          </div>
+          <Badge variant="outline">2500 pts</Badge>
+        </div>
+      </>
+    )}
+
+    <div className="pt-2">
+      <Link href="/vpoints">
+        <Button variant="outline" className="w-full">
+          Vai alla sezione riscatti
+        </Button>
+      </Link>
+    </div>
+  </CardContent>
+</Card>
           </div>
         </TabsContent>
      </Tabs>
