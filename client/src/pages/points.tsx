@@ -75,14 +75,16 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
   });
 
   const handleSubmit = async () => {
-    if (!newComment.trim()) return;
-await apiRequest("POST", `/api/posts/${postId}/comments`, { authorId: CURRENT_USER_ID, content: newComment.trim() });
-setNewComment("");
-await refetch();
-await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
-await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
-
-  return (
+  if (!newComment.trim()) return;
+  await apiRequest("POST", `/api/posts/${postId}/comments`, {
+    authorId: CURRENT_USER_ID,
+    content: newComment.trim(),
+  });
+  setNewComment("");
+  await refetch();
+  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+};
     <div className="border-t pt-3 mt-2 space-y-3">
       <div className="flex items-center gap-2">
        <div className="relative flex-1">
@@ -316,22 +318,30 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     },
   });
 
-  const handlePublishPost = async () => {
+ const handlePublishPost = async () => {
   if (!postText.trim()) return;
   try {
-    await apiRequest("POST", "/api/posts", { authorId: currentUserId, content: postText });
-    await queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
-    await queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
-    toast({ title: "Post pubblicato!" });
+    await apiRequest("POST", "/api/posts", {
+      authorId: CURRENT_USER_ID,
+      content: postText,
+    });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+    toast({
+      title: "Post pubblicato!",
+      description: "Il tuo post è stato condiviso con la community",
+    });
     setPostText("");
   } catch {
-    toast({ title: "Errore", variant: "destructive" });
+    toast({
+      title: "Errore",
+      description: "Non è stato possibile pubblicare il post",
+      variant: "destructive",
+    });
   }
 };
-
  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -984,12 +994,14 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                 onKeyDown={async (e) => {
                   if (e.key === "Enter" && commentInput.trim()) {
                     await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-                      authorId: CURRENT_USER_ID,
-                      content: commentInput.trim(),
-                    });
-                    setCommentInput("");
-                    closePhotoCommentMentions();
-                    refetchPhotoComments();
+  authorId: CURRENT_USER_ID,
+  content: commentInput.trim(),
+});
+setCommentInput("");
+closePhotoCommentMentions();
+await refetchPhotoComments();
+await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
                   }
                 }}
               />
@@ -1511,13 +1523,15 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     }}
     onKeyDown={async e => {
       if (e.key === "Enter" && videoCommentInput.trim()) {
-        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
-          authorId: CURRENT_USER_ID,
-          content: videoCommentInput.trim(),
-        });
-        setVideoCommentInput("");
-        closeVideoCommentMentions();
-        refetchVideoComments();
+       await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
+  authorId: CURRENT_USER_ID,
+  content: videoCommentInput.trim(),
+});
+setVideoCommentInput("");
+closeVideoCommentMentions();
+await refetchVideoComments();
+await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
       }
     }}
   />
