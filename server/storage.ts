@@ -1,8 +1,49 @@
 import { db } from "./db";
-import { users, posts, artistGoals, supports, artistPhotos, artistVideos, artistSongs, followers, messages, comments, stories, notifications, events, eventAttendees } from "@shared/schema";
-import type { User, InsertUser, Post, InsertPost, ArtistGoal, InsertArtistGoal, Support, InsertSupport, ArtistPhoto, InsertArtistPhoto, ArtistVideo, InsertArtistVideo, ArtistSong, InsertArtistSong, Message, InsertMessage, Comment, InsertComment, Story, InsertStory } from "@shared/schema";
-import { eq, desc, count, or, and, asc, ilike, gt, sql } from "drizzle-orm";
-
+import {
+  users,
+  posts,
+  artistGoals,
+  supports,
+  artistPhotos,
+  artistVideos,
+  artistSongs,
+  followers,
+  messages,
+  comments,
+  stories,
+  notifications,
+  events,
+  eventAttendees,
+  pointsTransactions,
+  pointsRedemptions,
+} from "@shared/schema";
+import type {
+  User,
+  InsertUser,
+  Post,
+  InsertPost,
+  ArtistGoal,
+  InsertArtistGoal,
+  Support,
+  InsertSupport,
+  ArtistPhoto,
+  InsertArtistPhoto,
+  ArtistVideo,
+  InsertArtistVideo,
+  ArtistSong,
+  InsertArtistSong,
+  Message,
+  InsertMessage,
+  Comment,
+  InsertComment,
+  Story,
+  InsertStory,
+  PointsTransaction,
+  InsertPointsTransaction,
+  PointsRedemption,
+  InsertPointsRedemption,
+} from "@shared/schema";
+import { eq, desc, count, or, and, asc, ilike, gt, gte, lte, sql } from "drizzle-orm";
 export interface IStorage {
   // Users
   getUser(id: number): Promise<User | undefined>;
@@ -13,6 +54,11 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   searchUsers(query: string, role?: string): Promise<User[]>;
   updateUserPoints(id: number, points: number): Promise<void>;
+  decrementUserPoints(id: number, points: number): Promise<void>;
+  getPointsTransactionsByUser(userId: number): Promise<PointsTransaction[]>;
+  getTodayPointsTransactions(userId: number): Promise<PointsTransaction[]>;
+  createPointsTransaction(data: InsertPointsTransaction): Promise<PointsTransaction>;
+  createPointsRedemption(data: InsertPointsRedemption): Promise<PointsRedemption>;
 
  // Posts
   getPosts(): Promise<(Post & { author: User })[]>;
@@ -145,13 +191,51 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     }
   }
 
-  async updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl'>>): Promise<User | undefined> {
-    const [updated] = await db.update(users)
-      .set(data)
-      .where(eq(users.id, id))
-      .returning();
-    return updated;
+  async decrementUserPoints(id: number, points: number): Promise<void> {
+    await db.update(users)
+      .set({
+        vibyngPoints: sql`GREATEST(${users.vibyngPoints} - ${points}, 0)`,
+      })
+      .where(eq(users.id, id));
   }
+
+  async getPointsTransactionsByUser(userId: number): Promise<PointsTransaction[]> {
+    return await db.select()
+      .from(pointsTransactions)
+      .where(eq(pointsTransactions.userId, userId))
+      .orderBy(desc(pointsTransactions.createdAt));
+  }
+
+  async getTodayPointsTransactions(userId: number): Promise<PointsTransaction[]> {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    return await db.select()
+      .from(pointsTransactions)
+      .where(
+        and(
+          eq(pointsTransactions.userId, userId),
+          gte(pointsTransactions.createdAt, start),
+          lte(pointsTransactions.createdAt, end),
+        )
+      )
+      .orderBy(desc(pointsTransactions.createdAt));
+  }
+
+  async createPointsTransaction(data: InsertPointsTransaction): Promise<PointsTransaction> {
+    const [transaction] = await db.insert(pointsTransactions).values(data).returning();
+    return transaction;
+  }
+
+  async createPointsRedemption(data: InsertPointsRedemption): Promise<PointsRedemption> {
+    const [redemption] = await db.insert(pointsRedemptions).values(data).returning();
+    return redemption;
+  }
+
+  async updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl'>>): Promise<User | undefined> {
 
   async getPosts(): Promise<(Post & { author: User })[]> {
     const results = await db.select({
@@ -183,15 +267,11 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     return results.map(r => ({ ...r.post, author: r.author }));
   }
 
-  async createPost(insertPost: InsertPost): Promise<Post> {
+ async createPost(insertPost: InsertPost): Promise<Post> {
     const [post] = await db.insert(posts).values(insertPost).returning();
-    // Reward artist for posting (+10 points)
-    const author = await this.getUser(insertPost.authorId);
-    if (author?.role === "artist") {
-      await this.updateUserPoints(insertPost.authorId, 10);
-    }
     return post;
   }
+    
 async likePost(postId: number, userId: number): Promise<void> {
     try {
       const result = await db.execute(sql`INSERT INTO post_likes (post_id, user_id) VALUES (${postId}, ${userId}) ON CONFLICT DO NOTHING RETURNING id`);
@@ -232,11 +312,7 @@ async likePost(postId: number, userId: number): Promise<void> {
 
   async createSupport(insertSupport: InsertSupport): Promise<Support> {
     const [support] = await db.insert(supports).values(insertSupport).returning();
-    // Reward fan for support (+50 points)
-    await this.updateUserPoints(insertSupport.fanId, 50);
-    // Reward artist for receiving support (+25 points)
-    await this.updateUserPoints(insertSupport.artistId, 25);
-    
+
     // Update goal if applicable
     const goals = await this.getGoalsByArtist(insertSupport.artistId);
     const activeGoal = goals.find(g => !g.isCompleted);
