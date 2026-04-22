@@ -15,7 +15,7 @@ export const POINT_RULES = {
   support_received: { points: 25, dailyLimit: 2 },
 } as const;
 
-export const REWARDS_CATALOG = {
+export const FAN_REWARDS_CATALOG = {
   exclusive_content: {
     label: "Contenuto esclusivo",
     description: "Accesso a demo, backstage o contenuti riservati",
@@ -38,8 +38,33 @@ export const REWARDS_CATALOG = {
   },
 } as const;
 
+export const ARTIST_REWARDS_CATALOG = {
+  sponsored_profile_feed: {
+    label: "Profilo sponsorizzato nel feed",
+    description: "Boost gratuito del profilo nel feed di Vibyng",
+    cost: 500,
+  },
+  sponsored_video_flow: {
+    label: "Video sponsorizzato in Flow",
+    description: "Promozione di un video nella sezione Flow",
+    cost: 1000,
+  },
+  partner_discount_25: {
+    label: "Sconto partner 25%",
+    description: "25% di sconto per un solo acquisto presso partner aderenti",
+    cost: 1500,
+  },
+  indie_single_recording: {
+    label: "Registrazione singolo",
+    description: "Possibilità di registrare un singolo presso partner aderenti, previa disponibilità",
+    cost: 2500,
+  },
+} as const;
+
 export type PointsAction = keyof typeof POINT_RULES;
-export type RewardCode = keyof typeof REWARDS_CATALOG;
+export type FanRewardCode = keyof typeof FAN_REWARDS_CATALOG;
+export type ArtistRewardCode = keyof typeof ARTIST_REWARDS_CATALOG;
+export type RewardCode = FanRewardCode | ArtistRewardCode;
 
 type AwardPointsInput = {
   userId: number;
@@ -66,15 +91,9 @@ type RedeemPointsInput = {
   rewardCode: RewardCode;
 };
 
-type RedeemPointsResult = {
-  success: boolean;
-  pointsSpent: number;
-  reason:
-    | "redeemed"
-    | "reward_not_found"
-    | "user_not_found"
-    | "insufficient_points";
-};
+function getRewardsCatalogForRole(role?: string) {
+  return role === "artist" ? ARTIST_REWARDS_CATALOG : FAN_REWARDS_CATALOG;
+}
 
 export function getTodayWindow(now = new Date()) {
   const start = new Date(now);
@@ -219,15 +238,17 @@ export async function redeemPoints(
   input: RedeemPointsInput
 ): Promise<RedeemPointsResult> {
   const { userId, rewardCode } = input;
-  const reward = REWARDS_CATALOG[rewardCode];
-
-  if (!reward) {
-    return { success: false, pointsSpent: 0, reason: "reward_not_found" };
-  }
 
   const [user] = await db.select().from(users).where(eq(users.id, userId));
   if (!user) {
     return { success: false, pointsSpent: 0, reason: "user_not_found" };
+  }
+
+  const rewardsCatalog = getRewardsCatalogForRole(user.role);
+  const reward = rewardsCatalog[rewardCode as keyof typeof rewardsCatalog];
+
+  if (!reward) {
+    return { success: false, pointsSpent: 0, reason: "reward_not_found" };
   }
 
   if ((user.vibyngPoints ?? 0) < reward.cost) {
@@ -278,7 +299,9 @@ export async function getPointsStatus(userId: number) {
     .orderBy(desc(pointsRedemptions.createdAt))
     .limit(20);
 
-  const rewards = Object.entries(REWARDS_CATALOG).map(([code, reward]) => ({
+  const rewardsCatalog = getRewardsCatalogForRole(user.role);
+
+  const rewards = Object.entries(rewardsCatalog).map(([code, reward]) => ({
     code,
     ...reward,
   }));
@@ -288,6 +311,7 @@ export async function getPointsStatus(userId: number) {
     todayEarned,
     dailyCap: DAILY_POINTS_CAP,
     remainingToday,
+    userRole: user.role,
     rewards,
     recentTransactions,
     recentRedemptions,
