@@ -1619,7 +1619,7 @@ const openInternalShare = () => {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-       {(shareDialogStep ?? "options") === "options" ? (
+        {(shareDialogStep ?? "options") === "options" ? (
           <>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Condividi contenuto</h2>
@@ -1665,7 +1665,5 @@ const openInternalShare = () => {
       </div>
     </div>,
     document.body
-  )}
-</div>
-  );
-}
+  )
+)}
