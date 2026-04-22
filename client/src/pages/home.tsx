@@ -880,14 +880,16 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
 });
 
   const handleSubmit = async () => {
-    if (!newComment.trim()) return;
-    await apiRequest("POST", `/api/videos/${videoId}/comments`, {
-      authorId: CURRENT_USER_ID_LOCAL,
-      content: newComment.trim(),
-    });
-    setNewComment("");
-    refetch();
-  };
+  if (!newComment.trim()) return;
+  await apiRequest("POST", `/api/photos/${photoId}/comments`, {
+    authorId: CURRENT_USER_ID_LOCAL,
+    content: newComment.trim(),
+  });
+  setNewComment("");
+  await refetch();
+  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID_LOCAL, "status"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID_LOCAL] });
+};
 
   return (
     <div className="border-t pt-3 mt-3 space-y-3">
@@ -1006,10 +1008,12 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
         content,
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
-      setNewComment("");
-    },
+    onSuccess: async () => {
+  await queryClient.invalidateQueries({ queryKey: ["/api/posts", postId, "comments"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+  setNewComment("");
+},
   });
 
   const handleSubmit = () => {
