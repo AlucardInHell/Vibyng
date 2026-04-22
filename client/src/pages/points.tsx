@@ -749,14 +749,14 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   }
 >
           <img
-            src={selectedPhoto.imageUrl ?? undefined}
-            alt={selectedPhoto.title}
-            className={
- className={
-  selectedPhotoIsTall
-    ? "w-full h-full max-h-[calc(100dvh-9rem)] object-contain"
-    : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
-}
+  src={selectedPhoto.imageUrl ?? undefined}
+  alt={selectedPhoto.title}
+  className={
+    selectedPhotoIsTall
+      ? "w-full h-full max-h-[calc(100dvh-9rem)] object-contain"
+      : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+  }
+/>
           />
         </div>
 
