@@ -1576,7 +1576,7 @@ const openInternalShare = () => {
                 >
                   <MessageCircle className={`w-4 h-4 ${openComments.has(post.id) ? "fill-current" : ""}`} />
                 </Button>
-           <Button 
+          <Button 
   variant="ghost" 
   size="sm"
   onClick={(e) => {
@@ -1610,8 +1610,7 @@ const openInternalShare = () => {
          </Card>
         </div>
       ))}
-     {!!shareOptionsPost &&
-  !!shareDialogStep &&
+    {!!shareOptionsPost && (
   typeof document !== "undefined" &&
   createPortal(
     <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
@@ -1620,7 +1619,7 @@ const openInternalShare = () => {
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        {shareDialogStep === "options" ? (
+       {(shareDialogStep ?? "options") === "options" ? (
           <>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Condividi contenuto</h2>
