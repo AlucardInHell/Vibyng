@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { api } from "@shared/routes";
+import { awardPoints, getPointsStatus, redeemPoints } from "./vibyng-points";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import crypto from "crypto";
@@ -110,6 +111,33 @@ await db.execute(sql`
   CREATE UNIQUE INDEX IF NOT EXISTS story_likes_story_user_idx
   ON story_likes (story_id, user_id)
 `);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS points_transactions (
+    id serial PRIMARY KEY,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action text NOT NULL,
+    points integer NOT NULL,
+    reference_type text NOT NULL,
+    reference_id integer NOT NULL,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS points_transactions_unique_action_ref_idx
+  ON points_transactions (user_id, action, reference_type, reference_id)
+`);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS points_redemptions (
+    id serial PRIMARY KEY,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    reward_code text NOT NULL,
+    points_spent integer NOT NULL,
+    created_at timestamp DEFAULT now()
+  )
+`);
   
   // === USERS ===
   app.get(api.users.artists.path, async (_req, res) => {
@@ -168,6 +196,52 @@ await db.execute(sql`
     }
   });
 
+app.get("/api/vpoints/:userId/status", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const status = await getPointsStatus(userId);
+
+      if (!status) {
+        return res.status(404).json({ message: "Utente non trovato" });
+      }
+
+      res.json(status);
+    } catch (err: any) {
+      res.status(400).json({ message: "Errore nel recupero stato VibyngPoints", detail: err?.message });
+    }
+  });
+
+  app.post("/api/vpoints/redeem", async (req, res) => {
+    try {
+      const userId = Number(req.body.userId);
+      const rewardCode = String(req.body.rewardCode ?? "");
+
+      const result = await redeemPoints({
+        userId,
+        rewardCode: rewardCode as any,
+      });
+
+      if (!result.success) {
+        const statusCode =
+          result.reason === "user_not_found" ? 404 :
+          result.reason === "reward_not_found" ? 400 :
+          result.reason === "insufficient_points" ? 400 :
+          400;
+
+        return res.status(statusCode).json(result);
+      }
+
+      const status = await getPointsStatus(userId);
+
+      res.json({
+        ...result,
+        status,
+      });
+    } catch (err: any) {
+      res.status(400).json({ message: "Errore nel riscatto dei VibyngPoints", detail: err?.message });
+    }
+  });
+  
   // === OBJECT STORAGE ===
   // === AUTH ===
 app.post("/api/auth/register", async (req, res) => {
@@ -442,6 +516,17 @@ app.post("/api/uploads/avatar", async (req, res) => {
     const input = api.posts.create.input.parse(req.body);
     const post = await storage.createPost(input);
 
+    try {
+      await awardPoints({
+        userId: Number(post.authorId),
+        action: "post_create",
+        referenceType: "post",
+        referenceId: Number(post.id),
+      });
+    } catch (pointsErr: any) {
+      console.error("[points-post-create]", pointsErr?.message);
+    }
+
     await sendMentionNotifications(String(post.content ?? ""), Number(post.authorId));
 
     res.status(201).json(post);
@@ -538,7 +623,7 @@ app.get("/api/posts", async (req, res) => {
     res.json(commentsWithLikes);
   });
 
- app.post("/api/posts/:postId/comments", async (req, res) => {
+app.post("/api/posts/:postId/comments", async (req, res) => {
   try {
     const { authorId, content } = req.body;
 
@@ -547,6 +632,18 @@ app.get("/api/posts", async (req, res) => {
       authorId,
       content,
     });
+
+    try {
+      await awardPoints({
+        userId: Number(authorId),
+        action: "comment_post",
+        referenceType: "comment",
+        referenceId: Number(comment.id),
+        content,
+      });
+    } catch (pointsErr: any) {
+      console.error("[points-comment-post]", pointsErr?.message);
+    }
 
     await sendMentionNotifications(String(content ?? ""), Number(authorId));
 
@@ -631,10 +728,33 @@ app.get("/api/posts", async (req, res) => {
   });
 
   // === SUPPORTS ===
-  app.post(api.supports.create.path, async (req, res) => {
+app.post(api.supports.create.path, async (req, res) => {
     try {
       const input = api.supports.create.input.parse(req.body);
       const support = await storage.createSupport(input);
+
+      try {
+        await awardPoints({
+          userId: Number(input.fanId),
+          action: "support_sent",
+          referenceType: "support",
+          referenceId: Number(support.id),
+        });
+      } catch (pointsErr: any) {
+        console.error("[points-support-sent]", pointsErr?.message);
+      }
+
+      try {
+        await awardPoints({
+          userId: Number(input.artistId),
+          action: "support_received",
+          referenceType: "support",
+          referenceId: Number(support.id),
+        });
+      } catch (pointsErr: any) {
+        console.error("[points-support-received]", pointsErr?.message);
+      }
+
       res.status(201).json(support);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -974,7 +1094,20 @@ app.get("/api/users/:userId/followers", async (req, res) => {
     try {
       const userId = Number(req.params.userId);
       const artistId = Number(req.params.artistId);
+
       await storage.followArtist(userId, artistId);
+
+      try {
+        await awardPoints({
+          userId,
+          action: "follow_artist",
+          referenceType: "artist",
+          referenceId: artistId,
+        });
+      } catch (pointsErr: any) {
+        console.error("[points-follow-artist]", pointsErr?.message);
+      }
+
       const follower = await storage.getUser(userId);
       await storage.createNotification({
         userId: artistId,
@@ -987,7 +1120,6 @@ app.get("/api/users/:userId/followers", async (req, res) => {
       res.status(400).json({ message: "Errore nel seguire l'artista" });
     }
   });
-
   app.delete("/api/users/:userId/follow/:artistId", async (req, res) => {
     try {
       await storage.unfollowArtist(Number(req.params.userId), Number(req.params.artistId));
@@ -1556,11 +1688,24 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
     }
   });
   
-  app.post("/api/events/:eventId/attend", async (req, res) => {
+ app.post("/api/events/:eventId/attend", async (req, res) => {
     try {
       const eventId = Number(req.params.eventId);
       const { userId } = req.body;
+
       await storage.attendEvent(eventId, userId);
+
+      try {
+        await awardPoints({
+          userId: Number(userId),
+          action: "attend_event",
+          referenceType: "event",
+          referenceId: eventId,
+        });
+      } catch (pointsErr: any) {
+        console.error("[points-attend-event]", pointsErr?.message);
+      }
+
       res.json({ success: true });
     } catch (err) {
       res.status(400).json({ message: "Errore" });
@@ -1602,13 +1747,26 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
       res.status(400).json({ message: "Errore nel recupero commenti" });
     }
   });
-  app.post("/api/photos/:photoId/comments", async (req, res) => {
+ app.post("/api/photos/:photoId/comments", async (req, res) => {
   try {
     const photoId = Number(req.params.photoId);
     const { authorId, content } = req.body;
     console.log(`[photo-comment] photoId=${photoId} authorId=${authorId} content=${content}`);
 
     const comment = await storage.createPhotoComment({ photoId, authorId, content });
+
+    try {
+      await awardPoints({
+        userId: Number(authorId),
+        action: "comment_photo",
+        referenceType: "photo_comment",
+        referenceId: Number(comment.id),
+        content,
+      });
+    } catch (pointsErr: any) {
+      console.error("[points-comment-photo]", pointsErr?.message);
+    }
+
     await sendMentionNotifications(String(content ?? ""), Number(authorId));
 
     res.status(201).json(comment);
@@ -1730,6 +1888,19 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
     const { authorId, content } = req.body;
 
     const comment = await storage.createVideoComment({ videoId, authorId, content });
+
+    try {
+      await awardPoints({
+        userId: Number(authorId),
+        action: "comment_video",
+        referenceType: "video_comment",
+        referenceId: Number(comment.id),
+        content,
+      });
+    } catch (pointsErr: any) {
+      console.error("[points-comment-video]", pointsErr?.message);
+    }
+
     await sendMentionNotifications(String(content ?? ""), Number(authorId));
 
     res.status(201).json(comment);
@@ -1924,31 +2095,6 @@ const artists = await storage.getArtists();
       title: "Video musicale professionale",
       description: "Finanziare la produzione del mio primo videoclip professionale.",
       targetAmount: "3000",
-    });
-
-    // Creiamo post demo
-    await storage.createPost({
-      authorId: artist1.id,
-      content: "Ciao a tutti! Sono Luna e questo è il mio primo post su Vibyng. Sono entusiasta di condividere la mia musica con voi! 🎵",
-      isExclusive: false,
-    });
-
-    await storage.createPost({
-      authorId: artist2.id,
-      content: "Nuovo beat in lavorazione... Stay tuned! Chi vuole un'anteprima esclusiva?",
-      isExclusive: false,
-    });
-
-    await storage.createPost({
-      authorId: artist3.id,
-      content: "Stasera provo nuove melodie. La musica soul mi scorre nelle vene.",
-      isExclusive: false,
-    });
-
-    await storage.createPost({
-      authorId: artist1.id,
-      content: "🎧 ESCLUSIVO per i miei supporter: ecco la demo del mio nuovo singolo! Fatemi sapere cosa ne pensate.",
-      isExclusive: true,
     });
 
     // Seed photos
