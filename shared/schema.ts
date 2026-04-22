@@ -367,6 +367,43 @@ export const eventAttendees = pgTable("event_attendees", {
 export const insertEventAttendeeSchema = createInsertSchema(eventAttendees);
 export type EventAttendee = typeof eventAttendees.$inferSelect;
 export type InsertEventAttendee = z.infer<typeof insertEventAttendeeSchema>;
+
+// === VIBYNG POINTS TRANSACTIONS ===
+export const pointsTransactions = pgTable("points_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  action: text("action").notNull(),
+  points: integer("points").notNull(),
+  referenceType: text("reference_type").notNull(),
+  referenceId: integer("reference_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// === VIBYNG POINTS REDEMPTIONS ===
+export const pointsRedemptions = pgTable("points_redemptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rewardCode: text("reward_code").notNull(),
+  pointsSpent: integer("points_spent").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPointsTransactionSchema = createInsertSchema(pointsTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPointsRedemptionSchema = createInsertSchema(pointsRedemptions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type PointsTransaction = typeof pointsTransactions.$inferSelect;
+export type InsertPointsTransaction = z.infer<typeof insertPointsTransactionSchema>;
+
+export type PointsRedemption = typeof pointsRedemptions.$inferSelect;
+export type InsertPointsRedemption = z.infer<typeof insertPointsRedemptionSchema>;
+
 // === PHOTO COMMENTS ===
 export const photoComments = pgTable("photo_comments", {
   id: serial("id").primaryKey(),
