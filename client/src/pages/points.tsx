@@ -756,8 +756,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
       ? "w-full h-full max-h-[calc(100dvh-9rem)] object-contain"
       : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
   }
-/>
-          />
+  />
         </div>
 
        <div
