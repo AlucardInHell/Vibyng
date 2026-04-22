@@ -60,11 +60,17 @@ function ArtistPostComments({ postId, postAuthorId }: { postId: number; postAuth
   });
 
   const handleSubmit = async () => {
-    if (!newComment.trim()) return;
-    await apiRequest("POST", `/api/posts/${postId}/comments`, { authorId: currentUserId, content: newComment.trim() });
-    setNewComment("");
-    refetch();
-  };
+  if (!newComment.trim()) return;
+  await apiRequest("POST", `/api/posts/${postId}/comments`, {
+    authorId: currentUserId,
+    content: newComment.trim(),
+  });
+  setNewComment("");
+  await refetch();
+  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+  await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
+};
 
   return (
     <div className="border-t pt-3 mt-2 space-y-3">
@@ -337,16 +343,20 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         return apiRequest("POST", `/api/users/${currentUserId}/follow/${artistId}`);
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "following", artistId] });
-      queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/followers/count`] });
-      toast({
-        title: isFollowingData?.isFollowing ? "Non segui più" : "Ora segui",
-        description: isFollowingData?.isFollowing
-          ? `Hai smesso di seguire ${artist?.displayName}`
-          : `Stai seguendo ${artist?.displayName}`,
-      });
-    },
+    onSuccess: async () => {
+  await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "following", artistId] });
+  await queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/followers/count`] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+  await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
+
+  toast({
+    title: isFollowingData?.isFollowing ? "Non segui più" : "Ora segui",
+    description: isFollowingData?.isFollowing
+      ? `Hai smesso di seguire ${artist?.displayName}`
+      : `Stai seguendo ${artist?.displayName}`,
+  });
+},
   });
 
   const supportMutation = useMutation({
@@ -359,10 +369,15 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         isSubscription: false,
       });
     },
-    onSuccess: () => {
-      toast({ title: "Grazie per il supporto!", description: "Hai guadagnato 50 VibyngPoints" });
-      queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/goals`] });
-    },
+    onSuccess: async () => {
+  await queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/goals`] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+  await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
+  await queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+
+  toast({ title: "Grazie per il supporto!", description: "Hai guadagnato 50 VibyngPoints" });
+},
     onError: () => {
       toast({ title: "Errore", description: "Non è stato possibile completare il supporto", variant: "destructive" });
     },
@@ -400,18 +415,21 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     }
   };
 
-  const handlePublishPost = async () => {
-    if (!postText.trim()) return;
-    try {
-      await apiRequest("POST", "/api/posts", { authorId: currentUserId, content: postText });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-      toast({ title: "Post pubblicato!" });
-      setPostText("");
-    } catch {
-      toast({ title: "Errore", variant: "destructive" });
-    }
-  };
+ const handlePublishPost = async () => {
+  if (!postText.trim()) return;
+  try {
+    await apiRequest("POST", "/api/posts", { authorId: currentUserId, content: postText });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+    await queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+    toast({ title: "Post pubblicato!" });
+    setPostText("");
+  } catch {
+    toast({ title: "Errore", variant: "destructive" });
+  }
+};
 
   const handlePlaySong = (song: ArtistSong) => {
     if (currentSong?.id === song.id) {
@@ -1016,16 +1034,19 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       handleVideoCommentTextChange(e.target.value, e.target.selectionStart || 0);
     }}
     onKeyDown={async e => {
-      if (e.key === "Enter" && videoCommentInput.trim()) {
-        await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
-          authorId: currentUserId,
-          content: videoCommentInput.trim(),
-        });
-        setVideoCommentInput("");
-        closeVideoCommentMentions();
-        refetchVideoComments();
-      }
-    }}
+  if (e.key === "Enter" && videoCommentInput.trim()) {
+    await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
+      authorId: currentUserId,
+      content: videoCommentInput.trim(),
+    });
+    setVideoCommentInput("");
+    closeVideoCommentMentions();
+    await refetchVideoComments();
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+    await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
+  }
+}}
   />
   <MentionDropdown
     query={videoCommentMentionQuery}
@@ -1153,15 +1174,18 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                               size="sm"
                               variant="outline"
                               onClick={async () => {
-                                try {
-                                  await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
-                                  setAttendingEventIds(prev => new Set(prev).add(event.id));
-                                  await queryClient.refetchQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
-                                  toast({ title: "Partecipi all'evento! 🎉" });
-                                } catch {
-                                  toast({ title: "Errore", variant: "destructive" });
-                                }
-                              }}
+  try {
+    await apiRequest("POST", `/api/events/${event.id}/attend`, { userId: currentUserId });
+    setAttendingEventIds(prev => new Set(prev).add(event.id));
+    await queryClient.refetchQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+    await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
+    toast({ title: "Partecipi all'evento! 🎉" });
+  } catch {
+    toast({ title: "Errore", variant: "destructive" });
+  }
+}}
                             >
                               <Calendar className="w-3 h-3 mr-1" />
                               Partecipo
@@ -1594,17 +1618,20 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   setCommentInput(e.target.value);
                   handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
                 }}
-                onKeyDown={async (e) => {
-                  if (e.key === "Enter" && commentInput.trim()) {
-                    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-                      authorId: currentUserId,
-                      content: commentInput.trim(),
-                    });
-                    setCommentInput("");
-                    closePhotoCommentMentions();
-                    await refetchPhotoComments();
-                  }
-                }}
+               onKeyDown={async (e) => {
+  if (e.key === "Enter" && commentInput.trim()) {
+    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+      authorId: currentUserId,
+      content: commentInput.trim(),
+    });
+    setCommentInput("");
+    closePhotoCommentMentions();
+    await refetchPhotoComments();
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+    await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
+  }
+}}
               />
               <MentionDropdown
                 query={photoCommentMentionQuery}
