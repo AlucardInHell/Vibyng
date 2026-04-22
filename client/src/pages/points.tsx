@@ -36,6 +36,33 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+type VPointsStatus = {
+  balance: number;
+  todayEarned: number;
+  dailyCap: number;
+  remainingToday: number;
+  rewards: Array<{
+    code: string;
+    label: string;
+    description: string;
+    cost: number;
+  }>;
+  recentTransactions: Array<{
+    id: number;
+    action: string;
+    points: number;
+    referenceType: string;
+    referenceId: number;
+    createdAt: string;
+  }>;
+  recentRedemptions: Array<{
+    id: number;
+    rewardCode: string;
+    pointsSpent: number;
+    createdAt: string;
+  }>;
+};
+
 function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
   const [newComment, setNewComment] = useState("");
 
@@ -188,6 +215,17 @@ const isVideoLiked = videoLikeData?.liked ?? false;
   
   const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/users", CURRENT_USER_ID],
+  });
+
+  const { data: vPointsStatus } = useQuery<VPointsStatus>({
+    queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"],
+    queryFn: async () => {
+      const res = await fetch(`/api/vpoints/${CURRENT_USER_ID}/status`);
+      if (!res.ok) {
+        throw new Error("Errore nel recupero dei VibyngPoints");
+      }
+      return res.json();
+    },
   });
 
   const { data: followedArtists = [] } = useQuery<User[]>({
@@ -517,7 +555,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
              <Link href="/vpoints">
                 <div className="flex items-center gap-1 text-primary cursor-pointer hover:opacity-80">
                   <Zap className="w-4 h-4" />
-                  <span className="text-sm font-medium" data-testid="text-my-points">{currentUser?.vibyngPoints ?? 0} VibyngPoints</span>
+                  <span className="text-sm font-medium" data-testid="text-my-points">
+                    {vPointsStatus?.balance ?? currentUser?.vibyngPoints ?? 0} VibyngPoints
+                  </span>
                 </div>
               </Link>
             </div>
@@ -604,7 +644,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
       </Card>
 
       <Tabs defaultValue="songs" className="w-full">
-       <TabsList className={`w-full grid ${currentUser?.role === "artist" ? "grid-cols-6" : "grid-cols-6"} `}>
+       <TabsList className="w-full grid grid-cols-7">
           <TabsTrigger value="songs" className="px-1 text-xs" data-testid="tab-songs">
             <Music className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Musica</span>
@@ -628,6 +668,10 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
          <TabsTrigger value="connections" className="px-1 text-xs">
             <Users className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">Connessioni</span>
+          </TabsTrigger>
+          <TabsTrigger value="vpoints" className="px-1 text-xs" data-testid="tab-vpoints">
+            <Zap className="w-4 h-4 sm:mr-1" />
+            <span className="hidden sm:inline">Punti</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1303,15 +1347,38 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           </div>
         </TabsContent>
        
-        <TabsContent value="vpoints" className="mt-4">
+ <TabsContent value="vpoints" className="mt-4">
           <div className="space-y-4">
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20" data-testid="card-points-balance">
               <CardContent className="pt-6 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Zap className="w-8 h-8 text-primary" />
-                  <span className="text-4xl font-bold text-primary" data-testid="text-total-points">{currentUser?.vibyngPoints ?? 0}</span>
+                  <span className="text-4xl font-bold text-primary" data-testid="text-total-points">
+                    {vPointsStatus?.balance ?? currentUser?.vibyngPoints ?? 0}
+                  </span>
                 </div>
                 <p className="text-sm text-muted-foreground">I tuoi VibyngPoints</p>
+
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg bg-background/70 p-3 border">
+                    <p className="text-xs text-muted-foreground">Oggi</p>
+                    <p className="font-semibold">{vPointsStatus?.todayEarned ?? 0}</p>
+                  </div>
+                  <div className="rounded-lg bg-background/70 p-3 border">
+                    <p className="text-xs text-muted-foreground">Cap giornaliero</p>
+                    <p className="font-semibold">{vPointsStatus?.dailyCap ?? 50}</p>
+                  </div>
+                  <div className="rounded-lg bg-background/70 p-3 border">
+                    <p className="text-xs text-muted-foreground">Disponibili oggi</p>
+                    <p className="font-semibold">{vPointsStatus?.remainingToday ?? 0}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <Link href="/vpoints">
+                    <Button size="sm">Apri sezione completa</Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
 
@@ -1325,33 +1392,68 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
                   <div className="p-2 rounded-full bg-primary/10">
+                    <Star className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm">Pubblica un post</span>
+                    <p className="text-xs text-muted-foreground">Massimo 1 ricompensa al giorno</p>
+                  </div>
+                  <Badge variant="secondary" className="text-primary">+10</Badge>
+                </div>
+
+                <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+                  <div className="p-2 rounded-full bg-primary/10">
                     <MessageCircle className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">Commenta i post</span>
-                    <p className="text-xs text-muted-foreground">Interagisci con la community</p>
+                    <span className="font-medium text-sm">Commenta post, foto o video</span>
+                    <p className="text-xs text-muted-foreground">Commenti validi, massimo 6 premiati al giorno</p>
                   </div>
                   <Badge variant="secondary" className="text-primary">+5</Badge>
                 </div>
+
+                <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Users className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm">Segui un profilo</span>
+                    <p className="text-xs text-muted-foreground">Massimo 5 follow premiati al giorno</p>
+                  </div>
+                  <Badge variant="secondary" className="text-primary">+3</Badge>
+                </div>
+
+                <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Calendar className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm">Partecipa a un evento</span>
+                    <p className="text-xs text-muted-foreground">Massimo 2 eventi premiati al giorno</p>
+                  </div>
+                  <Badge variant="secondary" className="text-primary">+10</Badge>
+                </div>
+
                 <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
                   <div className="p-2 rounded-full bg-primary/10">
                     <Heart className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="font-medium text-sm">Supporta un artista</span>
-                    <p className="text-xs text-muted-foreground">Fai una donazione</p>
+                    <p className="text-xs text-muted-foreground">Massimo 1 supporto premiato al giorno</p>
                   </div>
                   <Badge variant="secondary" className="text-primary">+50</Badge>
                 </div>
+
                 <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
                   <div className="p-2 rounded-full bg-primary/10">
-                    <Users className="w-4 h-4 text-primary" />
+                    <Trophy className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">Invita amici</span>
-                    <p className="text-xs text-muted-foreground">Porta nuovi utenti</p>
+                    <span className="font-medium text-sm">Ricevi un supporto</span>
+                    <p className="text-xs text-muted-foreground">Massimo 2 supporti premiati al giorno</p>
                   </div>
-                  <Badge variant="secondary" className="text-primary">+100</Badge>
+                  <Badge variant="secondary" className="text-primary">+25</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -1360,7 +1462,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Gift className="w-5 h-5 text-primary" />
-                  Premi disponibili
+                  Premi e riscatti
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -1369,30 +1471,51 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                     <Gift className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm">Contenuti esclusivi</span>
-                    <p className="text-xs text-muted-foreground">Accedi a demo e backstage</p>
+                    <span className="font-medium text-sm">Contenuto esclusivo</span>
+                    <p className="text-xs text-muted-foreground">Demo, backstage o contenuti riservati</p>
                   </div>
                   <Badge variant="outline">500 pts</Badge>
                 </div>
+
                 <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
                   <div className="p-2 rounded-full bg-primary/10">
                     <Trophy className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="font-medium text-sm">Badge Supporter</span>
-                    <p className="text-xs text-muted-foreground">Mostra il tuo supporto</p>
+                    <p className="text-xs text-muted-foreground">Badge reputazionale visibile nella community</p>
                   </div>
                   <Badge variant="outline">1000 pts</Badge>
                 </div>
+
                 <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
                   <div className="p-2 rounded-full bg-primary/10">
                     <Star className="w-4 h-4 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <span className="font-medium text-sm">Early access</span>
-                    <p className="text-xs text-muted-foreground">Nuove release in anteprima</p>
+                    <p className="text-xs text-muted-foreground">Accesso anticipato a release o live private</p>
                   </div>
-                  <Badge variant="outline">2000 pts</Badge>
+                  <Badge variant="outline">1500 pts</Badge>
+                </div>
+
+                <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Gift className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm">Vantaggio partner</span>
+                    <p className="text-xs text-muted-foreground">Coupon o vantaggi dedicati presso partner selezionati</p>
+                  </div>
+                  <Badge variant="outline">2500 pts</Badge>
+                </div>
+
+                <div className="pt-2">
+                  <Link href="/vpoints">
+                    <Button variant="outline" className="w-full">
+                      Vai alla sezione riscatti
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
