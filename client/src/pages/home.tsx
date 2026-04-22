@@ -10,7 +10,6 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { shareVibyngContent, buildContentShareUrl } from "@/lib/share-content";
 import type { Post, User, Comment, Story } from "@shared/schema";
 import {
@@ -23,8 +22,6 @@ import { useUpload } from "@/hooks/use-upload";
 import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
-import { ShareToVibyngDialog } from "@/components/share-to-vibyng-dialog";
-import type { SharedContentMessagePayload } from "@/lib/shared-content-message";
 
 const studioImage = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&q=80";
 const djImage = "https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&q=80";
@@ -1147,10 +1144,6 @@ const [searchOpen, setSearchOpen] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
 const searchInputRef = useRef<HTMLInputElement>(null);
-const [shareOptionsPost, setShareOptionsPost] = useState<PostWithAuthor | null>(null);
-const [internalSharePayload, setInternalSharePayload] = useState<SharedContentMessagePayload | null>(null);
-const [shareDialogStep, setShareDialogStep] = useState<"options" | "internal" | null>(null);
-
 const filteredUsers = searchResults;
 
 useEffect(() => {
@@ -1237,39 +1230,6 @@ useEffect(() => {
   setLikedPosts(likedSet as Set<any>);
   likedPostsRef.current = likedSet as Set<any>;
 }, [likedPostIds]);
-
-const buildInternalSharePayload = (post: PostWithAuthor): SharedContentMessagePayload => {
-  const rawId = String(post.id);
-  const contentType =
-    rawId.startsWith("photo_")
-      ? "photo"
-      : rawId.startsWith("video_")
-        ? "video"
-        : "post";
-
-  const contentId = contentType === "post" ? Number(rawId) : Number(rawId.split("_")[1]);
-  const shareUrl = buildContentShareUrl(contentType, contentId);
-
-  const title =
-    contentType === "photo"
-      ? `Foto di ${post.author.displayName}`
-      : contentType === "video"
-        ? `Video di ${post.author.displayName}`
-        : `Post di ${post.author.displayName}`;
-
-  return {
-    type: "shared_content",
-    contentType,
-    contentId,
-    shareUrl,
-    title,
-    text: post.content || "",
-    mediaUrl: post.mediaUrl ?? null,
-    thumbnailUrl: (post as any).thumbnailUrl ?? null,
-    authorId: post.authorId,
-    authorDisplayName: post.author.displayName,
-  };
-};
   
 const toggleComments = (postId: number) => {
     const newOpen = new Set(openComments);
@@ -1361,19 +1321,6 @@ if (result === "copied") {
     });
   }
 };
-
-const openInternalShare = () => {
-  if (!shareOptionsPost) return;
-
-  setInternalSharePayload(buildInternalSharePayload(shareOptionsPost));
-  setShareDialogStep("internal");
-};
-  
- const closeShareModal = () => {
-  setShareOptionsPost(null);
-  setInternalSharePayload(null);
-  setShareDialogStep(null);
-}; 
   
   if (isLoading) {
     return (
@@ -1576,14 +1523,13 @@ const openInternalShare = () => {
                 >
                   <MessageCircle className={`w-4 h-4 ${openComments.has(post.id) ? "fill-current" : ""}`} />
                 </Button>
-          <Button 
+         <Button 
   variant="ghost" 
   size="sm"
-  onClick={(e) => {
+  onClick={async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setShareOptionsPost(post);
-    setShareDialogStep("options");
+    await handleShare(post);
   }}
   data-testid={`button-share-${post.id}`}
 >
@@ -1610,63 +1556,6 @@ const openInternalShare = () => {
          </Card>
         </div>
       ))}
-    {!!shareOptionsPost && (
-  typeof document !== "undefined" &&
-  createPortal(
-    <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4">
-      <div
-        className="w-full max-w-sm rounded-lg border bg-background p-6 shadow-lg"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {(shareDialogStep ?? "options") === "options" ? (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Condividi contenuto</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={closeShareModal}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <Button
-                className="w-full justify-start"
-                onClick={openInternalShare}
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Invia su Vibyng
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={async () => {
-                  if (!shareOptionsPost) return;
-                  await handleShare(shareOptionsPost);
-                  closeShareModal();
-                }}
-              >
-                <Share2 className="w-4 h-4 mr-2" />
-                Condividi fuori da Vibyng
-              </Button>
-            </div>
-          </>
-        ) : (
-          <ShareToVibyngDialog
-            payload={internalSharePayload}
-            onBack={() => setShareDialogStep("options")}
-            onClose={closeShareModal}
-          />
-        )}
-      </div>
-    </div>,
-    document.body
-  )
-)}
-</div>
+    </div>
   );
 }
