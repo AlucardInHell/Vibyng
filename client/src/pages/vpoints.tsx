@@ -42,6 +42,7 @@ type VPointsStatus = {
   todayEarned: number;
   dailyCap: number;
   remainingToday: number;
+  userRole: string;
   rewards: RewardItem[];
   recentTransactions: PointsTransaction[];
   recentRedemptions: PointsRedemption[];
@@ -63,6 +64,10 @@ const REWARD_LABELS: Record<string, string> = {
   supporter_badge: "Badge Supporter",
   early_access: "Early access",
   partner_perk: "Vantaggio partner",
+  sponsored_profile_feed: "Profilo sponsorizzato nel feed",
+  sponsored_video_flow: "Video sponsorizzato in Flow",
+  partner_discount_25: "Sconto partner 25%",
+  indie_single_recording: "Registrazione singolo",
 };
 
 function formatDate(value?: string) {
@@ -218,36 +223,38 @@ export default function VPoints() {
             <Badge variant="secondary" className="text-primary">+10</Badge>
           </div>
 
-          <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
-            <div className="p-2 rounded-full bg-primary/10">
-              <Heart className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="font-medium text-sm">Supporta un artista</span>
-              <p className="text-xs text-muted-foreground">Massimo 1 supporto premiato al giorno</p>
-            </div>
-            <Badge variant="secondary" className="text-primary">+50</Badge>
-          </div>
-
-          <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
-            <div className="p-2 rounded-full bg-primary/10">
-              <Trophy className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="font-medium text-sm">Ricevi un supporto</span>
-              <p className="text-xs text-muted-foreground">Massimo 2 supporti premiati al giorno</p>
-            </div>
-            <Badge variant="secondary" className="text-primary">+25</Badge>
-          </div>
+          {status.userRole === "artist" ? (
+  <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+    <div className="p-2 rounded-full bg-primary/10">
+      <Trophy className="w-4 h-4 text-primary" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <span className="font-medium text-sm">Ricevi un supporto</span>
+      <p className="text-xs text-muted-foreground">Massimo 2 supporti premiati al giorno</p>
+    </div>
+    <Badge variant="secondary" className="text-primary">+25</Badge>
+  </div>
+) : (
+  <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50">
+    <div className="p-2 rounded-full bg-primary/10">
+      <Heart className="w-4 h-4 text-primary" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <span className="font-medium text-sm">Supporta un artista</span>
+      <p className="text-xs text-muted-foreground">Massimo 1 supporto premiato al giorno</p>
+    </div>
+    <Badge variant="secondary" className="text-primary">+50</Badge>
+  </div>
+)}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
-            <Gift className="w-5 h-5 text-primary" />
-            Premi disponibili
-          </CardTitle>
+  <Gift className="w-5 h-5 text-primary" />
+  {status.userRole === "artist" ? "Premi disponibili per artisti" : "Premi disponibili per fan"}
+</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {status.rewards.map((reward) => {
