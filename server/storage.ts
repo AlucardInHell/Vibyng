@@ -235,7 +235,13 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     return redemption;
   }
 
-  async updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl'>>): Promise<User | undefined> {
+ async updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl'>>): Promise<User | undefined> {
+    const [updated] = await db.update(users)
+      .set(data)
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
+  }
 
   async getPosts(): Promise<(Post & { author: User })[]> {
     const results = await db.select({
