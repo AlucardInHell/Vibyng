@@ -76,10 +76,11 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
-    await apiRequest("POST", `/api/posts/${postId}/comments`, { authorId: CURRENT_USER_ID, content: newComment.trim() });
-    setNewComment("");
-    refetch();
-  };
+await apiRequest("POST", `/api/posts/${postId}/comments`, { authorId: CURRENT_USER_ID, content: newComment.trim() });
+setNewComment("");
+await refetch();
+await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
 
   return (
     <div className="border-t pt-3 mt-2 space-y-3">
@@ -316,27 +317,20 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   });
 
   const handlePublishPost = async () => {
-    if (!postText.trim()) {
-      toast({
-        title: "Post vuoto",
-        description: "Scrivi qualcosa prima di pubblicare",
-        variant: "destructive",
-      });
-      return;
-    }
-    try {
-      await apiRequest("POST", "/api/posts", { authorId: CURRENT_USER_ID, content: postText });
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
-      toast({
-        title: "Post pubblicato!",
-        description: "Il tuo post è stato condiviso con la community",
-      });
-      setPostText("");
-    } catch {
-      toast({ title: "Errore", description: "Non è stato possibile pubblicare il post", variant: "destructive" });
-    }
-  };
+  if (!postText.trim()) return;
+  try {
+    await apiRequest("POST", "/api/posts", { authorId: currentUserId, content: postText });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+    await queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+    toast({ title: "Post pubblicato!" });
+    setPostText("");
+  } catch {
+    toast({ title: "Errore", variant: "destructive" });
+  }
+};
 
  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
