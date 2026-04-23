@@ -483,9 +483,7 @@ export default function Artists() {
         comments.map((comment: any) => (
           <div key={comment.id} className="flex items-start gap-3">
             <Avatar className="w-9 h-9 flex-shrink-0">
-              {comment.avatar_url && (
-                <AvatarImage src={comment.avatar_url} alt={comment.display_name} />
-              )}
+              {comment.avatar_url && <AvatarImage src={comment.avatar_url} alt={comment.display_name} />}
               <AvatarFallback className="bg-primary/10 text-primary text-xs">
                 {comment.display_name?.charAt(0)}
               </AvatarFallback>
@@ -541,3 +539,11 @@ export default function Artists() {
     </div>
   </div>
 )}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
