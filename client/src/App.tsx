@@ -783,9 +783,6 @@ function SettingsMenu() {
               <SelectContent>
                 <SelectItem value="it">Italiano</SelectItem>
                 <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Español</SelectItem>
-                <SelectItem value="fr">Français</SelectItem>
-                <SelectItem value="de">Deutsch</SelectItem>
               </SelectContent>
             </Select>
           </div>
