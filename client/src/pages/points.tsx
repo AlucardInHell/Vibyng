@@ -1452,7 +1452,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
           <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
             <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
-              <video src={selectedVideo.videoUrl} controls className="w-full max-h-[40vh] object-contain bg-black" />
+              <video src={selectedVideo.videoUrl} controls className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black" />
               <div className="p-4">
                 {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium whitespace-pre-wrap break-words">
   <MentionText text={selectedVideo.title} />
@@ -1509,84 +1509,136 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                   </button>
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
-                <div className="space-y-2 max-h-24 overflow-y-auto mb-3">
-                  {videoCommentsList.map((c: any) => (
-                    <div key={c.id} className="flex gap-2">
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                        <p className="text-sm font-semibold">{c.display_name}</p>
-                        <p className="text-sm whitespace-pre-wrap break-words">
-  <MentionText text={c.content} />
-</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {(Number(c.author_id) === Number(CURRENT_USER_ID) || Number(selectedVideo.artistId) === Number(CURRENT_USER_ID)) && (
-                              <button className="text-xs text-red-400 hover:text-red-600" onClick={async () => { await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`); refetchVideoComments(); }}>🗑️</button>
-                            )}
-                            <button
-  className={`flex items-center gap-1 text-xs ${
-    Number(c.author_id) === Number(CURRENT_USER_ID)
-      ? "opacity-50 cursor-not-allowed text-muted-foreground"
-      : c.likedByMe
-        ? "text-red-500"
-        : "text-muted-foreground hover:text-red-500"
-  }`}
-  disabled={Number(c.author_id) === Number(CURRENT_USER_ID)}
-  onClick={async () => {
-    if (c.likedByMe) {
-      await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/unlike`, { userId: CURRENT_USER_ID });
-    } else {
-      await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like`, { userId: CURRENT_USER_ID });
-    }
-    await refetchVideoComments();
-  }}
->
-  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
-  <span>{c.likes_count ?? 0}</span>
-</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="relative">
-  <input
-    className="w-full text-sm border rounded-lg px-3 py-1 bg-background"
-    placeholder="Scrivi un commento..."
-    value={videoCommentInput}
-    onChange={e => {
-      setVideoCommentInput(e.target.value);
-      handleVideoCommentTextChange(e.target.value, e.target.selectionStart || 0);
-    }}
-    onKeyDown={async e => {
-      if (e.key === "Enter" && videoCommentInput.trim()) {
-       await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
-  authorId: CURRENT_USER_ID,
-  content: videoCommentInput.trim(),
-});
-setVideoCommentInput("");
-closeVideoCommentMentions();
-await refetchVideoComments();
-await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
-await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
-      }
-    }}
-  />
-  <MentionDropdown
-    query={videoCommentMentionQuery}
-    visible={showVideoCommentMentions}
-    onSelect={(username) => {
-      setVideoCommentInput(insertVideoCommentMention(videoCommentInput, username));
-      closeVideoCommentMentions();
-    }}
-  />
+                <div className="mt-4 border-t pt-4 px-4 pb-4">
+  <div className="space-y-4 max-h-[26vh] overflow-y-auto pr-1">
+    {videoCommentsList.map((c: any) => (
+      <div key={c.id} className="flex items-start gap-3">
+        <Avatar className="w-9 h-9 flex-shrink-0">
+          {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
+          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+            {c.display_name?.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+
+        <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
+          <p className="text-sm font-semibold">{c.display_name}</p>
+          <p className="text-sm whitespace-pre-wrap break-words">
+            <MentionText text={c.content} />
+          </p>
+
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs text-muted-foreground">
+              {c.created_at &&
+                new Date(c.created_at).toLocaleDateString("it-IT", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+            </span>
+
+            <div className="flex items-center gap-2">
+              {(Number(c.author_id) === Number(CURRENT_USER_ID) ||
+                Number(selectedVideo.artistId) === Number(CURRENT_USER_ID)) && (
+                <button
+                  className="text-xs text-red-400 hover:text-red-600"
+                  onClick={async () => {
+                    await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`);
+                    await refetchVideoComments();
+                  }}
+                >
+                  🗑️
+                </button>
+              )}
+
+              <button
+                className={`flex items-center gap-1 text-xs ${
+                  Number(c.author_id) === Number(CURRENT_USER_ID)
+                    ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                    : c.likedByMe
+                      ? "text-red-500"
+                      : "text-muted-foreground hover:text-red-500"
+                }`}
+                disabled={Number(c.author_id) === Number(CURRENT_USER_ID)}
+                onClick={async () => {
+                  if (c.likedByMe) {
+                    await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/unlike`, {
+                      userId: CURRENT_USER_ID,
+                    });
+                  } else {
+                    await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like`, {
+                      userId: CURRENT_USER_ID,
+                    });
+                  }
+                  await refetchVideoComments();
+                }}
+              >
+                <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+                <span>{c.likes_count ?? 0}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <div className="pt-3 mt-2 border-t">
+    <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
+      <div className="relative flex-1">
+        <input
+          className="w-full h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 text-base placeholder:text-[14px]"
+          placeholder="Scrivi un commento..."
+          value={videoCommentInput}
+          onChange={e => {
+            setVideoCommentInput(e.target.value);
+            handleVideoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+          }}
+          onKeyDown={async e => {
+            if (e.key === "Enter" && videoCommentInput.trim()) {
+              await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
+                authorId: CURRENT_USER_ID,
+                content: videoCommentInput.trim(),
+              });
+              setVideoCommentInput("");
+              closeVideoCommentMentions();
+              await refetchVideoComments();
+              await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+              await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+            }
+          }}
+        />
+        <MentionDropdown
+          query={videoCommentMentionQuery}
+          visible={showVideoCommentMentions}
+          onSelect={(username) => {
+            setVideoCommentInput(insertVideoCommentMention(videoCommentInput, username));
+            closeVideoCommentMentions();
+          }}
+        />
+      </div>
+
+      <Button
+        size="icon"
+        className="shrink-0"
+        onClick={async () => {
+          if (!videoCommentInput.trim()) return;
+          await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
+            authorId: CURRENT_USER_ID,
+            content: videoCommentInput.trim(),
+          });
+          setVideoCommentInput("");
+          closeVideoCommentMentions();
+          await refetchVideoComments();
+          await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
+          await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+        }}
+        disabled={!videoCommentInput.trim()}
+      >
+        <Send className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
 </div>
               </div>
             </div>
