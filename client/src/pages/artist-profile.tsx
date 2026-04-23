@@ -1088,10 +1088,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
    </div>
   </div>
 </div>
-          </DialogContent>
-        </Dialog>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-    </TabsContent>
 
     {/* Tab Canzoni — solo Artista */}
     {isArtist && (
