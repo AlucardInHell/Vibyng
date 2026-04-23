@@ -1033,7 +1033,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
   <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
     <div className="relative flex-1">
       <input
-        className="w-full h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+        className="w-full h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 text-base placeholder:text-sm"
         placeholder="Scrivi un commento..."
         value={videoCommentInput}
         onChange={e => {
