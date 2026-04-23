@@ -402,7 +402,7 @@ function SettingsMenu() {
   const userId = getCurrentUserId();
   const { data: user } = useQuery<UserType>({ queryKey: ["/api/users", userId] });
   const { data: followingList = [] } = useQuery<UserType[]>({ queryKey: ["/api/users", userId, "following"] });
-  const followingCount = followingList.length;
+  const followedProfilesCount = followingList.length;
 
   const [editFormData, setEditFormData] = useState({
     displayName: "",
@@ -621,9 +621,9 @@ function SettingsMenu() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Artisti seguiti</span>
-                  <span className="text-sm text-muted-foreground">{followingCount ?? "—"}</span>
-                </div>
+                  <span className="text-sm">Profili seguiti</span>
+                  <span className="text-sm text-muted-foreground">{followedProfilesCount ?? "—"}</span>
+              </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">VibyngPoints</span>
                   <span className="text-sm font-semibold text-primary">{user?.vibyngPoints ?? 0}</span>
