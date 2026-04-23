@@ -356,8 +356,9 @@ export default function Artists() {
               className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-1"
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
-               <div
+              <div
   className={`relative ${commentsOpen ? "h-[58%]" : "h-full"} transition-all duration-300`}
+  onClick={() => togglePause(video.id)}
 >
   <video
     ref={(el) => {
@@ -469,7 +470,7 @@ export default function Artists() {
                   </div>
 
                  <div className="absolute top-4 left-4">
-<div className="px-2.5 py-1 rounded-full bg-black/50 text-white text-[11px] border border-white/10">xs border border-white/10">
+<div className="px-2.5 py-1 rounded-full bg-black/50 text-white text-[11px] border border-white/10">
     {activeTab === "for-you" ? "Per Te" : activeTab === "emerging" ? "Emergenti" : "Trend"}
   </div>
 </div>
