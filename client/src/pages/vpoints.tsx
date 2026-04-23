@@ -150,26 +150,32 @@ export default function VPoints() {
           </div>
           <p className="text-sm text-muted-foreground">I tuoi VibyngPoints</p>
 
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-  <div className="rounded-lg bg-background/70 border px-2 py-3 min-h-[110px] flex flex-col justify-center min-w-0">
-    <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground break-words">
-      Oggi
-    </p>
-    <p className="font-semibold text-2xl leading-none mt-3">{status.todayEarned}</p>
+         <div className="mt-4 grid grid-cols-3 gap-2 text-center items-stretch">
+  <div className="rounded-lg bg-background/70 border px-2 py-3 h-[132px] flex flex-col items-center justify-between">
+    <div className="h-[44px] flex items-center justify-center">
+      <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground text-center">
+        Oggi
+      </p>
+    </div>
+    <p className="font-semibold text-2xl leading-none">{status.todayEarned}</p>
   </div>
 
-  <div className="rounded-lg bg-background/70 border px-2 py-3 min-h-[110px] flex flex-col justify-center min-w-0">
-    <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground break-words">
-      Cap giornaliero
-    </p>
-    <p className="font-semibold text-2xl leading-none mt-3">{status.dailyCap}</p>
+  <div className="rounded-lg bg-background/70 border px-2 py-3 h-[132px] flex flex-col items-center justify-between">
+    <div className="h-[44px] flex items-center justify-center">
+      <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground text-center">
+        Cap<br />giornaliero
+      </p>
+    </div>
+    <p className="font-semibold text-2xl leading-none">{status.dailyCap}</p>
   </div>
 
-  <div className="rounded-lg bg-background/70 border px-2 py-3 min-h-[110px] flex flex-col justify-center min-w-0">
-    <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground break-words">
-      Ancora disponibili
-    </p>
-    <p className="font-semibold text-2xl leading-none mt-3">{status.remainingToday}</p>
+  <div className="rounded-lg bg-background/70 border px-2 py-3 h-[132px] flex flex-col items-center justify-between">
+    <div className="h-[44px] flex items-center justify-center">
+      <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground text-center">
+        Ancora<br />disponibili
+      </p>
+    </div>
+    <p className="font-semibold text-2xl leading-none">{status.remainingToday}</p>
   </div>
 </div>
 
