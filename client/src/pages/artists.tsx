@@ -490,11 +490,73 @@ export default function Artists() {
             </Avatar>
 
             <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
-              <p className="text-sm font-semibold">{comment.display_name}</p>
-              <p className="text-sm whitespace-pre-wrap break-words">
-                <MentionText text={comment.content} />
-              </p>
-            </div>
+  <p className="text-sm font-semibold">{comment.display_name}</p>
+
+  <p className="text-sm whitespace-pre-wrap break-words">
+    <MentionText text={comment.content} />
+  </p>
+
+  <div className="flex items-center justify-between mt-2">
+    <span className="text-xs text-muted-foreground">
+      {comment.created_at &&
+        new Date(comment.created_at).toLocaleDateString("it-IT", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+    </span>
+
+    <div className="flex items-center gap-2">
+      {(Number(comment.author_id) === Number(currentUserId) ||
+        Number(video.artist.id) === Number(currentUserId)) && (
+        <button
+          className="text-xs text-red-400 hover:text-red-600"
+          onClick={async (e) => {
+            e.stopPropagation();
+            await apiRequest("DELETE", `/api/videos/${video.id}/comments/${comment.id}`);
+            await refetchComments();
+          }}
+        >
+          🗑️
+        </button>
+      )}
+
+      <button
+        className={`flex items-center gap-1 text-xs ${
+          Number(comment.author_id) === Number(currentUserId)
+            ? "opacity-50 cursor-not-allowed text-muted-foreground"
+            : comment.likedByMe
+              ? "text-red-500"
+              : "text-muted-foreground hover:text-red-500"
+        }`}
+        disabled={Number(comment.author_id) === Number(currentUserId)}
+        onClick={async (e) => {
+          e.stopPropagation();
+
+          if (comment.likedByMe) {
+            await apiRequest(
+              "POST",
+              `/api/videos/${video.id}/comments/${comment.id}/unlike`,
+              { userId: currentUserId }
+            );
+          } else {
+            await apiRequest(
+              "POST",
+              `/api/videos/${video.id}/comments/${comment.id}/like`,
+              { userId: currentUserId }
+            );
+          }
+
+          await refetchComments();
+        }}
+      >
+        <Heart className={`w-3 h-3 ${comment.likedByMe ? "fill-red-500" : ""}`} />
+        <span>{comment.likes_count ?? 0}</span>
+      </button>
+    </div>
+  </div>
+</div>
           </div>
         ))
       ) : (
