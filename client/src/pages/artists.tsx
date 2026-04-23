@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Zap, Heart, Bookmark, Share2, MessageCircle, Volume2, VolumeX, Sparkles, Play, Pause } from "lucide-react";
+import { Zap, Heart, Bookmark, Share2, MessageCircle, Volume2, VolumeX, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,21 +162,27 @@ export default function Artists() {
   });
 
   useEffect(() => {
-    activeList.forEach((video, index) => {
-      const el = videoRefs.current[video.id];
-      if (!el) return;
+  activeList.forEach((video, index) => {
+    const el = videoRefs.current[video.id];
+    if (!el) return;
 
-      if (index === activeIndex && !pausedVideoIds.has(video.id)) {
-        el.muted = mutedVideoIds.has(video.id);
-        const promise = el.play();
-        if (promise && typeof promise.catch === "function") {
-          promise.catch(() => {});
-        }
-      } else {
-        el.pause();
-      }
-    });
-  }, [activeIndex, activeList, mutedVideoIds, pausedVideoIds]);
+    if (index === activeIndex && !pausedVideoIds.has(video.id)) {
+      el.muted = mutedVideoIds.has(video.id);
+      el.playsInline = true;
+      el.preload = "auto";
+
+      const tryPlay = () => {
+        el.play().catch(() => {});
+      };
+
+      tryPlay();
+      requestAnimationFrame(tryPlay);
+      setTimeout(tryPlay, 120);
+    } else {
+      el.pause();
+    }
+  });
+}, [activeIndex, activeList, mutedVideoIds, pausedVideoIds]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -337,11 +343,10 @@ export default function Artists() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="h-[calc(100dvh-12rem)] overflow-y-auto snap-y snap-mandatory"
+        className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] overflow-y-auto snap-y snap-mandatory"
       >
         {activeList.map((video, index) => {
           const isActive = index === activeIndex;
-          const isPaused = pausedVideoIds.has(video.id);
           const isMuted = mutedVideoIds.has(video.id);
           const isSaved = savedVideoIds.includes(video.id);
           const isLiked = likedMap[video.id] ?? false;
@@ -351,22 +356,29 @@ export default function Artists() {
           return (
             <section
               key={video.id}
-              className="h-[calc(100dvh-12rem)] snap-start py-2"
+              className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-1"
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
                 <div className={`relative ${commentsOpen ? "h-[58%]" : "h-full"} transition-all duration-300`}>
-                  <video
-                    ref={(el) => {
-                      videoRefs.current[video.id] = el;
-                    }}
-                    src={video.videoUrl ?? undefined}
-                    playsInline
-                    loop
-                    autoPlay={isActive}
-                    muted={isMuted}
-                    className="w-full h-full object-cover"
-                    onClick={() => togglePause(video.id)}
-                  />
+                 <video
+  ref={(el) => {
+    videoRefs.current[video.id] = el;
+  }}
+  src={video.videoUrl ?? undefined}
+  playsInline
+  loop
+  autoPlay={isActive}
+  muted={isMuted}
+  preload="auto"
+  className="w-full h-full object-cover"
+  onLoadedData={() => {
+    if (index === activeIndex && !pausedVideoIds.has(video.id)) {
+      const el = videoRefs.current[video.id];
+      if (el) el.play().catch(() => {});
+    }
+  }}
+  onClick={() => togglePause(video.id)}
+/>
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/10 pointer-events-none" />
 
@@ -392,29 +404,6 @@ export default function Artists() {
                         </p>
                         <p className="text-white/70 text-lg truncate">@{video.artist.username}</p>
 
-                        <div className="flex items-center gap-5 mt-4">
-                          <button
-                            className={`flex items-center gap-2 text-white ${isLiked ? "text-red-400" : ""}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleLike(video);
-                            }}
-                          >
-                            <Heart className={`w-7 h-7 ${isLiked ? "fill-red-400" : ""}`} />
-                            <span className="text-lg">{likesCount >= 1000 ? `${(likesCount / 1000).toFixed(1)}K` : likesCount}</span>
-                          </button>
-
-                          <button
-                            className="flex items-center gap-2 text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCommentsOpenId(commentsOpen ? null : video.id);
-                              setCommentInput("");
-                            }}
-                          >
-                            <MessageCircle className="w-7 h-7" />
-                          </button>
-                        </div>
                       </div>
                     </div>
 
@@ -472,27 +461,11 @@ export default function Artists() {
                     </div>
                   </div>
 
-                  <div className="absolute top-4 left-4 flex items-center gap-2">
-                    <div className="px-3 py-1 rounded-full bg-black/50 text-white text-xs border border-white/10">
-                      {activeTab === "for-you" ? "Per Te" : activeTab === "emerging" ? "Emergenti" : "Trend"}
-                    </div>
-                    {isPaused && (
-                      <div className="p-3 rounded-full bg-black/55">
-                        <Play className="w-6 h-6 text-white" />
-                      </div>
-                    )}
-                    {!isPaused && isActive && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePause(video.id);
-                        }}
-                        className="p-3 rounded-full bg-black/45"
-                      >
-                        <Pause className="w-5 h-5 text-white" />
-                      </button>
-                    )}
-                  </div>
+                 <div className="absolute top-4 left-4">
+  <div className="px-3 py-1 rounded-full bg-black/50 text-white text-xs border border-white/10">
+    {activeTab === "for-you" ? "Per Te" : activeTab === "emerging" ? "Emergenti" : "Trend"}
+  </div>
+</div>
                 </div>
 
                 {commentsOpen && (
