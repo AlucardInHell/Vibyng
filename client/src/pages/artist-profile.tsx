@@ -1085,6 +1085,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     >
       <Send className="w-4 h-4" />
     </Button>
+   </div>
   </div>
 </div>
           </DialogContent>
