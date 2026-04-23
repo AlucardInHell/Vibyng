@@ -283,9 +283,9 @@ function BottomNav() {
   const mediaInputRef = useRef<HTMLInputElement>(null);
 
   const navItemsLeft = [
-    { path: "/", icon: HomeIcon, label: "Feed" },
-    { path: "/artists", icon: Users, label: "Artisti" },
-  ];
+  { path: "/", icon: HomeIcon, label: "Feed" },
+  { path: "/artists", icon: Zap, label: "Flow" },
+];
 
 const navItemsRight = [
     { path: "/me", icon: User, label: "Me" },
