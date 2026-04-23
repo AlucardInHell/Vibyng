@@ -958,74 +958,75 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
                <div className="mt-4 border-t pt-4 px-4 pb-4">
-                  <div className="space-y-4 max-h-[26vh] overflow-y-auto pr-1">
+                 <div className="space-y-4 max-h-[26vh] overflow-y-auto pr-1">
   {videoCommentsList.map((c: any) => (
-  <div key={c.id} className="flex items-start gap-3">
-    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-      {c.avatar_url ? (
-        <img src={c.avatar_url} alt={c.display_name} className="w-full h-full object-cover" />
-      ) : (
-        <span className="text-xs text-primary font-medium">{c.display_name?.charAt(0)}</span>
-      )}
-    </div>
+    <div key={c.id} className="flex items-start gap-3">
+      <Link href={`/artist/${c.author_id}`}>
+        <Avatar className="w-9 h-9 cursor-pointer flex-shrink-0">
+          {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
+          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+            {c.display_name?.charAt(0)}
+          </AvatarFallback>
+        </Avatar>
+      </Link>
 
-    className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0"
-      <p className="text-sm font-semibold">{c.display_name}</p>
-      <p className="text-sm whitespace-pre-wrap break-words">
-  <MentionText text={c.content} />
-</p>
+      <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
+        <p className="text-sm font-semibold">{c.display_name}</p>
+        <p className="text-sm whitespace-pre-wrap break-words">
+          <MentionText text={c.content} />
+        </p>
 
-      <div className="flex items-center justify-between mt-2">
-        <span className="text-xs text-muted-foreground">
-          {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", {
-            day: "numeric",
-            month: "short",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-xs text-muted-foreground">
+            {c.created_at &&
+              new Date(c.created_at).toLocaleDateString("it-IT", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+          </span>
 
-        <div className="flex items-center gap-2">
-          {(Number(c.author_id) === Number(currentUserId) || Number(artistId) === Number(currentUserId)) && (
+          <div className="flex items-center gap-2">
+            {(Number(c.author_id) === Number(currentUserId) ||
+              Number(selectedVideo?.artistId ?? selectedVideo?.authorId ?? 0) === Number(currentUserId)) && (
+              <button
+                className="text-xs text-red-400 hover:text-red-600"
+                onClick={async () => {
+                  await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`);
+                  await refetchVideoComments();
+                }}
+              >
+                🗑️
+              </button>
+            )}
+
             <button
-              className="text-xs text-red-400 hover:text-red-600"
+              className={`flex items-center gap-1 text-xs ${
+                Number(c.author_id) === Number(currentUserId)
+                  ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                  : c.likedByMe
+                    ? "text-red-500"
+                    : "text-muted-foreground hover:text-red-500"
+              }`}
+              disabled={Number(c.author_id) === Number(currentUserId)}
               onClick={async () => {
-                await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`);
+                if (c.likedByMe) {
+                  await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/unlike/${currentUserId}`);
+                } else {
+                  await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like/${currentUserId}`);
+                }
                 await refetchVideoComments();
               }}
             >
-              🗑️
+              <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+              <span>{c.likes_count ?? 0}</span>
             </button>
-          )}
-
-          <button
-            className={`flex items-center gap-1 text-xs ${
-              Number(c.author_id) === Number(currentUserId)
-                ? "opacity-50 cursor-not-allowed text-muted-foreground"
-                : c.likedByMe
-                  ? "text-red-500"
-                  : "text-muted-foreground hover:text-red-500"
-            }`}
-            disabled={Number(c.author_id) === Number(currentUserId)}
-            onClick={async () => {
-              if (c.likedByMe) {
-                await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/unlike`, { userId: currentUserId });
-              } else {
-                await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like`, { userId: currentUserId });
-              }
-              await refetchVideoComments();
-            }}
-          >
-            <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
-            <span>{c.likes_count ?? 0}</span>
-          </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-))}
-                </div>
-
+  ))}
 </div>
 
 <div className="pt-3 mt-2 border-t">
