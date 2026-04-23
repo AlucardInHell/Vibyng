@@ -357,7 +357,7 @@ export default function Artists() {
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
               <div
-  className={`relative ${commentsOpen ? "h-[58%]" : "h-full"} transition-all duration-300`}
+  className={`relative ${commentsOpen ? "h-[48%]" : "h-full"} transition-all duration-300`}
   onClick={() => togglePause(video.id)}
 >
   <video
@@ -477,73 +477,67 @@ export default function Artists() {
                 </div>
 
                 {commentsOpen && (
-                  <div className="h-[42%] bg-background border-t border-border/70 p-4 flex flex-col">
-                    <div className="space-y-3 flex-1 overflow-y-auto pr-1">
-                      {comments.length > 0 ? (
-                        comments.map((comment: any) => (
-                          <div key={comment.id} className="flex gap-3">
-                            <Avatar className="w-9 h-9 flex-shrink-0">
-                              {comment.avatar_url && <AvatarImage src={comment.avatar_url} alt={comment.display_name} />}
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {comment.display_name?.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
+  <div className="h-[52%] bg-background border-t border-border/70 flex flex-col">
+    <div className="space-y-4 flex-1 overflow-y-auto px-4 pt-4 pr-3">
+      {comments.length > 0 ? (
+        comments.map((comment: any) => (
+          <div key={comment.id} className="flex items-start gap-3">
+            <Avatar className="w-9 h-9 flex-shrink-0">
+              {comment.avatar_url && (
+                <AvatarImage src={comment.avatar_url} alt={comment.display_name} />
+              )}
+              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                {comment.display_name?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
 
-                            <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
-                              <p className="text-sm font-semibold">{comment.display_name}</p>
-                              <p className="text-sm whitespace-pre-wrap break-words">
-                                <MentionText text={comment.content} />
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Ancora nessun commento.</p>
-                      )}
-                    </div>
+            <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
+              <p className="text-sm font-semibold">{comment.display_name}</p>
+              <p className="text-sm whitespace-pre-wrap break-words">
+                <MentionText text={comment.content} />
+              </p>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-muted-foreground px-4">Ancora nessun commento.</p>
+      )}
+    </div>
 
-                    <div className="pt-3 mt-3 border-t">
-                      <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
-                        <div className="relative flex-1">
-                          <Input
-                            value={commentInput}
-                            placeholder="Scrivi un commento..."
-                            className="w-full h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 text-base placeholder:text-[14px]"
-                            onChange={(e) => {
-                              setCommentInput(e.target.value);
-                              handleTextChange(e.target.value, e.target.selectionStart || 0);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") handleSubmitComment();
-                            }}
-                          />
-                          <MentionDropdown
-                            query={mentionQuery}
-                            visible={showMentions}
-                            onSelect={(username) => {
-                              setCommentInput(insertMention(commentInput, username));
-                              closeMentions();
-                            }}
-                          />
-                        </div>
+    <div className="pt-3 mt-2 border-t px-4 pb-4 bg-background shrink-0">
+      <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
+        <div className="relative flex-1">
+          <Input
+            value={commentInput}
+            placeholder="Scrivi un commento..."
+            className="w-full h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 text-base placeholder:text-[14px]"
+            onChange={(e) => {
+              setCommentInput(e.target.value);
+              handleTextChange(e.target.value, e.target.selectionStart || 0);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSubmitComment();
+            }}
+          />
+          <MentionDropdown
+            query={mentionQuery}
+            visible={showMentions}
+            onSelect={(username) => {
+              setCommentInput(insertMention(commentInput, username));
+              closeMentions();
+            }}
+          />
+        </div>
 
-                        <Button
-                          size="icon"
-                          className="shrink-0"
-                          onClick={handleSubmitComment}
-                          disabled={!commentInput.trim()}
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
-          );
-        })}
+        <Button
+          size="icon"
+          className="shrink-0"
+          onClick={handleSubmitComment}
+          disabled={!commentInput.trim()}
+        >
+          <MessageCircle className="w-4 h-4" />
+        </Button>
       </div>
     </div>
-  );
-}
+  </div>
+)}
