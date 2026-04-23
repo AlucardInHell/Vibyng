@@ -171,10 +171,7 @@ export default function Artists() {
       el.playsInline = true;
       el.preload = "auto";
 
-      const tryPlay = () => {
-        el.play().catch(() => {});
-      };
-
+      const tryPlay = () => el.play().catch(() => {});
       tryPlay();
       requestAnimationFrame(tryPlay);
       setTimeout(tryPlay, 120);
@@ -182,7 +179,7 @@ export default function Artists() {
       el.pause();
     }
   });
-}, [activeIndex, activeList, mutedVideoIds, pausedVideoIds]);
+}, [activeIndex, activeList, mutedVideoIds, pausedVideoIds, activeTab]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -359,33 +356,43 @@ export default function Artists() {
               className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-1"
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
-                <div className={`relative ${commentsOpen ? "h-[58%]" : "h-full"} transition-all duration-300`}>
-                 <video
-  ref={(el) => {
-    videoRefs.current[video.id] = el;
-  }}
-  src={video.videoUrl ?? undefined}
-  playsInline
-  loop
-  autoPlay={isActive}
-  muted={isMuted}
-  preload="auto"
-  className="w-full h-full object-cover"
-  onLoadedData={() => {
-    if (index === activeIndex && !pausedVideoIds.has(video.id)) {
+               <div
+  className={`relative ${commentsOpen ? "h-[58%]" : "h-full"} transition-all duration-300`}
+>
+  <video
+    ref={(el) => {
+      videoRefs.current[video.id] = el;
+      if (el && index === activeIndex && !pausedVideoIds.has(video.id)) {
+        el.muted = mutedVideoIds.has(video.id);
+        el.playsInline = true;
+        el.preload = "auto";
+
+        const tryPlay = () => el.play().catch(() => {});
+        requestAnimationFrame(tryPlay);
+        setTimeout(tryPlay, 120);
+      }
+    }}
+    src={video.videoUrl ?? undefined}
+    playsInline
+    loop
+    autoPlay
+    muted={isMuted}
+    preload="auto"
+    className="w-full h-full object-cover"
+    onLoadedData={() => {
       const el = videoRefs.current[video.id];
-      if (el) el.play().catch(() => {});
-    }
-  }}
-  onClick={() => togglePause(video.id)}
-/>
+      if (el && index === activeIndex && !pausedVideoIds.has(video.id)) {
+        el.play().catch(() => {});
+      }
+    }}
+  />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/10 pointer-events-none" />
 
-                  <div className="absolute inset-x-0 bottom-0 p-5 flex items-end justify-between">
-                    <div className="flex items-end gap-3 min-w-0 max-w-[75%]">
+                 <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
+                   <div className="flex items-end gap-2 min-w-0 max-w-[70%]">
                       <Link href={`/artist/${video.artist.id}`}>
-                        <Avatar className="w-14 h-14 border-2 border-primary/80">
+                        <Avatar className="w-11 h-11 border-2 border-primary/80">
                           {video.artist.avatarUrl && (
                             <AvatarImage src={video.artist.avatarUrl} alt={video.artist.displayName} />
                           )}
@@ -396,18 +403,18 @@ export default function Artists() {
                       </Link>
 
                       <div className="min-w-0">
-                        <p className="text-white text-2xl font-semibold leading-tight truncate">
+                        <p className="text-white text-lg font-semibold leading-tight truncate">
                           {video.artist.displayName}
                         </p>
-                        <p className="text-white text-2xl font-semibold leading-tight truncate">
+                        <p className="text-white text-lg font-semibold leading-tight truncate">
                           {video.title || "Senza titolo"}
                         </p>
-                        <p className="text-white/70 text-lg truncate">@{video.artist.username}</p>
+                       <p className="text-white/70 text-sm truncate">@{video.artist.username}</p>
 
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center gap-6 text-white">
+                    <div className="flex flex-col items-center gap-4 text-white">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -415,8 +422,8 @@ export default function Artists() {
                         }}
                         className="flex flex-col items-center gap-2"
                       >
-                        <Heart className={`w-9 h-9 ${isLiked ? "fill-red-400 text-red-400" : ""}`} />
-                        <span className="text-sm">{likesCount >= 1000 ? `${(likesCount / 1000).toFixed(1)}K` : likesCount}</span>
+                        <Heart className={`w-7 h-7 ${isLiked ? "fill-red-400 text-red-400" : ""}`} />
+                       <span className="text-[11px]">{likesCount >= 1000 ? `${(likesCount / 1000).toFixed(1)}K` : likesCount}</span>
                       </button>
 
                       <button
@@ -426,7 +433,7 @@ export default function Artists() {
                         }}
                         className="flex flex-col items-center gap-2"
                       >
-                        <Bookmark className={`w-9 h-9 ${isSaved ? "fill-white" : ""}`} />
+                        <Bookmark className={`w-7 h-7 ${isSaved ? "fill-white" : ""}`} />
                       </button>
 
                       <button
@@ -436,7 +443,7 @@ export default function Artists() {
                         }}
                         className="flex flex-col items-center gap-2"
                       >
-                        <Share2 className="w-9 h-9" />
+                        <Share2 className="w-7 h-7" />
                       </button>
 
                       <button
@@ -447,7 +454,7 @@ export default function Artists() {
                         }}
                         className="flex flex-col items-center gap-2"
                       >
-                        <MessageCircle className="w-9 h-9" />
+                        <MessageCircle className="w-7 h-7" />
                       </button>
 
                       <button
@@ -456,13 +463,13 @@ export default function Artists() {
                           toggleMute(video.id);
                         }}
                       >
-                        {isMuted ? <VolumeX className="w-8 h-8" /> : <Volume2 className="w-8 h-8" />}
+                        {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
                       </button>
                     </div>
                   </div>
 
                  <div className="absolute top-4 left-4">
-  <div className="px-3 py-1 rounded-full bg-black/50 text-white text-xs border border-white/10">
+<div className="px-2.5 py-1 rounded-full bg-black/50 text-white text-[11px] border border-white/10">xs border border-white/10">
     {activeTab === "for-you" ? "Per Te" : activeTab === "emerging" ? "Emergenti" : "Trend"}
   </div>
 </div>
