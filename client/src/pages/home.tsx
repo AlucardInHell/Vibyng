@@ -872,52 +872,58 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
 
   const { data: comments = [], refetch } = useQuery<any[]>({
-  queryKey: ["/api/videos", videoId, "comments", CURRENT_USER_ID_LOCAL],
-  queryFn: async () => {
-    const res = await fetch(`/api/videos/${videoId}/comments?userId=${CURRENT_USER_ID_LOCAL}`);
-    return res.json();
-  },
-});
+    queryKey: ["/api/videos", videoId, "comments", CURRENT_USER_ID_LOCAL],
+    queryFn: async () => {
+      const res = await fetch(`/api/videos/${videoId}/comments?userId=${CURRENT_USER_ID_LOCAL}`);
+      return res.json();
+    },
+    staleTime: 0,
+  });
 
   const handleSubmit = async () => {
-  if (!newComment.trim()) return;
-  await apiRequest("POST", `/api/photos/${photoId}/comments`, {
-    authorId: CURRENT_USER_ID_LOCAL,
-    content: newComment.trim(),
-  });
-  setNewComment("");
-  await refetch();
-  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID_LOCAL, "status"] });
-  await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID_LOCAL] });
-};
+    if (!newComment.trim()) return;
+
+    await apiRequest("POST", `/api/videos/${videoId}/comments`, {
+      authorId: CURRENT_USER_ID_LOCAL,
+      content: newComment.trim(),
+    });
+
+    setNewComment("");
+    await refetch();
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID_LOCAL, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID_LOCAL] });
+  };
 
   return (
     <div className="border-t pt-3 mt-3 space-y-3">
-     <div className="flex items-center gap-2">
-  <div className="relative flex-1">
-    <Input
-      placeholder="Scrivi un commento..."
-      value={newComment}
-      onChange={e => {
-        setNewComment(e.target.value);
-        handleTextChange(e.target.value, e.target.selectionStart || 0);
-      }}
-      onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }}
-      className="w-full"
-    />
-    <MentionDropdown
-      query={mentionQuery}
-      visible={showMentions}
-      onSelect={(username) => {
-        setNewComment(insertMention(newComment, username));
-        closeMentions();
-      }}
-    />
-  </div>
-  <Button size="icon" onClick={handleSubmit} disabled={newComment.length === 0}>
-    <Send className="w-4 h-4" />
-  </Button>
-</div>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Input
+            placeholder="Scrivi un commento..."
+            value={newComment}
+            onChange={(e) => {
+              setNewComment(e.target.value);
+              handleTextChange(e.target.value, e.target.selectionStart || 0);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSubmit();
+            }}
+            className="w-full"
+          />
+          <MentionDropdown
+            query={mentionQuery}
+            visible={showMentions}
+            onSelect={(username) => {
+              setNewComment(insertMention(newComment, username));
+              closeMentions();
+            }}
+          />
+        </div>
+
+        <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}>
+          <Send className="w-4 h-4" />
+        </Button>
+      </div>
 
       {comments.map((c: any) => (
         <div key={c.id} className="flex gap-2">
@@ -933,26 +939,28 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
           <div className="flex-1 bg-muted rounded-lg px-3 py-2">
             <p className="text-sm font-semibold">{c.display_name}</p>
             <p className="text-sm whitespace-pre-wrap break-words">
-  <MentionText text={c.content} />
-</p>
+              <MentionText text={c.content} />
+            </p>
 
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-muted-foreground">
-                {c.created_at && new Date(c.created_at).toLocaleDateString("it-IT", {
-                  day: "numeric",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {c.created_at &&
+                  new Date(c.created_at).toLocaleDateString("it-IT", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
               </span>
 
               <div className="flex items-center gap-2">
-                {(Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL) || Number(videoAuthorId) === Number(CURRENT_USER_ID_LOCAL)) && (
+                {(Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL) ||
+                  Number(videoAuthorId) === Number(CURRENT_USER_ID_LOCAL)) && (
                   <button
                     className="text-xs text-red-400 hover:text-red-600"
                     onClick={async () => {
                       await apiRequest("DELETE", `/api/videos/${videoId}/comments/${c.id}`);
-                      refetch();
+                      await refetch();
                     }}
                   >
                     🗑️
@@ -960,26 +968,26 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
                 )}
 
                 <button
-  className={`flex items-center gap-1 text-xs ${
-    Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)
-      ? "opacity-50 cursor-not-allowed text-muted-foreground"
-      : c.likedByMe
-        ? "text-red-500"
-        : "text-muted-foreground hover:text-red-500"
-  }`}
-  disabled={Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)}
-  onClick={async () => {
-    if (c.likedByMe) {
-      await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/unlike`, { userId: CURRENT_USER_ID_LOCAL });
-    } else {
-      await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/like`, { userId: CURRENT_USER_ID_LOCAL });
-    }
-    await refetch();
-  }}
->
-  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
-  <span>{c.likes_count ?? 0}</span>
-</button>
+                  className={`flex items-center gap-1 text-xs ${
+                    Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)
+                      ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                      : c.likedByMe
+                        ? "text-red-500"
+                        : "text-muted-foreground hover:text-red-500"
+                  }`}
+                  disabled={Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)}
+                  onClick={async () => {
+                    if (c.likedByMe) {
+                      await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/unlike/${CURRENT_USER_ID_LOCAL}`);
+                    } else {
+                      await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/like/${CURRENT_USER_ID_LOCAL}`);
+                    }
+                    await refetch();
+                  }}
+                >
+                  <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
+                  <span>{c.likes_count ?? 0}</span>
+                </button>
               </div>
             </div>
           </div>
