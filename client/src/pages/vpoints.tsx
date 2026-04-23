@@ -151,19 +151,27 @@ export default function VPoints() {
           <p className="text-sm text-muted-foreground">I tuoi VibyngPoints</p>
 
           <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-lg bg-background/70 p-3 border">
-              <p className="text-xs text-muted-foreground">Oggi</p>
-              <p className="font-semibold">{status.todayEarned}</p>
-            </div>
-            <div className="rounded-lg bg-background/70 p-3 border">
-              <p className="text-xs text-muted-foreground">Cap giornaliero</p>
-              <p className="font-semibold">{status.dailyCap}</p>
-            </div>
-            <div className="rounded-lg bg-background/70 p-3 border">
-              <p className="text-xs text-muted-foreground">Ancora disponibili</p>
-              <p className="font-semibold">{status.remainingToday}</p>
-            </div>
-          </div>
+  <div className="rounded-lg bg-background/70 border px-2 py-3 min-h-[110px] flex flex-col justify-center min-w-0">
+    <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground break-words">
+      Oggi
+    </p>
+    <p className="font-semibold text-2xl leading-none mt-3">{status.todayEarned}</p>
+  </div>
+
+  <div className="rounded-lg bg-background/70 border px-2 py-3 min-h-[110px] flex flex-col justify-center min-w-0">
+    <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground break-words">
+      Cap giornaliero
+    </p>
+    <p className="font-semibold text-2xl leading-none mt-3">{status.dailyCap}</p>
+  </div>
+
+  <div className="rounded-lg bg-background/70 border px-2 py-3 min-h-[110px] flex flex-col justify-center min-w-0">
+    <p className="text-[11px] sm:text-xs leading-tight text-muted-foreground break-words">
+      Ancora disponibili
+    </p>
+    <p className="font-semibold text-2xl leading-none mt-3">{status.remainingToday}</p>
+  </div>
+</div>
 
           <p className="text-xs text-muted-foreground mt-3">
             Puoi accumulare al massimo {status.dailyCap} punti al giorno.
