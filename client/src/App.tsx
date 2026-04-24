@@ -55,6 +55,157 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
 
 type Theme = "light" | "dark";
+type AppLanguage = "it" | "en";
+
+const appTranslations = {
+  it: {
+    feed: "Feed",
+    flow: "Flow",
+    me: "Me",
+    messages: "Messaggi",
+    notifications: "Notifiche",
+
+    settings: "Impostazioni",
+    account: "Account",
+    privacy: "Privacy",
+    language: "Lingua",
+    darkTheme: "Tema Scuro",
+    lightTheme: "Tema Chiaro",
+    help: "Assistenza",
+    terms: "Termini e Condizioni",
+    logout: "Esci",
+
+    accountTitle: "Il tuo Account",
+    editProfileTitle: "Modifica Profilo",
+    accountDescription: "Gestisci le informazioni del tuo profilo",
+    editProfileDescription: "Modifica le informazioni del tuo profilo",
+
+    displayName: "Nome visualizzato",
+    username: "Username",
+    email: "Email",
+    bio: "Bio",
+    memberSince: "Membro dal",
+    followedProfiles: "Profili seguiti",
+    vibyngPoints: "VibyngPoints",
+
+    close: "Chiudi",
+    editProfile: "Modifica Profilo",
+    cancel: "Annulla",
+    saveChanges: "Salva Modifiche",
+    saving: "Salvataggio...",
+
+    privacyTitle: "Privacy",
+    privacyDescription: "Controlla chi può vedere le tue informazioni",
+    publicProfile: "Profilo pubblico",
+    publicProfileDescription: "Altri utenti possono vedere il tuo profilo",
+    showActivity: "Mostra attività",
+    showActivityDescription: "Mostra i tuoi like e commenti",
+    allowMessages: "Consenti messaggi",
+    allowMessagesDescription: "Ricevi messaggi da altri utenti",
+
+    notificationsTitle: "Notifiche",
+    notificationsDescription: "Scegli quali notifiche ricevere",
+    pushNotifications: "Notifiche push",
+    pushNotificationsDescription: "Ricevi notifiche sul dispositivo",
+    emailNotifications: "Email",
+    emailNotificationsDescription: "Ricevi aggiornamenti via email",
+    notificationTypes: "Tipi di notifiche",
+    newFollowers: "Nuovi follower",
+    newMessages: "Nuovi messaggi",
+    artistUpdates: "Aggiornamenti artisti",
+
+    languageTitle: "Lingua",
+    languageDescription: "Seleziona la lingua dell'app",
+    save: "Salva",
+
+    profileUpdated: "Profilo aggiornato",
+    profileUpdatedDescription: "Le modifiche sono state salvate con successo!",
+    profileUpdateError: "Non è stato possibile salvare le modifiche",
+    privacyUpdated: "Privacy aggiornata",
+    privacyUpdatedDescription: "Le impostazioni sono state salvate.",
+    notificationsUpdated: "Notifiche aggiornate",
+    notificationsUpdatedDescription: "Le preferenze sono state salvate.",
+    languageUpdated: "Lingua aggiornata",
+    languageUpdatedDescription: "Italiano selezionato.",
+    disconnected: "Disconnesso",
+    disconnectedDescription: "Hai effettuato il logout con successo.",
+    error: "Errore",
+  },
+
+  en: {
+    feed: "Feed",
+    flow: "Flow",
+    me: "Me",
+    messages: "Messages",
+    notifications: "Notifications",
+
+    settings: "Settings",
+    account: "Account",
+    privacy: "Privacy",
+    language: "Language",
+    darkTheme: "Dark Theme",
+    lightTheme: "Light Theme",
+    help: "Help",
+    terms: "Terms and Conditions",
+    logout: "Log out",
+
+    accountTitle: "Your Account",
+    editProfileTitle: "Edit Profile",
+    accountDescription: "Manage your profile information",
+    editProfileDescription: "Edit your profile information",
+
+    displayName: "Display name",
+    username: "Username",
+    email: "Email",
+    bio: "Bio",
+    memberSince: "Member since",
+    followedProfiles: "Followed profiles",
+    vibyngPoints: "VibyngPoints",
+
+    close: "Close",
+    editProfile: "Edit Profile",
+    cancel: "Cancel",
+    saveChanges: "Save Changes",
+    saving: "Saving...",
+
+    privacyTitle: "Privacy",
+    privacyDescription: "Control who can see your information",
+    publicProfile: "Public profile",
+    publicProfileDescription: "Other users can see your profile",
+    showActivity: "Show activity",
+    showActivityDescription: "Show your likes and comments",
+    allowMessages: "Allow messages",
+    allowMessagesDescription: "Receive messages from other users",
+
+    notificationsTitle: "Notifications",
+    notificationsDescription: "Choose which notifications you want to receive",
+    pushNotifications: "Push notifications",
+    pushNotificationsDescription: "Receive notifications on your device",
+    emailNotifications: "Email",
+    emailNotificationsDescription: "Receive updates by email",
+    notificationTypes: "Notification types",
+    newFollowers: "New followers",
+    newMessages: "New messages",
+    artistUpdates: "Artist updates",
+
+    languageTitle: "Language",
+    languageDescription: "Select the app language",
+    save: "Save",
+
+    profileUpdated: "Profile updated",
+    profileUpdatedDescription: "Your changes have been saved successfully!",
+    profileUpdateError: "Unable to save changes",
+    privacyUpdated: "Privacy updated",
+    privacyUpdatedDescription: "Your settings have been saved.",
+    notificationsUpdated: "Notifications updated",
+    notificationsUpdatedDescription: "Your preferences have been saved.",
+    languageUpdated: "Language updated",
+    languageUpdatedDescription: "English selected.",
+    disconnected: "Logged out",
+    disconnectedDescription: "You have logged out successfully.",
+    error: "Error",
+  },
+} as const;
 
 const ThemeContext = createContext<{
   theme: Theme;
@@ -116,6 +267,16 @@ function ProfileProvider({ children }: { children: React.ReactNode }) {
     enabled: userId > 0,
   });
 
+  const LanguageContext = createContext<{
+  language: AppLanguage;
+  setLanguage: (language: AppLanguage) => void;
+  t: typeof appTranslations.it;
+}>({
+  language: "it",
+  setLanguage: () => {},
+  t: appTranslations.it,
+});
+
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<ProfileData>) => {
       return apiRequest("PATCH", `/api/users/${userId}`, data);
@@ -152,6 +313,33 @@ function ProfileProvider({ children }: { children: React.ReactNode }) {
 
 function useTheme() {
   return useContext(ThemeContext);
+}
+
+function useLanguage() {
+  return useContext(LanguageContext);
+}
+
+function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguageState] = useState<AppLanguage>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("vibyng-language");
+      if (stored === "it" || stored === "en") return stored;
+    }
+    return "it";
+  });
+
+  const setLanguage = (nextLanguage: AppLanguage) => {
+    setLanguageState(nextLanguage);
+    localStorage.setItem("vibyng-language", nextLanguage);
+  };
+
+  const t = appTranslations[language];
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
 }
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -197,6 +385,7 @@ function Router() {
   );
 }
 function MessagesButton() {
+  const { t } = useLanguage();
   const [location] = useLocation();
   const isActive = location === "/messages";
   const storedUser = localStorage.getItem("vibyng-user");
@@ -226,12 +415,13 @@ function MessagesButton() {
             </span>
           )}
         </div>
-        <span className="text-xs font-medium">Messaggi</span>
+        <span className="text-xs font-medium">{t.messages}</span>
       </button>
     </Link>
   );
 }
 function NotificationBell() {
+  const { t } = useLanguage();
   const [location] = useLocation();
   const isActive = location === "/notifications";
   const storedUser = localStorage.getItem("vibyng-user");
@@ -261,12 +451,13 @@ function NotificationBell() {
             </span>
           )}
         </div>
-        <span className="text-xs font-medium">Notifiche</span>
+        <span className="text-xs font-medium">{t.notifications}</span>
       </button>
     </Link>
   );
 }
 function BottomNav() {
+  const { t } = useLanguage();
   const [location, setLocation] = useLocation();
   
   const handleFeedRefresh = () => {
@@ -283,13 +474,13 @@ function BottomNav() {
   const mediaInputRef = useRef<HTMLInputElement>(null);
 
   const navItemsLeft = [
-  { path: "/", icon: HomeIcon, label: "Feed" },
-  { path: "/artists", icon: Zap, label: "Flow" },
+  { path: "/", icon: HomeIcon, label: t.feed },
+  { path: "/artists", icon: Zap, label: t.flow },
 ];
 
-const navItemsRight = [
-    { path: "/me", icon: User, label: "Me" },
-  ];
+  const navItemsRight = [
+  { path: "/me", icon: User, label: t.me },
+];
 
   const handleTakePhoto = () => {
     photoInputRef.current?.click();
@@ -388,6 +579,7 @@ const navItemsRight = [
 }
 
 function SettingsMenu() {
+  const { language, setLanguage, t } = useLanguage();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const { profileData, updateProfile } = useProfile();
@@ -425,7 +617,6 @@ function SettingsMenu() {
     artistUpdates: true,
   });
 
-  const [language, setLanguage] = useState("it");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleOpenEdit = () => {
@@ -452,9 +643,9 @@ function SettingsMenu() {
     try {
       await updateProfile(editFormData);
       setEditMode(false);
-      toast({ title: "Profilo aggiornato", description: "Le modifiche sono state salvate con successo!" });
+      toast({ title: t.profileUpdated, description: t.profileUpdatedDescription });
     } catch (err) {
-      toast({ title: "Errore", description: "Non è stato possibile salvare le modifiche", variant: "destructive" });
+      toast({ title: t.error, description: t.profileUpdateError, variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -469,21 +660,21 @@ function SettingsMenu() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56" data-testid="menu-settings">
-          <DropdownMenuLabel>Impostazioni</DropdownMenuLabel>
+          <DropdownMenuLabel>{t.settings}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setAccountOpen(true)} data-testid="menu-item-account">
+          <DropdownMenuItem onClick={() => setAccountOpen(true)} data-testid="menu-item-{t.account}">
             <User className="w-4 h-4 mr-2" />
             Account
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setPrivacyOpen(true)} data-testid="menu-item-privacy">
+          <DropdownMenuItem onClick={() => setPrivacyOpen(true)} data-testid="menu-item-{t.privacy}">
             <Shield className="w-4 h-4 mr-2" />
             Privacy
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setNotificationsOpen(true)} data-testid="menu-item-notifications">
+          <DropdownMenuItem onClick={() => setNotificationsOpen(true)} data-testid="menu-item-{t.notifications}">
             <Bell className="w-4 h-4 mr-2" />
             Notifiche
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setLanguageOpen(true)} data-testid="menu-item-language">
+          <DropdownMenuItem onClick={() => setLanguageOpen(true)} data-testid="menu-item-{t.language}">
             <Globe className="w-4 h-4 mr-2" />
             Lingua
           </DropdownMenuItem>
@@ -492,19 +683,19 @@ function SettingsMenu() {
             data-testid="menu-item-theme"
           >
             {theme === "dark" ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
-            {theme === "dark" ? "Tema Chiaro" : "Tema Scuro"}
+            {theme === "dark" ? t.lightTheme : t.darkTheme}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setHelpOpen(true)} data-testid="menu-item-help">
+          <DropdownMenuItem onClick={() => setHelpOpen(true)} data-testid="menu-item-{t.help}">
             <HelpCircle className="w-4 h-4 mr-2" />
             Assistenza
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTermsOpen(true)} data-testid="menu-item-terms">
+          <DropdownMenuItem onClick={() => setTermsOpen(true)} data-testid="menu-item-{t.terms}">
             <FileText className="w-4 h-4 mr-2" />
             Termini e Condizioni
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive" onClick={() => setLogoutOpen(true)} data-testid="menu-item-logout">
+          <DropdownMenuItem className="text-destructive" onClick={() => setLogoutOpen(true)} data-testid="menu-item-{t.logout}">
             <LogOut className="w-4 h-4 mr-2" />
             Esci
           </DropdownMenuItem>
@@ -514,15 +705,15 @@ function SettingsMenu() {
       <Dialog open={accountOpen} onOpenChange={(open) => { setAccountOpen(open); if (!open) setEditMode(false); }}>
         <DialogContent data-testid="dialog-account">
           <DialogHeader>
-            <DialogTitle>{editMode ? "Modifica Profilo" : "Il tuo Account"}</DialogTitle>
+            <DialogTitle>{editMode ? t.editProfileTitle : t.accountTitle}</DialogTitle>
             <DialogDescription>
-              {editMode ? "Modifica le informazioni del tuo profilo" : "Gestisci le informazioni del tuo profilo"}
+              {editMode ? t.editProfileDescription : t.accountDescription}
             </DialogDescription>
           </DialogHeader>
           {editMode ? (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="displayName">Nome visualizzato</Label>
+                <Label htmlFor="displayName">{t.displayName}</Label>
                 <Input
                   id="displayName"
                   value={editFormData.displayName}
@@ -531,7 +722,7 @@ function SettingsMenu() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t.username}</Label>
                 <Input
                   id="username"
                   value={editFormData.username}
@@ -540,7 +731,7 @@ function SettingsMenu() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t.email}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -550,7 +741,7 @@ function SettingsMenu() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
+                <Label htmlFor="bio">{t.bio}</Label>
                 <Textarea
                   id="bio"
                   value={editFormData.bio}
@@ -615,17 +806,17 @@ function SettingsMenu() {
               )}
              <div className="space-y-2 pt-2 border-t">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Membro dal</span>
+                  <span className="text-sm">{t.memberSince}</span>
                   <span className="text-sm text-muted-foreground">
                     {user?.createdAt ? new Date(user.createdAt).toLocaleDateString("it-IT", { month: "long", year: "numeric" }) : "—"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Profili seguiti</span>
+                  <span className="text-sm">{t.followedProfiles}</span>
                   <span className="text-sm text-muted-foreground">{followedProfilesCount ?? "—"}</span>
               </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">VibyngPoints</span>
+                  <span className="text-sm">{t.vibyngPoints}</span>
                   <span className="text-sm font-semibold text-primary">{user?.vibyngPoints ?? 0}</span>
                 </div>
               </div>
@@ -635,17 +826,17 @@ function SettingsMenu() {
             {editMode ? (
               <>
                 <Button variant="outline" onClick={() => setEditMode(false)} data-testid="button-cancel-edit">
-                  Annulla
+                  {t.cancel}
                 </Button>
                 <Button onClick={handleSaveProfile} disabled={isSaving} data-testid="button-save-profile">
-                  {isSaving ? "Salvataggio..." : "Salva Modifiche"}
+                  {isSaving ? "{t.saving}..." : "{t.saveChanges}"}
                 </Button>
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={() => setAccountOpen(false)}>Chiudi</Button>
+                <Button variant="outline" onClick={() => setAccountOpen(false)}>{t.close}</Button>
                 <Button onClick={handleOpenEdit} data-testid="button-edit-profile">
-                  Modifica Profilo
+                  {t.editProfile}
                 </Button>
               </>
             )}
@@ -772,11 +963,11 @@ function SettingsMenu() {
       <Dialog open={languageOpen} onOpenChange={setLanguageOpen}>
         <DialogContent data-testid="dialog-language">
           <DialogHeader>
-            <DialogTitle>Lingua</DialogTitle>
-            <DialogDescription>Seleziona la lingua dell'app</DialogDescription>
+           <DialogTitle>{t.languageTitle}</DialogTitle>
+            <DialogDescription>{t.languageDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Select value={language} onValueChange={setLanguage}>
+            <Select value={language} onValueChange={(value) => setLanguage(value as AppLanguage)}>
               <SelectTrigger data-testid="select-language">
                 <SelectValue />
               </SelectTrigger>
@@ -787,10 +978,15 @@ function SettingsMenu() {
             </Select>
           </div>
           <DialogFooter>
-            <Button onClick={() => {
-              setLanguageOpen(false);
-              toast({ title: "Lingua aggiornata", description: language === "it" ? "Italiano selezionato." : "Language updated." });
-            }}>Salva</Button>
+           <Button onClick={() => {
+  setLanguageOpen(false);
+  toast({
+    title: t.languageUpdated,
+    description: t.languageUpdatedDescription,
+  });
+}}>
+  {t.save}
+</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -983,14 +1179,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <ProfileProvider>
+       <LanguageProvider>
+           <ProfileProvider>
           <AudioPlayerProvider>
             <TooltipProvider>
               <AppWithAuth />
               <Toaster />
             </TooltipProvider>
           </AudioPlayerProvider>
-        </ProfileProvider>
+           </ProfileProvider>
+         <LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
