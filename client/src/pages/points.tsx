@@ -87,13 +87,13 @@ const pointsTranslations = {
     events: "Eventi",
     connections: "Connessioni",
 
-noSongs: "{t.noSongs}",
-noPhotos: "{t.noPhotos}",
-noVideos: "{t.noVideos}",
-noPosts: "{t.noPosts}",
-noEvents: "{t.noEvents}",
-noFollowers: "{t.noFollowers}",
-noFollowing: "{t.noFollowing}",
+noSongs: "Nessuna canzone disponibile",
+noPhotos: "Nessuna foto disponibile",
+noVideos: "Nessun video disponibile",
+noPosts: "Nessun post ancora.",
+noEvents: "Nessun evento in programma",
+noFollowers: "Nessun follower ancora",
+noFollowing: "Non segui ancora nessuno",
 
 comments: "Commenti",
 share: "Condividi",
@@ -1673,7 +1673,8 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
             </div>
           </div>
         </div>
-      )}
+      </div>
+    )}
       {selectedVideo && (
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
           <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
