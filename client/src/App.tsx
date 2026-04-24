@@ -127,9 +127,29 @@ const appTranslations = {
     notificationsUpdatedDescription: "Le preferenze sono state salvate.",
     languageUpdated: "Lingua aggiornata",
     languageUpdatedDescription: "Italiano selezionato.",
-    disconnected: "Disconnesso",
-    disconnectedDescription: "Hai effettuato il logout con successo.",
-    error: "Errore",
+
+helpTitle: "Assistenza",
+helpDescription: "Come possiamo aiutarti?",
+faq: "Domande Frequenti (FAQ)",
+faqToastTitle: "FAQ",
+faqToastDescription: "Apertura FAQ...",
+contactSupport: "Contatta il Supporto",
+supportToastTitle: "Supporto",
+supportToastDescription: "Email inviata a supporto@vibyng.com",
+reportProblem: "Segnala un Problema",
+bugToastTitle: "Bug Report",
+bugToastDescription: "Grazie per la segnalazione!",
+
+termsTitle: "Termini e Condizioni",
+termsDescription: "Ultimo aggiornamento: Gennaio 2024",
+understood: "Ho capito",
+
+logoutTitle: "Conferma Logout",
+logoutDescription: "Sei sicuro di voler uscire dal tuo account?",
+
+disconnected: "Disconnesso",
+disconnectedDescription: "Hai effettuato il logout con successo.",
+error: "Errore",
   },
 
   en: {
@@ -201,9 +221,29 @@ const appTranslations = {
     notificationsUpdatedDescription: "Your preferences have been saved.",
     languageUpdated: "Language updated",
     languageUpdatedDescription: "English selected.",
-    disconnected: "Logged out",
-    disconnectedDescription: "You have logged out successfully.",
-    error: "Error",
+
+helpTitle: "Help",
+helpDescription: "How can we help you?",
+faq: "Frequently Asked Questions (FAQ)",
+faqToastTitle: "FAQ",
+faqToastDescription: "Opening FAQ...",
+contactSupport: "Contact Support",
+supportToastTitle: "Support",
+supportToastDescription: "Email sent to support@vibyng.com",
+reportProblem: "Report a Problem",
+bugToastTitle: "Bug Report",
+bugToastDescription: "Thanks for your report!",
+
+termsTitle: "Terms and Conditions",
+termsDescription: "Last updated: January 2024",
+understood: "Got it",
+
+logoutTitle: "Confirm Logout",
+logoutDescription: "Are you sure you want to log out of your account?",
+
+disconnected: "Logged out",
+disconnectedDescription: "You have logged out successfully.",
+error: "Error",
   },
 } as const;
 
@@ -634,9 +674,9 @@ function SettingsMenu() {
     localStorage.removeItem("vibyng-user");
     window.location.href = "/";
     toast({
-      title: "Disconnesso",
-      description: "Hai effettuato il logout con successo.",
-    });
+  title: t.disconnected,
+  description: t.disconnectedDescription,
+  });
   };
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -991,34 +1031,33 @@ function SettingsMenu() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
-        <DialogContent data-testid="dialog-help">
-          <DialogHeader>
-            <DialogTitle>Assistenza</DialogTitle>
-            <DialogDescription>Come possiamo aiutarti?</DialogDescription>
-          </DialogHeader>
+     <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
+  <DialogContent data-testid="dialog-help">
+    <DialogHeader>
+      <DialogTitle>{t.helpTitle}</DialogTitle>
+      <DialogDescription>{t.helpDescription}</DialogDescription>
+    </DialogHeader>
           <div className="space-y-3">
             <Button variant="outline" className="w-full justify-start" onClick={() => {
-              setHelpOpen(false);
-              toast({ title: "FAQ", description: "Apertura FAQ..." });
-            }} data-testid="button-faq">
-              <FileText className="w-4 h-4 mr-2" />
-              Domande Frequenti (FAQ)
-            </Button>
+  setHelpOpen(false);
+  toast({ title: t.faqToastTitle, description: t.faqToastDescription });
+}} data-testid="button-faq">
+  <FileText className="w-4 h-4 mr-2" />
+  {t.faq}
+</Button>
             <Button variant="outline" className="w-full justify-start" onClick={() => {
-              setHelpOpen(false);
-              toast({ title: "Supporto", description: "Email inviata a supporto@vibyng.com" });
-            }} data-testid="button-contact">
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Contatta il Supporto
-            </Button>
-            <Button variant="outline" className="w-full justify-start" onClick={() => {
-              setHelpOpen(false);
-              toast({ title: "Bug Report", description: "Grazie per la segnalazione!" });
-            }} data-testid="button-bug">
-              <HelpCircle className="w-4 h-4 mr-2" />
-              Segnala un Problema
-            </Button>
+  setHelpOpen(false);
+  toast({ title: t.supportToastTitle, description: t.supportToastDescription });
+}} data-testid="button-contact">
+  <MessageCircle className="w-4 h-4 mr-2" />
+  {t.contactSupport}
+</Button><Button variant="outline" className="w-full justify-start" onClick={() => {
+  setHelpOpen(false);
+  toast({ title: t.bugToastTitle, description: t.bugToastDescription });
+}} data-testid="button-bug">
+  <HelpCircle className="w-4 h-4 mr-2" />
+  {t.reportProblem}
+</Button>
           </div>
           <div className="text-center text-xs text-muted-foreground pt-2 border-t">
             <p>Vibyng v1.0.0</p>
@@ -1030,8 +1069,8 @@ function SettingsMenu() {
       <Dialog open={termsOpen} onOpenChange={setTermsOpen}>
         <DialogContent className="max-h-[80vh] overflow-y-auto" data-testid="dialog-terms">
           <DialogHeader>
-            <DialogTitle>Termini e Condizioni</DialogTitle>
-            <DialogDescription>Ultimo aggiornamento: Gennaio 2024</DialogDescription>
+            <DialogTitle>{t.termsTitle}</DialogTitle>
+             <DialogDescription>{t.termsDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 text-sm">
             <div>
@@ -1071,7 +1110,7 @@ function SettingsMenu() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setTermsOpen(false)}>Ho capito</Button>
+            <Button onClick={() => setTermsOpen(false)}>{t.understood}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1079,18 +1118,18 @@ function SettingsMenu() {
       <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
         <DialogContent data-testid="dialog-logout">
           <DialogHeader>
-            <DialogTitle>Conferma Logout</DialogTitle>
-            <DialogDescription>Sei sicuro di voler uscire dal tuo account?</DialogDescription>
+            <DialogTitle>{t.logoutTitle}</DialogTitle>
+             <DialogDescription>{t.logoutDescription}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setLogoutOpen(false)} data-testid="button-cancel-logout">
-              <X className="w-4 h-4 mr-2" />
-              Annulla
-            </Button>
-            <Button variant="destructive" onClick={handleLogout} data-testid="button-confirm-logout">
-              <Check className="w-4 h-4 mr-2" />
-              Esci
-            </Button>
+  <X className="w-4 h-4 mr-2" />
+  {t.cancel}
+</Button>
+           <Button variant="destructive" onClick={handleLogout} data-testid="button-confirm-logout">
+  <Check className="w-4 h-4 mr-2" />
+  {t.logout}
+</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
