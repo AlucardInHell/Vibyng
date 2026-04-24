@@ -215,6 +215,16 @@ const ThemeContext = createContext<{
   setTheme: () => {},
 });
 
+  const LanguageContext = createContext<{
+  language: AppLanguage;
+  setLanguage: (language: AppLanguage) => void;
+  t: typeof appTranslations.it;
+}>({
+  language: "it",
+  setLanguage: () => {},
+  t: appTranslations.it,
+});
+
 export type ProfileData = {
   displayName: string;
   username: string;
@@ -266,16 +276,6 @@ function ProfileProvider({ children }: { children: React.ReactNode }) {
     queryKey: ["/api/users", userId],
     enabled: userId > 0,
   });
-
-  const LanguageContext = createContext<{
-  language: AppLanguage;
-  setLanguage: (language: AppLanguage) => void;
-  t: typeof appTranslations.it;
-}>({
-  language: "it",
-  setLanguage: () => {},
-  t: appTranslations.it,
-});
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<ProfileData>) => {
@@ -662,19 +662,19 @@ function SettingsMenu() {
         <DropdownMenuContent align="end" className="w-56" data-testid="menu-settings">
           <DropdownMenuLabel>{t.settings}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setAccountOpen(true)} data-testid="menu-item-{t.account}">
+          <DropdownMenuItem onClick={() => setAccountOpen(true)} data-testid="menu-item-account">
             <User className="w-4 h-4 mr-2" />
             Account
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setPrivacyOpen(true)} data-testid="menu-item-{t.privacy}">
+          <DropdownMenuItem onClick={() => setPrivacyOpen(true)} data-testid="menu-item-privacy">
             <Shield className="w-4 h-4 mr-2" />
             Privacy
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setNotificationsOpen(true)} data-testid="menu-item-{t.notifications}">
+          <DropdownMenuItem onClick={() => setNotificationsOpen(true)} data-testid="menu-item-notifications">
             <Bell className="w-4 h-4 mr-2" />
             Notifiche
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setLanguageOpen(true)} data-testid="menu-item-{t.language}">
+          <DropdownMenuItem onClick={() => setLanguageOpen(true)} data-testid="menu-item-language">
             <Globe className="w-4 h-4 mr-2" />
             Lingua
           </DropdownMenuItem>
@@ -686,16 +686,16 @@ function SettingsMenu() {
             {theme === "dark" ? t.lightTheme : t.darkTheme}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setHelpOpen(true)} data-testid="menu-item-{t.help}">
+          <DropdownMenuItem onClick={() => setHelpOpen(true)} data-testid="menu-item-help">
             <HelpCircle className="w-4 h-4 mr-2" />
             Assistenza
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTermsOpen(true)} data-testid="menu-item-{t.terms}">
+          <DropdownMenuItem onClick={() => setTermsOpen(true)} data-testid="menu-item-terms">
             <FileText className="w-4 h-4 mr-2" />
             Termini e Condizioni
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="text-destructive" onClick={() => setLogoutOpen(true)} data-testid="menu-item-{t.logout}">
+          <DropdownMenuItem className="text-destructive" onClick={() => setLogoutOpen(true)} data-testid="menu-item-logout">
             <LogOut className="w-4 h-4 mr-2" />
             Esci
           </DropdownMenuItem>
@@ -1188,7 +1188,7 @@ function App() {
             </TooltipProvider>
           </AudioPlayerProvider>
            </ProfileProvider>
-         <LanguageProvider>
+       </LanguageProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
