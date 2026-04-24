@@ -47,9 +47,15 @@ const pointsTranslations = {
     postPublishedDescription: "Il tuo post è stato condiviso con la community",
     postPublishError: "Non è stato possibile pubblicare il post",
 
+    shareToFeed: "Condividi nel feed",
+    writeSomething: "Scrivi qualcosa...",
+    dontShare: "Non condividere",
+
     photoUploadError: "Non è stato possibile caricare la foto",
     videoUploadError: "Non è stato possibile caricare il video",
     songUploadError: "Non è stato possibile salvare la canzone",
+
+    videoUploadedTitle: "Video caricato!",
 
     fileTooLargeTitle: "File troppo grande",
     videoTooLargeDescription: "Il video deve essere inferiore a 50MB",
@@ -81,13 +87,13 @@ const pointsTranslations = {
     events: "Eventi",
     connections: "Connessioni",
 
-noSongs: "Nessuna canzone disponibile",
-noPhotos: "Nessuna foto disponibile",
-noVideos: "Nessun video disponibile",
-noPosts: "Nessun post ancora.",
-noEvents: "Nessun evento in programma",
-noFollowers: "Nessun follower ancora",
-noFollowing: "Non segui ancora nessuno",
+noSongs: "{t.noSongs}",
+noPhotos: "{t.noPhotos}",
+noVideos: "{t.noVideos}",
+noPosts: "{t.noPosts}",
+noEvents: "{t.noEvents}",
+noFollowers: "{t.noFollowers}",
+noFollowing: "{t.noFollowing}",
 
 comments: "Commenti",
 share: "Condividi",
@@ -135,9 +141,15 @@ error: "Errore",
     postPublishedDescription: "Your post has been shared with the community",
     postPublishError: "Unable to publish the post",
 
+    shareToFeed: "Share to feed",
+    writeSomething: "Write something...",
+    dontShare: "Don't share",
+
     photoUploadError: "Unable to upload the photo",
     videoUploadError: "Unable to upload the video",
     songUploadError: "Unable to save the song",
+
+    videoUploadedTitle: "Video uploaded!",
 
     fileTooLargeTitle: "File too large",
     videoTooLargeDescription: "The video must be under 50MB",
@@ -1102,7 +1114,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
               onClick={() => setPhotoCommentsOpen(true)}
             >
               <MessageCircle className="w-5 h-5" />
-              Commenti
+              {t.comments}
             </button>
 <button
   className="flex items-center gap-1 text-sm text-white/80"
@@ -1157,7 +1169,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     <Sheet open={photoCommentsOpen} onOpenChange={setPhotoCommentsOpen}>
       <SheetContent side="bottom" className="h-[75vh] rounded-t-2xl">
         <SheetHeader>
-          <SheetTitle>Commenti</SheetTitle>
+          <SheetTitle>{t.comments}</SheetTitle>
         </SheetHeader>
 
         <div className="mt-4 flex flex-col h-[calc(75vh-5rem)]">
@@ -1427,23 +1439,23 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                <p className="text-sm text-muted-foreground">I tuoi eventi ({myArtistEvents.length})</p>
                 <Button size="sm" variant="outline" onClick={() => setShowEventForm(!showEventForm)}>
                   <Plus className="w-4 h-4 mr-1" />
-                  Aggiungi
+                  {t.add}
                 </Button>
               </div>
               {showEventForm && (
                 <Card>
                   <CardContent className="p-4 space-y-3">
-                    <Input placeholder="Nome evento *" value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} />
+                    <Input placeholder={t.eventName} value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} />
                     <Input type="datetime-local" value={eventForm.eventDate} onChange={e => setEventForm(p => ({ ...p, eventDate: e.target.value }))} />
-                    <Input placeholder="Città" value={eventForm.city} onChange={e => setEventForm(p => ({ ...p, city: e.target.value }))} />
-                    <Input placeholder="Venue / Locale" value={eventForm.venue} onChange={e => setEventForm(p => ({ ...p, venue: e.target.value }))} />
-                    <Textarea placeholder="Descrizione (opzionale)" value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} rows={2} />
-                    <Input placeholder="Link biglietti (opzionale)" value={eventForm.ticketUrl} onChange={e => setEventForm(p => ({ ...p, ticketUrl: e.target.value }))} />
+                    <Input placeholder={t.city} value={eventForm.city} onChange={e => setEventForm(p => ({ ...p, city: e.target.value }))} />
+                    <Input placeholder={t.venue} value={eventForm.venue} onChange={e => setEventForm(p => ({ ...p, venue: e.target.value }))} />
+                    <Textarea placeholder={t.eventDescription} value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} rows={2} />
+                    <Input placeholder={t.ticketUrl} value={eventForm.ticketUrl} onChange={e => setEventForm(p => ({ ...p, ticketUrl: e.target.value }))} />
                     <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1" onClick={() => setShowEventForm(false)}>Annulla</Button>
+                      <Button variant="outline" className="flex-1" onClick={() => setShowEventForm(false)}>{t.cancel}</Button>
                       <Button className="flex-1" onClick={async () => {
                         if (!eventForm.name || !eventForm.eventDate) {
-                          toast({ title: "Compila nome e data", variant: "destructive" });
+                          toast({ title: t.eventRequiredError, variant: "destructive" });
                           return;
                         }
                         try {
@@ -1452,11 +1464,11 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                           queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"] });
                           setShowEventForm(false);
                           setEventForm({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
-                          toast({ title: "Evento aggiunto!" });
+                          toast({ title: t.eventAddedTitle });
                         } catch {
                           toast({ title: t.error, variant: "destructive" });
                         }
-                      }}>Salva</Button>
+                      }}>{t.save}</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -1484,7 +1496,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                               try {
                                 await apiRequest("DELETE", `/api/events/${event.id}`);
                                 queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/events`] });
-                                toast({ title: "Evento eliminato" });
+                                toast({ title: t.eventDeletedTitle });
                               } catch {
                                 toast({ title: t.error, variant: "destructive" });
                               }
@@ -1613,25 +1625,24 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
       {pendingVideo && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
-            <h3 className="font-semibold">Condividi nel feed</h3>
+            <h3 className="font-semibold">{t.shareToFeed}</h3>
             <video src={pendingVideo.videoData} controls className="w-full rounded-lg max-h-48 object-cover" />
             <div className="relative">
              <div className="relative">
               <textarea
                 className="w-full p-3 rounded-lg bg-muted border-0 text-sm outline-none resize-none"
-                placeholder="Scrivi qualcosa..."
+                placeholder={t.writeSomething}
                 rows={3}
                 value={pendingVideoText}
                 onChange={e => { setPendingVideoText(e.target.value); handleVideoTextChange(e.target.value, e.target.selectionStart || 0); }}
               />
               <MentionDropdown query={videoMentionQuery} visible={showVideoMentions} onSelect={(username) => { setPendingVideoText(insertVideoMention(pendingVideoText, username)); closeVideoMentions(); }} />
             </div>
-              <MentionDropdown query={photoMentionQuery} visible={showPhotoMentions} onSelect={(username) => { setPendingPostText(insertPhotoMention(pendingPostText, username)); closePhotoMentions(); }} />
-            </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => { setPendingVideo(null); setPendingPostText(""); }}>
-                Non condividere
-              </Button>
+              <Button variant="outline" className="flex-1" onClick={() => { setPendingVideo(null); setPendingVideoText(""); }}>
+               {t.dontShare}
+               </Button>
+              
               <Button className="flex-1" disabled={uploadingType === "uploading-video"} onClick={async () => {
                 setUploadingType("uploading-video");
                 try {
@@ -1642,13 +1653,13 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                   });
                   const { url } = await uploadRes.json();
                   await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
-                    title: pendingVideoText || "Video",
+                    title: pendingVideoText || t.untitledVideo,
                     videoUrl: url,
                     thumbnailUrl: url,
                   });
                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-                 toast({ title: "Video caricato!" });
+                 toast({ title: t.videoUploadedTitle });
                 } catch {
                   toast({ title: t.error, variant: "destructive" });
                 } finally {
@@ -1657,7 +1668,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                   setPendingVideoText("");
                 }
               }}>
-                Pubblica
+                {t.publish}
               </Button>
             </div>
           </div>
@@ -1863,12 +1874,12 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
       {pendingPhoto && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
-            <h3 className="font-semibold">Condividi nel feed</h3>
+            <h3 className="font-semibold">{t.shareToFeed}</h3>
             <img src={pendingPhoto.imageData} alt="preview" className="w-full h-48 object-cover rounded-lg" />
            <div className="relative">
               <textarea
                 className="w-full p-3 rounded-lg bg-muted border-0 text-sm outline-none resize-none"
-                placeholder="Scrivi qualcosa..."
+                placeholder={t.writeSomething}
                 rows={3}
                 value={pendingPostText}
                 onChange={e => { setPendingPostText(e.target.value); handlePhotoTextChange(e.target.value, e.target.selectionStart || 0); }}
@@ -1877,28 +1888,28 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => { setPendingPhoto(null); setPendingPostText(""); }}>
-                Non condividere
+               {t.dontShare}
               </Button>
               <Button className="flex-1" disabled={uploadingType === "publishing"} onClick={async () => {
                 setUploadingType("publishing");
                 try {
                  await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
-                    title: pendingPostText || "Foto",
+                    title: pendingPostText || t.untitledPhoto,
                     imageUrl: pendingPhoto.imageData,
                     description: pendingPostText,
                   });
                   queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
                   await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
-                  toast({ title: "Post pubblicato!" });
+                  toast({ title: t.postPublishedTitle });
                 } catch {
-                 toast({ title: t.error, variant: "destructive" });
+                  toast({ title: t.error, variant: "destructive" });
                 } finally {
                   setUploadingType(null);
                   setPendingPhoto(null);
                   setPendingPostText("");
                 }
               }}>
-                Pubblica
+                {t.publish}
               </Button>
             </div>
           </div>
