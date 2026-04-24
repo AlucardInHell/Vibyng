@@ -29,6 +29,121 @@ function getCurrentUserId(): number {
   return 1;
 }
 const CURRENT_USER_ID = getCurrentUserId();
+type AppLanguage = "it" | "en";
+
+const pointsTranslations = {
+  it: {
+    commentPlaceholder: "Scrivi un commento...",
+    vpointsFetchError: "Errore nel recupero dei VibyngPoints",
+
+    avatarUpdatedTitle: "Foto profilo aggiornata!",
+    avatarUpdatedDescription: "La tua immagine è stata salvata",
+    avatarUploadError: "Non è stato possibile caricare l'immagine",
+
+    profileAvatarUpdatedTitle: "Foto profilo aggiornata",
+    profileAvatarUpdatedDescription: "La tua nuova immagine è stata salvata",
+
+    postPublishedTitle: "Post pubblicato!",
+    postPublishedDescription: "Il tuo post è stato condiviso con la community",
+    postPublishError: "Non è stato possibile pubblicare il post",
+
+    photoUploadError: "Non è stato possibile caricare la foto",
+    videoUploadError: "Non è stato possibile caricare il video",
+    songUploadError: "Non è stato possibile salvare la canzone",
+
+    fileTooLargeTitle: "File troppo grande",
+    videoTooLargeDescription: "Il video deve essere inferiore a 50MB",
+    mp3TooLargeDescription: "Il file MP3 deve essere inferiore a 10MB",
+
+    songUploadedTitle: "Canzone caricata!",
+    songUploadedDescription: "La tua canzone è ora visibile nel tuo profilo",
+
+    removedFromPlaylistTitle: "Rimosso dalla playlist",
+    removedFromPlaylistDescription: "è stato rimosso dalla tua playlist",
+
+    unfollowTitle: "Non segui più",
+    unfollowDescription: "Hai smesso di seguire",
+
+    roleArtist: "Artista",
+    roleRehearsalStudio: "Sala Prove",
+    roleRecordingStudio: "Studio di Registrazione",
+    roleRecordLabel: "Casa Discografica",
+    roleFan: "Fan",
+
+    follower: "follower",
+    postPlaceholder: "A cosa stai pensando?",
+    publish: "Pubblica",
+
+    music: "Musica",
+    photos: "Foto",
+    videos: "Video",
+    posts: "Post",
+    events: "Eventi",
+    connections: "Connessioni",
+
+    error: "Errore",
+  },
+
+  en: {
+    commentPlaceholder: "Write a comment...",
+    vpointsFetchError: "Error fetching VibyngPoints",
+
+    avatarUpdatedTitle: "Profile photo updated!",
+    avatarUpdatedDescription: "Your image has been saved",
+    avatarUploadError: "Unable to upload the image",
+
+    profileAvatarUpdatedTitle: "Profile photo updated",
+    profileAvatarUpdatedDescription: "Your new image has been saved",
+
+    postPublishedTitle: "Post published!",
+    postPublishedDescription: "Your post has been shared with the community",
+    postPublishError: "Unable to publish the post",
+
+    photoUploadError: "Unable to upload the photo",
+    videoUploadError: "Unable to upload the video",
+    songUploadError: "Unable to save the song",
+
+    fileTooLargeTitle: "File too large",
+    videoTooLargeDescription: "The video must be under 50MB",
+    mp3TooLargeDescription: "The MP3 file must be under 10MB",
+
+    songUploadedTitle: "Song uploaded!",
+    songUploadedDescription: "Your song is now visible on your profile",
+
+    removedFromPlaylistTitle: "Removed from playlist",
+    removedFromPlaylistDescription: "has been removed from your playlist",
+
+    unfollowTitle: "No longer following",
+    unfollowDescription: "You stopped following",
+
+    roleArtist: "Artist",
+    roleRehearsalStudio: "Rehearsal Studio",
+    roleRecordingStudio: "Recording Studio",
+    roleRecordLabel: "Record Label",
+    roleFan: "Fan",
+
+    follower: "followers",
+    postPlaceholder: "What's on your mind?",
+    publish: "Publish",
+
+    music: "Music",
+    photos: "Photos",
+    videos: "Videos",
+    posts: "Posts",
+    events: "Events",
+    connections: "Connections",
+
+    error: "Error",
+  },
+} as const;
+
+function getStoredLanguage(): AppLanguage {
+  try {
+    const stored = localStorage.getItem("vibyng-language");
+    if (stored === "it" || stored === "en") return stored;
+  } catch {}
+  return "it";
+}
 
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -91,7 +206,7 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Input
-            placeholder="Scrivi un commento..."
+            placeholder={t.commentPlaceholder}
             value={newComment}
             onChange={(e) => {
               setNewComment(e.target.value);
@@ -169,6 +284,8 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
 }
 export default function Points() {
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
+  const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+  const t = pointsTranslations[language];
   const { toast } = useToast();
   const { profileData, updateProfile } = useProfile();
   const [myPlaylist, setMyPlaylist] = useState<Song[]>([]);
@@ -185,6 +302,20 @@ export default function Points() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+    }
+  };
+
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+  };
+}, []);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
   const [selectedPhotoIsTall, setSelectedPhotoIsTall] = useState(false);
@@ -256,7 +387,7 @@ useEffect(() => {
   staleTime: 0,
 });
 
-const isVideoLiked = videoLikeData?.liked ?? false;
+  const isVideoLiked = videoLikeData?.liked ?? false;
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   
@@ -269,7 +400,7 @@ const isVideoLiked = videoLikeData?.liked ?? false;
     queryFn: async () => {
       const res = await fetch(`/api/vpoints/${CURRENT_USER_ID}/status`);
       if (!res.ok) {
-        throw new Error("Errore nel recupero dei VibyngPoints");
+        throw new Error(t.vpointsFetchError);
       }
       return res.json();
     },
@@ -349,16 +480,16 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
       const newAvatarUrl = response.objectPath;
       await updateProfile({ avatarUrl: newAvatarUrl });
       toast({
-        title: "Foto profilo aggiornata",
-        description: "La tua nuova immagine è stata salvata",
-      });
+  title: t.profileAvatarUpdatedTitle,
+  description: t.profileAvatarUpdatedDescription,
+});
     },
     onError: () => {
       toast({
-        title: "Errore",
-        description: "Non è stato possibile caricare l'immagine",
-        variant: "destructive",
-      });
+  title: t.error,
+  description: t.avatarUploadError,
+  variant: "destructive",
+});
     },
   });
 
@@ -374,16 +505,16 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
     await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
     toast({
-      title: "Post pubblicato!",
-      description: "Il tuo post è stato condiviso con la community",
-    });
+  title: t.postPublishedTitle,
+  description: t.postPublishedDescription,
+});
     setPostText("");
   } catch {
     toast({
-      title: "Errore",
-      description: "Non è stato possibile pubblicare il post",
-      variant: "destructive",
-    });
+  title: t.error,
+  description: t.postPublishError,
+  variant: "destructive",
+});
   }
 };
  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -407,13 +538,13 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
           body: JSON.stringify({ imageData, userId: CURRENT_USER_ID }),
         });
         await updateProfile({ avatarUrl: imageData });
-        toast({ title: "Foto profilo aggiornata!", description: "La tua immagine è stata salvata" });
+        toast({ title: t.avatarUpdatedTitle, description: t.avatarUpdatedDescription });
       };
       img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   } catch {
-    toast({ title: "Errore", description: "Non è stato possibile caricare l'immagine", variant: "destructive" });
+    toast({ title: t.error, description: t.avatarUploadError, variant: "destructive" });
   }
 };
 
@@ -445,7 +576,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
         setPendingPhoto({ imageData, title: file.name.replace(/\.[^/.]+$/, "") });
       }
     } catch {
-      toast({ title: "Errore", description: "Non è stato possibile caricare la foto", variant: "destructive" });
+      toast({ title: t.error, description: t.photoUploadError, variant: "destructive" });
     } finally {
       setUploadingType(null);
       if (photoInputRef.current) photoInputRef.current.value = "";
@@ -456,7 +587,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 50 * 1024 * 1024) {
-      toast({ title: "File troppo grande", description: "Il video deve essere inferiore a 50MB", variant: "destructive" });
+      toast({ title: t.fileTooLargeTitle, description: t.videoTooLargeDescription, variant: "destructive" });
       return;
     }
     setUploadingType("video");
@@ -467,7 +598,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     const videoData = reader.result as string;
           setPendingVideo({ videoData, title: file.name.replace(/\.[^/.]+$/, "") });
         } catch {
-          toast({ title: "Errore", description: "Non è stato possibile caricare il video", variant: "destructive" });
+          toast({ title: t.error, description: t.videoUploadError, variant: "destructive" });
         } finally {
           setUploadingType(null);
           if (videoInputRef.current) videoInputRef.current.value = "";
@@ -484,7 +615,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "File troppo grande", description: "Il file MP3 deve essere inferiore a 10MB", variant: "destructive" });
+      toast({ title: t.fileTooLargeTitle, description: t.mp3TooLargeDescription, variant: "destructive" });
       return;
     }
     setUploadingType("music");
@@ -512,9 +643,9 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             duration: audioDuration,
           });
           queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
-          toast({ title: "Canzone caricata!", description: "La tua canzone è ora visibile nel tuo profilo" });
+          toast({ title: t.songUploadedTitle, description: t.songUploadedDescription });
         } catch {
-          toast({ title: "Errore", description: "Non è stato possibile salvare la canzone", variant: "destructive" });
+          toast({ title: t.error, description: t.songUploadError, variant: "destructive" });
         } finally {
           setUploadingType(null);
           if (musicInputRef.current) musicInputRef.current.value = "";
@@ -538,18 +669,18 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   const handleRemoveFromPlaylist = (songId: number, songTitle: string) => {
     setMyPlaylist(prev => prev.filter(s => s.id !== songId));
     toast({
-      title: "Rimosso dalla playlist",
-      description: `"${songTitle}" è stato rimosso dalla tua playlist`,
-    });
+  title: t.removedFromPlaylistTitle,
+  description: `"${songTitle}" ${t.removedFromPlaylistDescription}`,
+});
   };
 
   const handleUnfollowArtist = async (artistId: number, artistName: string) => {
     try {
       await unfollowMutation.mutateAsync(artistId);
       toast({
-        title: "Non segui più",
-        description: `Hai smesso di seguire ${artistName}`,
-      });
+  title: t.unfollowTitle,
+  description: `${t.unfollowDescription} ${artistName}`,
+});
     } catch {
       toast({ title: "Errore", variant: "destructive" });
     }
@@ -588,16 +719,16 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             <h1 className="text-xl font-bold" data-testid="text-my-name">{profileData.displayName}</h1>
             <span className="text-sm text-muted-foreground">@{profileData.username}</span>
           <Badge variant="outline" className="mt-2" data-testid="badge-role">
-              {currentUser?.role === "artist" ? "Artista" : 
-               currentUser?.role === "rehearsal_studio" ? "Sala Prove" :
-               currentUser?.role === "recording_studio" ? "Studio di Registrazione" :
-               currentUser?.role === "record_label" ? "Casa Discografica" : "Fan"}
+              {currentUser?.role === "artist" ? t.roleArtist :
+ currentUser?.role === "rehearsal_studio" ? t.roleRehearsalStudio :
+ currentUser?.role === "recording_studio" ? t.roleRecordingStudio :
+ currentUser?.role === "record_label" ? t.roleRecordLabel : t.roleFan}
             </Badge>
             <div className="flex items-center gap-4 mt-3">
              <div className="flex items-center gap-1 text-muted-foreground">
                 <Users className="w-4 h-4" />
                 <span className="text-sm font-medium" data-testid="text-followers">
-                  {followersData?.count ?? 0} follower
+                  {followersData?.count ?? 0} {t.follower}
                 </span>
               </div>
              <Link href="/vpoints">
@@ -628,7 +759,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             <div className="flex-1 space-y-3">
               <div className="relative">
                 <Textarea
-                  placeholder="A cosa stai pensando?"
+                  placeholder={t.postPlaceholder}
                   value={postText}
                   onChange={(e) => {
                     setPostText(e.target.value);
@@ -683,7 +814,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                   data-testid="button-publish-post"
                 >
                   <Send className="w-4 h-4 mr-1" />
-                  Pubblica
+                  {t.publish}
                 </Button>
               </div>
             </div>
@@ -695,27 +826,27 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
        <TabsList className="w-full grid grid-cols-6">
           <TabsTrigger value="songs" className="px-1 text-xs" data-testid="tab-songs">
             <Music className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Musica</span>
+           <span className="hidden sm:inline">{t.music}</span>
           </TabsTrigger>
           <TabsTrigger value="photos" className="px-1 text-xs" data-testid="tab-photos">
             <ImageIcon className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Foto</span>
+            <span className="hidden sm:inline">{t.photos}</span>
           </TabsTrigger>
           <TabsTrigger value="videos" className="px-1 text-xs" data-testid="tab-videos">
             <Video className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Video</span>
+            <span className="hidden sm:inline">{t.videos}</span>
           </TabsTrigger>
          <TabsTrigger value="posts" className="px-1 text-xs" data-testid="tab-posts">
             <FileText className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Post</span>
+            <span className="hidden sm:inline">{t.posts}</span>
           </TabsTrigger>
         <TabsTrigger value="events" className="px-1 text-xs">
             <Calendar className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Eventi</span>
+            <span className="hidden sm:inline">{t.events}</span>
           </TabsTrigger>
          <TabsTrigger value="connections" className="px-1 text-xs">
             <Users className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Connessioni</span>
+           <span className="hidden sm:inline">{t.connections}</span>
           </TabsTrigger>
           
         </TabsList>
@@ -1029,7 +1160,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             <div className="relative">
               <input
                 className="w-full text-sm border rounded-lg px-3 py-2 bg-background"
-                placeholder="Scrivi un commento..."
+                placeholder={t.commentPlaceholder}
                 value={commentInput}
                 onChange={(e) => {
                   setCommentInput(e.target.value);
@@ -1588,7 +1719,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
       <div className="relative flex-1">
         <input
           className="w-full h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 text-base placeholder:text-[14px]"
-          placeholder="Scrivi un commento..."
+          placeholder={t.commentPlaceholder}
           value={videoCommentInput}
           onChange={e => {
             setVideoCommentInput(e.target.value);
