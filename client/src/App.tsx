@@ -384,9 +384,12 @@ function LanguageProvider({ children }: { children: React.ReactNode }) {
   });
 
   const setLanguage = (nextLanguage: AppLanguage) => {
-    setLanguageState(nextLanguage);
-    localStorage.setItem("vibyng-language", nextLanguage);
-  };
+  setLanguageState(nextLanguage);
+  localStorage.setItem("vibyng-language", nextLanguage);
+  window.dispatchEvent(
+    new CustomEvent("vibyng-language-change", { detail: nextLanguage })
+  );
+};
 
   const t = appTranslations[language];
 
