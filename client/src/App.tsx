@@ -53,6 +53,7 @@ import { Label } from "@/components/ui/label";
 import { Switch as SwitchUI } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
+import { legalDocuments } from "@/lib/legal-documents";
 
 type Theme = "light" | "dark";
 type AppLanguage = "it" | "en";
@@ -74,6 +75,7 @@ const appTranslations = {
     help: "Assistenza",
     terms: "Termini e Condizioni",
     logout: "Esci",
+    privacyPolicy: "Informativa Privacy",
 
     accountTitle: "Il tuo Account",
     editProfileTitle: "Modifica Profilo",
@@ -168,6 +170,7 @@ error: "Errore",
     help: "Help",
     terms: "Terms and Conditions",
     logout: "Log out",
+    privacyPolicy: "Privacy Policy",
 
     accountTitle: "Your Account",
     editProfileTitle: "Edit Profile",
@@ -630,11 +633,13 @@ function SettingsMenu() {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+  const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const userId = getCurrentUserId();
   const { data: user } = useQuery<UserType>({ queryKey: ["/api/users", userId] });
   const { data: followingList = [] } = useQuery<UserType[]>({ queryKey: ["/api/users", userId, "following"] });
   const followedProfilesCount = followingList.length;
+  const legalTexts = legalDocuments[language];
 
   const [editFormData, setEditFormData] = useState({
     displayName: "",
@@ -734,6 +739,10 @@ function SettingsMenu() {
             <FileText className="w-4 h-4 mr-2" />
            {t.terms}
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setPrivacyPolicyOpen(true)} data-testid="menu-item-privacy-policy">
+  <Shield className="w-4 h-4 mr-2" />
+  {t.privacyPolicy}
+</DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="text-destructive" onClick={() => setLogoutOpen(true)} data-testid="menu-item-logout">
             <LogOut className="w-4 h-4 mr-2" />
@@ -1072,42 +1081,9 @@ function SettingsMenu() {
             <DialogTitle>{t.termsTitle}</DialogTitle>
              <DialogDescription>{t.termsDescription}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 text-sm">
-            <div>
-              <h4 className="font-semibold mb-1">1. Accettazione dei Termini</h4>
-              <p className="text-muted-foreground">
-                Utilizzando Vibyng, accetti di essere vincolato da questi termini di servizio. 
-                Se non accetti questi termini, non utilizzare la piattaforma.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">2. Uso della Piattaforma</h4>
-              <p className="text-muted-foreground">
-                Vibyng è una piattaforma per connettere artisti e fan. Gli utenti devono 
-                comportarsi in modo rispettoso e non pubblicare contenuti offensivi o illegali.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">3. VibyngPoints</h4>
-              <p className="text-muted-foreground">
-                I VibyngPoints sono una valuta virtuale della piattaforma. Non hanno valore 
-                monetario reale e non sono rimborsabili.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">4. Privacy</h4>
-              <p className="text-muted-foreground">
-                I tuoi dati sono protetti secondo la nostra Informativa sulla Privacy. 
-                Non condividiamo i tuoi dati personali con terze parti senza il tuo consenso.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">5. Proprietà Intellettuale</h4>
-              <p className="text-muted-foreground">
-                Gli artisti mantengono tutti i diritti sui contenuti che pubblicano. 
-                Vibyng ha una licenza per visualizzare e distribuire tali contenuti sulla piattaforma.
-              </p>
-            </div>
+         <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed pr-2">
+  {legalTexts.terms}
+</div>
           </div>
           <DialogFooter>
             <Button onClick={() => setTermsOpen(false)}>{t.understood}</Button>
@@ -1115,6 +1091,23 @@ function SettingsMenu() {
         </DialogContent>
       </Dialog>
 
+<Dialog open={privacyPolicyOpen} onOpenChange={setPrivacyPolicyOpen}>
+  <DialogContent className="max-h-[80vh] overflow-y-auto" data-testid="dialog-privacy-policy">
+    <DialogHeader>
+      <DialogTitle>{t.privacyPolicy}</DialogTitle>
+      <DialogDescription>{t.privacyDescription}</DialogDescription>
+    </DialogHeader>
+
+    <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed pr-2">
+      {legalTexts.privacy}
+    </div>
+
+    <DialogFooter>
+      <Button onClick={() => setPrivacyPolicyOpen(false)}>{t.understood}</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+    
       <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
         <DialogContent data-testid="dialog-logout">
           <DialogHeader>
