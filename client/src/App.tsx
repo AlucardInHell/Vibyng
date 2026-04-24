@@ -151,6 +151,12 @@ logoutDescription: "Sei sicuro di voler uscire dal tuo account?",
 
 disconnected: "Disconnesso",
 disconnectedDescription: "Hai effettuato il logout con successo.",
+photo: "Foto",
+video: "Video",
+file: "File",
+uploadSelectedTitle: "File selezionato",
+uploadSelectedDescription: "è stato selezionato con successo",
+
 error: "Errore",
   },
 
@@ -246,6 +252,12 @@ logoutDescription: "Are you sure you want to log out of your account?",
 
 disconnected: "Logged out",
 disconnectedDescription: "You have logged out successfully.",
+photo: "Photo",
+video: "Video",
+file: "File",
+uploadSelectedTitle: "File selected",
+uploadSelectedDescription: "has been selected successfully",
+
 error: "Error",
   },
 } as const;
@@ -538,15 +550,15 @@ function BottomNav() {
   };
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      toast({
-        title: `${type} caricato`,
-        description: `"${file.name}" è stato selezionato con successo`,
-      });
-      e.target.value = "";
-    }
-  };
+  const file = e.target.files?.[0];
+  if (file) {
+    toast({
+      title: `${type} ${t.uploadSelectedTitle.toLowerCase()}`,
+      description: `"${file.name}" ${t.uploadSelectedDescription}`,
+    });
+    e.target.value = "";
+  }
+};
 
   const renderNavItem = (item: { path: string; icon: React.ComponentType<{ className?: string }>; label: string }) => {
   const isActive = location === item.path || (item.path !== "/" && item.path !== "/me" && location.startsWith(item.path));
@@ -588,7 +600,7 @@ function BottomNav() {
         type="file"
         accept="image/*"
         capture="environment"
-        onChange={(e) => handleFileSelected(e, "Foto")}
+        onChange={(e) => handleFileSelected(e, t.photo)}
         className="hidden"
         data-testid="input-photo-capture"
       />
@@ -597,7 +609,7 @@ function BottomNav() {
         type="file"
         accept="video/*"
         capture="environment"
-        onChange={(e) => handleFileSelected(e, "Video")}
+        onChange={(e) => handleFileSelected(e, t.video)}
         className="hidden"
         data-testid="input-video-capture"
       />
@@ -605,7 +617,7 @@ function BottomNav() {
         ref={mediaInputRef}
         type="file"
         accept="image/*,video/*,audio/*"
-        onChange={(e) => handleFileSelected(e, "File")}
+        onChange={(e) => handleFileSelected(e, t.file)}
         className="hidden"
         data-testid="input-media-upload"
       />
@@ -857,7 +869,12 @@ function SettingsMenu() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm">{t.memberSince}</span>
                   <span className="text-sm text-muted-foreground">
-                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString("it-IT", { month: "long", year: "numeric" }) : "—"}
+                   {user?.createdAt
+  ? new Date(user.createdAt).toLocaleDateString(language === "it" ? "it-IT" : "en-US", {
+      month: "long",
+      year: "numeric",
+    })
+  : "—"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
