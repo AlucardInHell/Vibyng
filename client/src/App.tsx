@@ -664,19 +664,19 @@ function SettingsMenu() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setAccountOpen(true)} data-testid="menu-item-account">
             <User className="w-4 h-4 mr-2" />
-            Account
+            {t.account}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setPrivacyOpen(true)} data-testid="menu-item-privacy">
             <Shield className="w-4 h-4 mr-2" />
-            Privacy
+            {t.privacy}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setNotificationsOpen(true)} data-testid="menu-item-notifications">
             <Bell className="w-4 h-4 mr-2" />
-            Notifiche
+            {t.notifications}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setLanguageOpen(true)} data-testid="menu-item-language">
             <Globe className="w-4 h-4 mr-2" />
-            Lingua
+            {t.language}
           </DropdownMenuItem>
           <DropdownMenuItem 
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")} 
@@ -688,16 +688,16 @@ function SettingsMenu() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setHelpOpen(true)} data-testid="menu-item-help">
             <HelpCircle className="w-4 h-4 mr-2" />
-            Assistenza
+            {t.help}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setTermsOpen(true)} data-testid="menu-item-terms">
             <FileText className="w-4 h-4 mr-2" />
-            Termini e Condizioni
+           {t.terms}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="text-destructive" onClick={() => setLogoutOpen(true)} data-testid="menu-item-logout">
             <LogOut className="w-4 h-4 mr-2" />
-            Esci
+            {t.logout}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -847,14 +847,14 @@ function SettingsMenu() {
       <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
         <DialogContent data-testid="dialog-privacy">
           <DialogHeader>
-            <DialogTitle>Privacy</DialogTitle>
-            <DialogDescription>Controlla chi può vedere le tue informazioni</DialogDescription>
+           <DialogTitle>{t.privacyTitle}</DialogTitle>
+            <DialogDescription>{t.privacyDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Profilo pubblico</Label>
-                <p className="text-xs text-muted-foreground">Altri utenti possono vedere il tuo profilo</p>
+                <Label>{t.publicProfile}</Label>
+              <p className="text-xs text-muted-foreground">{t.publicProfileDescription}</p>
               </div>
               <SwitchUI 
                 checked={privacySettings.profilePublic} 
@@ -864,8 +864,8 @@ function SettingsMenu() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>Mostra attività</Label>
-                <p className="text-xs text-muted-foreground">Mostra i tuoi like e commenti</p>
+               <Label>{t.showActivity}</Label>
+               <p className="text-xs text-muted-foreground">{t.showActivityDescription}</p>
               </div>
               <SwitchUI 
                 checked={privacySettings.showActivity} 
@@ -875,8 +875,8 @@ function SettingsMenu() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>Consenti messaggi</Label>
-                <p className="text-xs text-muted-foreground">Ricevi messaggi da altri utenti</p>
+                <Label>{t.allowMessages}</Label>
+              <p className="text-xs text-muted-foreground">{t.allowMessagesDescription}</p>
               </div>
               <SwitchUI 
                 checked={privacySettings.allowMessages} 
@@ -888,8 +888,8 @@ function SettingsMenu() {
           <DialogFooter>
             <Button onClick={() => {
               setPrivacyOpen(false);
-              toast({ title: "Privacy aggiornata", description: "Le impostazioni sono state salvate." });
-            }}>Salva</Button>
+              toast({ title: t.privacyUpdated, description: t.privacyUpdatedDescription });
+            }}>{t.save}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -897,14 +897,14 @@ function SettingsMenu() {
       <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
         <DialogContent data-testid="dialog-notifications">
           <DialogHeader>
-            <DialogTitle>Notifiche</DialogTitle>
-            <DialogDescription>Scegli quali notifiche ricevere</DialogDescription>
+           <DialogTitle>{t.notificationsTitle}</DialogTitle>
+           <DialogDescription>{t.notificationsDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Notifiche push</Label>
-                <p className="text-xs text-muted-foreground">Ricevi notifiche sul dispositivo</p>
+                <Label>{t.pushNotifications}</Label>
+                <p className="text-xs text-muted-foreground">{t.pushNotificationsDescription}</p>
               </div>
               <SwitchUI 
                 checked={notificationSettings.pushEnabled} 
@@ -914,8 +914,8 @@ function SettingsMenu() {
             </div>
             <div className="flex items-center justify-between">
               <div>
-                <Label>Email</Label>
-                <p className="text-xs text-muted-foreground">Ricevi aggiornamenti via email</p>
+                <Label>{t.emailNotifications}</Label>
+               <p className="text-xs text-muted-foreground">{t.emailNotificationsDescription}</p>
               </div>
               <SwitchUI 
                 checked={notificationSettings.emailEnabled} 
@@ -924,9 +924,9 @@ function SettingsMenu() {
               />
             </div>
             <div className="border-t pt-3 space-y-3">
-              <p className="text-sm font-medium">Tipi di notifiche</p>
+             <p className="text-sm font-medium">{t.notificationTypes}</p>
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-normal">Nuovi follower</Label>
+                <Label className="text-sm font-normal">{t.newFollowers}</Label>
                 <SwitchUI 
                   checked={notificationSettings.newFollowers} 
                   onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, newFollowers: checked }))}
@@ -934,7 +934,7 @@ function SettingsMenu() {
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-normal">Nuovi messaggi</Label>
+               <Label className="text-sm font-normal">{t.newMessages}</Label>
                 <SwitchUI 
                   checked={notificationSettings.newMessages} 
                   onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, newMessages: checked }))}
@@ -942,7 +942,7 @@ function SettingsMenu() {
                 />
               </div>
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-normal">Aggiornamenti artisti</Label>
+                <Label className="text-sm font-normal">{t.artistUpdates}</Label>
                 <SwitchUI 
                   checked={notificationSettings.artistUpdates} 
                   onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, artistUpdates: checked }))}
@@ -954,8 +954,8 @@ function SettingsMenu() {
           <DialogFooter>
             <Button onClick={() => {
               setNotificationsOpen(false);
-              toast({ title: "Notifiche aggiornate", description: "Le preferenze sono state salvate." });
-            }}>Salva</Button>
+              toast({ title: t.notificationsUpdated, description: t.notificationsUpdatedDescription });
+            }}>{t.save}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
