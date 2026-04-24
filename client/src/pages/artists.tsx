@@ -22,12 +22,52 @@ function getCurrentUserId(): number {
 }
 
 type FlowTab = "for-you" | "emerging" | "trend";
+type AppLanguage = "it" | "en";
+
+const flowTranslations = {
+  it: {
+    loading: "Caricamento Flow...",
+    empty: "Nessun video disponibile nel Flow",
+    forYou: "Per Te",
+    emerging: "Emergenti",
+    trend: "Trend",
+    untitled: "Senza titolo",
+    copied: "Link copiato!",
+    noComments: "Ancora nessun commento.",
+    commentPlaceholder: "Scrivi un commento...",
+    loadArtistsError: "Errore nel caricamento artisti",
+    flowShareText: "Flow su Vibyng",
+  },
+  en: {
+    loading: "Loading Flow...",
+    empty: "No videos available in Flow",
+    forYou: "For You",
+    emerging: "Emerging",
+    trend: "Trend",
+    untitled: "Untitled",
+    copied: "Link copied!",
+    noComments: "No comments yet.",
+    commentPlaceholder: "Write a comment...",
+    loadArtistsError: "Error loading artists",
+    flowShareText: "Flow on Vibyng",
+  },
+} as const;
+
+function getStoredLanguage(): AppLanguage {
+  try {
+    const stored = localStorage.getItem("vibyng-language");
+    if (stored === "it" || stored === "en") return stored;
+  } catch {}
+  return "it";
+}
 type FlowVideo = ArtistVideo & {
   artist: User;
 };
 
 export default function Artists() {
   const currentUserId = getCurrentUserId();
+  const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+  const t = flowTranslations[language];
   const { toast } = useToast();
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
 
@@ -50,12 +90,26 @@ export default function Artists() {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+useEffect(() => {
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+    }
+  };
 
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+  };
+}, []);
+  
   const { data: artists = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/artists"],
     queryFn: async () => {
       const res = await fetch("/api/artists");
-      if (!res.ok) throw new Error("Errore nel caricamento artisti");
+      if (!res.ok) throw new Error(t.loadArtistsError);
       return res.json();
     },
   });
@@ -256,7 +310,7 @@ export default function Artists() {
 
     const result = await shareVibyngContent({
       title: video.title || "Video",
-      text: `${video.artist.displayName} • ${video.title || "Flow su Vibyng"}`,
+      text: `${video.artist.displayName} • ${video.title || t.flowShareText}`,
       mediaUrl: video.videoUrl ?? undefined,
       fallbackUrl: shareUrl,
       shareUrl,
@@ -264,7 +318,7 @@ export default function Artists() {
     });
 
     if (result === "copied") {
-      toast({ title: "Link copiato!" });
+      toast({ title: t.copied });
     }
   };
 
@@ -288,7 +342,7 @@ export default function Artists() {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex flex-col items-center gap-2">
           <Sparkles className="w-8 h-8 text-primary" />
-          <span className="text-muted-foreground">Caricamento Flow...</span>
+          <span className="text-muted-foreground">{t.loading}</span>
         </div>
       </div>
     );
@@ -298,7 +352,7 @@ export default function Artists() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-2">
         <Sparkles className="w-8 h-8 text-muted-foreground" />
-        <p className="text-muted-foreground">Nessun video disponibile nel Flow</p>
+        <p className="text-muted-foreground">{t.empty}</p>
       </div>
     );
   }
@@ -317,7 +371,7 @@ export default function Artists() {
           }`}
           onClick={() => setActiveTab("for-you")}
         >
-          Per Te
+          {t.forYou}
         </button>
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition ${
@@ -325,7 +379,7 @@ export default function Artists() {
           }`}
           onClick={() => setActiveTab("emerging")}
         >
-          Emergenti
+          {t.emerging}
         </button>
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition ${
@@ -333,7 +387,7 @@ export default function Artists() {
           }`}
           onClick={() => setActiveTab("trend")}
         >
-          Trend
+          {t.trend}
         </button>
       </div>
 
@@ -408,7 +462,7 @@ export default function Artists() {
                           {video.artist.displayName}
                         </p>
                         <p className="text-white text-lg font-semibold leading-tight truncate">
-                          {video.title || "Senza titolo"}
+                          {video.title || t.untitled}
                         </p>
                        <p className="text-white/70 text-sm truncate">@{video.artist.username}</p>
 
@@ -471,7 +525,7 @@ export default function Artists() {
 
                  <div className="absolute top-4 left-4">
 <div className="px-2.5 py-1 rounded-full bg-black/50 text-white text-[11px] border border-white/10">
-    {activeTab === "for-you" ? "Per Te" : activeTab === "emerging" ? "Emergenti" : "Trend"}
+    {activeTab === "for-you" ? t.forYou : activeTab === "emerging" ? t.emerging : t.trend}
   </div>
 </div>
                 </div>
@@ -560,7 +614,7 @@ export default function Artists() {
           </div>
         ))
       ) : (
-        <p className="text-sm text-muted-foreground px-4">Ancora nessun commento.</p>
+        <p className="text-sm text-muted-foreground px-4">{t.noComments}</p>
       )}
     </div>
 
@@ -569,7 +623,7 @@ export default function Artists() {
         <div className="relative flex-1">
           <Input
             value={commentInput}
-            placeholder="Scrivi un commento..."
+           placeholder={t.commentPlaceholder}
             className="w-full h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 text-base placeholder:text-[14px]"
             onChange={(e) => {
               setCommentInput(e.target.value);
