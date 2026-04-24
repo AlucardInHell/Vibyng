@@ -1081,10 +1081,11 @@ function SettingsMenu() {
             <DialogTitle>{t.termsTitle}</DialogTitle>
              <DialogDescription>{t.termsDescription}</DialogDescription>
           </DialogHeader>
+          
          <div className="max-h-[60vh] overflow-y-auto whitespace-pre-wrap text-sm text-muted-foreground leading-relaxed pr-2">
   {legalTexts.terms}
 </div>
-          </div>
+          
           <DialogFooter>
             <Button onClick={() => setTermsOpen(false)}>{t.understood}</Button>
           </DialogFooter>
