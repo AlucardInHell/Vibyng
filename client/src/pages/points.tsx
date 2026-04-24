@@ -81,7 +81,43 @@ const pointsTranslations = {
     events: "Eventi",
     connections: "Connessioni",
 
-    error: "Errore",
+noSongs: "Nessuna canzone disponibile",
+noPhotos: "Nessuna foto disponibile",
+noVideos: "Nessun video disponibile",
+noPosts: "Nessun post ancora.",
+noEvents: "Nessun evento in programma",
+noFollowers: "Nessun follower ancora",
+noFollowing: "Non segui ancora nessuno",
+
+comments: "Commenti",
+share: "Condividi",
+copied: "Link copiato!",
+untitledPhoto: "Foto",
+untitledVideo: "Video",
+delete: "Elimina",
+
+photoDescriptionPlaceholder: "Scrivi una descrizione per la foto...",
+videoDescriptionPlaceholder: "Scrivi una descrizione per il video...",
+publishPhoto: "Pubblica foto",
+publishVideo: "Pubblica video",
+cancel: "Annulla",
+
+add: "Aggiungi",
+eventName: "Nome evento *",
+eventDate: "Data e ora",
+city: "Città",
+venue: "Venue / Locale",
+eventDescription: "Descrizione (opzionale)",
+ticketUrl: "Link biglietti (opzionale)",
+save: "Salva",
+attend: "Partecipo",
+buyTickets: "Acquista biglietti",
+eventRequiredError: "Compila nome e data",
+eventAddedTitle: "Evento aggiunto!",
+eventDeletedTitle: "Evento eliminato",
+eventAttendTitle: "Partecipi all'evento! 🎉",
+
+error: "Errore",
   },
 
   en: {
@@ -133,7 +169,43 @@ const pointsTranslations = {
     events: "Events",
     connections: "Connections",
 
-    error: "Error",
+noSongs: "No songs available",
+noPhotos: "No photos available",
+noVideos: "No videos available",
+noPosts: "No posts yet.",
+noEvents: "No upcoming events",
+noFollowers: "No followers yet",
+noFollowing: "You are not following anyone yet",
+
+comments: "Comments",
+share: "Share",
+copied: "Link copied!",
+untitledPhoto: "Photo",
+untitledVideo: "Video",
+delete: "Delete",
+
+photoDescriptionPlaceholder: "Write a description for the photo...",
+videoDescriptionPlaceholder: "Write a description for the video...",
+publishPhoto: "Publish photo",
+publishVideo: "Publish video",
+cancel: "Cancel",
+
+add: "Add",
+eventName: "Event name *",
+eventDate: "Date and time",
+city: "City",
+venue: "Venue / Venue name",
+eventDescription: "Description (optional)",
+ticketUrl: "Ticket link (optional)",
+save: "Save",
+attend: "Attend",
+buyTickets: "Buy tickets",
+eventRequiredError: "Please enter name and date",
+eventAddedTitle: "Event added!",
+eventDeletedTitle: "Event deleted",
+eventAttendTitle: "You are attending the event! 🎉",
+
+error: "Error",
   },
 } as const;
 
@@ -178,7 +250,15 @@ type VPointsStatus = {
   }>;
 };
 
-function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
+function MePostComments({
+  postId,
+  postAuthorId,
+  commentPlaceholder,
+}: {
+  postId: number;
+  postAuthorId: number;
+  commentPlaceholder: string;
+}) {
   const [newComment, setNewComment] = useState("");
 
   const { data: comments = [], refetch } = useQuery<any[]>({
@@ -206,7 +286,7 @@ function MePostComments({ postId, postAuthorId }: { postId: number; postAuthorId
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Input
-            placeholder={t.commentPlaceholder}
+            placeholder={commentPlaceholder}
             value={newComment}
             onChange={(e) => {
               setNewComment(e.target.value);
@@ -606,7 +686,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
       };
       reader.readAsDataURL(file);
     } catch {
-      toast({ title: "Errore", variant: "destructive" });
+      toast({ title: t.error, variant: "destructive" });
       setUploadingType(null);
     }
   };
@@ -653,7 +733,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
       };
       reader.readAsDataURL(file);
     } catch {
-      toast({ title: "Errore", variant: "destructive" });
+     toast({ title: t.error, variant: "destructive" });
       setUploadingType(null);
     }
   };
@@ -682,7 +762,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   description: `${t.unfollowDescription} ${artistName}`,
 });
     } catch {
-      toast({ title: "Errore", variant: "destructive" });
+      toast({ title: t.error, variant: "destructive" });
     }
   };
 
@@ -884,7 +964,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
                             toast({ title: "Rimossa dalla playlist" });
                           }
                         } catch {
-                          toast({ title: "Errore", variant: "destructive" });
+                         toast({ title: t.error, variant: "destructive" });
                         }
                       }}
                     >
@@ -1041,12 +1121,12 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     });
 
     if (result === "copied") {
-      toast({ title: "Link copiato!" });
+     toast({ title: t.copied });
     }
   }}
 >
   <Share2 className="w-5 h-5" />
-  Condividi
+{t.share}
 </button>
             <button
               className="flex items-center gap-1 text-sm text-red-400 ml-auto"
@@ -1297,7 +1377,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
     });
 
     if (result === "copied") {
-      toast({ title: "Link copiato!" });
+     toast({ title: t.copied });
     }
   }}
 >
@@ -1317,7 +1397,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                             queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
                             toast({ title: "Post eliminato" });
                           } catch {
-                            toast({ title: "Errore", variant: "destructive" });
+                           toast({ title: t.error, variant: "destructive" });
                           }
                         }}
                       >🗑️</button>
@@ -1325,7 +1405,11 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                   </CardContent>
                   {openCommentsPosts.has(post.id) && (
                     <CardContent className="pt-0">
-                      <MePostComments postId={post.id} postAuthorId={CURRENT_USER_ID} />
+                      <MePostComments
+  postId={post.id}
+  postAuthorId={post.author.id}
+  commentPlaceholder={t.commentPlaceholder}
+/>
                     </CardContent>
                   )}
                 </Card>
@@ -1370,7 +1454,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                           setEventForm({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
                           toast({ title: "Evento aggiunto!" });
                         } catch {
-                          toast({ title: "Errore", variant: "destructive" });
+                          toast({ title: t.error, variant: "destructive" });
                         }
                       }}>Salva</Button>
                     </div>
@@ -1402,7 +1486,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                                 queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/events`] });
                                 toast({ title: "Evento eliminato" });
                               } catch {
-                                toast({ title: "Errore", variant: "destructive" });
+                                toast({ title: t.error, variant: "destructive" });
                               }
                             }}
                           >🗑️</button>
@@ -1443,7 +1527,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                             queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"] });
                             toast({ title: "Evento rimosso" });
                           } catch {
-                            toast({ title: "Errore", variant: "destructive" });
+                            toast({ title: t.error, variant: "destructive" });
                           }
                         }}
                       >🗑️</button>
@@ -1566,7 +1650,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                  toast({ title: "Video caricato!" });
                 } catch {
-                  toast({ title: "Errore", variant: "destructive" });
+                  toast({ title: t.error, variant: "destructive" });
                 } finally {
                   setUploadingType(null);
                   setPendingVideo(null);
@@ -1616,12 +1700,12 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
     });
 
     if (result === "copied") {
-      toast({ title: "Link copiato!" });
+      toast({ title: t.copied });
     }
   }}
 >
-  <Share2 className="w-5 h-5" />
-  Condividi
+ <Share2 className="w-5 h-5" />
+{t.share}
 </button>
                   <button
                     className="flex items-center gap-1 text-sm text-red-500"
@@ -1632,7 +1716,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                         setSelectedVideo(null);
                         toast({ title: "Video eliminato" });
                       } catch {
-                        toast({ title: "Errore", variant: "destructive" });
+                        toast({ title: t.error, variant: "destructive" });
                       }
                     }}
                   >
@@ -1807,7 +1891,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                   await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
                   toast({ title: "Post pubblicato!" });
                 } catch {
-                  toast({ title: "Errore", variant: "destructive" });
+                 toast({ title: t.error, variant: "destructive" });
                 } finally {
                   setUploadingType(null);
                   setPendingPhoto(null);
