@@ -30,13 +30,101 @@ function getCurrentUserId(): number {
   return 1;
 }
 
-function getRoleLabel(role: string): string {
+type AppLanguage = "it" | "en";
+
+const artistProfileTranslations = {
+  it: {
+    loading: "Caricamento...",
+    commentPlaceholder: "Scrivi un commento...",
+    postPlaceholder: "A cosa stai pensando?",
+    publish: "Pubblica",
+
+    posts: "Post",
+    photos: "Foto",
+    videos: "Video",
+    messages: "Messaggi",
+    songs: "Canzoni",
+    events: "Eventi",
+    connections: "Connessioni",
+
+    roleArtist: "Artista",
+    roleRehearsalStudio: "Sala Prove",
+    roleRecordingStudio: "Studio di Registrazione",
+    roleRecordLabel: "Casa Discografica",
+    roleFan: "Fan",
+
+    follower: "follower",
+    follow: "Segui",
+    unfollow: "Non seguire più",
+
+    followTitle: "Ora segui",
+    followDescription: "Stai seguendo",
+    unfollowTitle: "Non segui più",
+    unfollowDescription: "Hai smesso di seguire",
+
+    avatarUpdatedTitle: "Foto profilo aggiornata!",
+    postPublishedTitle: "Post pubblicato!",
+    error: "Errore",
+
+    supportThanksTitle: "Grazie per il supporto!",
+    supportThanksDescription: "Hai guadagnato 50 VibyngPoints",
+    supportErrorDescription: "Non è stato possibile completare il supporto",
+  },
+
+  en: {
+    loading: "Loading...",
+    commentPlaceholder: "Write a comment...",
+    postPlaceholder: "What's on your mind?",
+    publish: "Publish",
+
+    posts: "Posts",
+    photos: "Photos",
+    videos: "Videos",
+    messages: "Messages",
+    songs: "Songs",
+    events: "Events",
+    connections: "Connections",
+
+    roleArtist: "Artist",
+    roleRehearsalStudio: "Rehearsal Studio",
+    roleRecordingStudio: "Recording Studio",
+    roleRecordLabel: "Record Label",
+    roleFan: "Fan",
+
+    follower: "followers",
+    follow: "Follow",
+    unfollow: "Unfollow",
+
+    followTitle: "Now following",
+    followDescription: "You are following",
+    unfollowTitle: "No longer following",
+    unfollowDescription: "You stopped following",
+
+    avatarUpdatedTitle: "Profile photo updated!",
+    postPublishedTitle: "Post published!",
+    error: "Error",
+
+    supportThanksTitle: "Thanks for your support!",
+    supportThanksDescription: "You earned 50 VibyngPoints",
+    supportErrorDescription: "Unable to complete the support",
+  },
+} as const;
+
+function getStoredLanguage(): AppLanguage {
+  try {
+    const stored = localStorage.getItem("vibyng-language");
+    if (stored === "it" || stored === "en") return stored;
+  } catch {}
+  return "it";
+}
+
+function getRoleLabel(role: string, t: typeof artistProfileTranslations.it): string {
   switch (role) {
-    case "artist": return "Artista";
-    case "rehearsal_studio": return "Sala Prove";
-    case "recording_studio": return "Studio di Registrazione";
-    case "record_label": return "Casa Discografica";
-    default: return "Fan";
+    case "artist": return t.roleArtist;
+    case "rehearsal_studio": return t.roleRehearsalStudio;
+    case "recording_studio": return t.roleRecordingStudio;
+    case "record_label": return t.roleRecordLabel;
+    default: return t.roleFan;
   }
 }
 
@@ -46,7 +134,15 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-function ArtistPostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
+function ArtistPostComments({
+  postId,
+  postAuthorId,
+  commentPlaceholder,
+}: {
+  postId: number;
+  postAuthorId: number;
+  commentPlaceholder: string;
+}) {
   const [newComment, setNewComment] = useState("");
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const currentUserId = getCurrentUserId();
@@ -76,7 +172,7 @@ function ArtistPostComments({ postId, postAuthorId }: { postId: number; postAuth
     <div className="border-t pt-3 mt-2 space-y-3">
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Input placeholder="Scrivi un commento..." value={newComment} onChange={e => { setNewComment(e.target.value); handleTextChange(e.target.value, e.target.selectionStart || 0); }} onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} className="w-full" />
+         <Input placeholder={commentPlaceholder} value={newComment} onChange={e => { setNewComment(e.target.value); handleTextChange(e.target.value, e.target.selectionStart || 0); }} onKeyDown={e => { if (e.key === "Enter") handleSubmit(); }} className="w-full" />
           <MentionDropdown query={mentionQuery} visible={showMentions} onSelect={(username) => { setNewComment(insertMention(newComment, username)); closeMentions(); }} />
         </div>
         <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}><Send className="w-4 h-4" /></Button>
@@ -117,6 +213,8 @@ export default function ArtistProfile() {
   const { id } = useParams<{ id: string }>();
   const artistId = Number(id);
   const currentUserId = getCurrentUserId();
+  const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+  const t = artistProfileTranslations[language];
   const isOwnProfile = artistId === currentUserId;
 
   const { toast } = useToast();
@@ -212,6 +310,20 @@ useEffect(() => {
   const [attendingEventIds, setAttendingEventIds] = useState<Set<number>>(new Set());
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+    }
+  };
+
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+  };
+}, []);
 
   const { data: artist, isLoading: artistLoading } = useQuery<User>({
     queryKey: [`/api/users/${id}`],
@@ -351,11 +463,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
   await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
 
   toast({
-    title: isFollowingData?.isFollowing ? "Non segui più" : "Ora segui",
-    description: isFollowingData?.isFollowing
-      ? `Hai smesso di seguire ${artist?.displayName}`
-      : `Stai seguendo ${artist?.displayName}`,
-  });
+  title: isFollowingData?.isFollowing ? t.unfollowTitle : t.followTitle,
+  description: isFollowingData?.isFollowing
+    ? `${t.unfollowDescription} ${artist?.displayName}`
+    : `${t.followDescription} ${artist?.displayName}`,
+});
 },
   });
 
@@ -376,10 +488,10 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
   await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
   await queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
 
-  toast({ title: "Grazie per il supporto!", description: "Hai guadagnato 50 VibyngPoints" });
+  toast({ title: t.supportThanksTitle, description: t.supportThanksDescription });
 },
     onError: () => {
-      toast({ title: "Errore", description: "Non è stato possibile completare il supporto", variant: "destructive" });
+      toast({ title: t.error, description: t.supportErrorDescription, variant: "destructive" });
     },
   });
 
@@ -405,13 +517,13 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             body: JSON.stringify({ imageData, userId: currentUserId }),
           });
           queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
-          toast({ title: "Foto profilo aggiornata!" });
+          toast({ title: t.avatarUpdatedTitle });
         };
         img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     } catch {
-      toast({ title: "Errore", variant: "destructive" });
+      toast({ title: t.error, variant: "destructive" });
     }
   };
 
@@ -424,7 +536,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
     await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
     await queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
-    toast({ title: "Post pubblicato!" });
+    toast({ title: t.postPublishedTitle });
     setPostText("");
   } catch {
     toast({ title: "Errore", variant: "destructive" });
@@ -480,7 +592,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex flex-col items-center gap-2">
           <Music2 className="w-8 h-8 text-primary" />
-          <span className="text-muted-foreground">Caricamento...</span>
+          <span className="text-muted-foreground">{t.loading}</span>
         </div>
       </div>
     );
@@ -529,7 +641,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <h1 className="text-xl font-bold">{artist.displayName}</h1>
             <span className="text-sm text-muted-foreground">@{artist.username}</span>
             <Badge variant="outline" className="mt-2">
-              {getRoleLabel(artist.role || "fan")}
+              {getRoleLabel(artist.role || "fan", t)}
             </Badge>
             {artist.genre && (
               <Badge variant="secondary" className="mt-1">{artist.genre}</Badge>
@@ -541,12 +653,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   onClick={() => { setConnectionsTab("followers"); setConnectionsOpen(true); }}
                 >
                   <Users className="w-4 h-4" />
-                  <span className="text-sm font-medium">{followersData?.count ?? 0} follower</span>
+                  <span className="text-sm font-medium">{followersData?.count ?? 0} {t.follower}</span>
                 </button>
               ) : (
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Users className="w-4 h-4" />
-                  <span className="text-sm font-medium">{followersData?.count ?? 0} follower</span>
+                  <span className="text-sm font-medium">{followersData?.count ?? 0} {t.follower}</span>
                 </div>
               )}
               <div className="flex items-center gap-1 text-primary">
@@ -563,9 +675,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                 disabled={followMutation.isPending}
               >
                 {isFollowingData?.isFollowing ? (
-                  <><UserMinus className="w-4 h-4 mr-1" /> Non seguire più</>
+                  <><UserMinus className="w-4 h-4 mr-1" /> {t.unfollow}</>
                 ) : (
-                  <><UserPlus className="w-4 h-4 mr-1" /> Segui</>
+                  <><UserPlus className="w-4 h-4 mr-1" /> {t.follow}</>
                 )}
               </Button>
             )}
@@ -587,7 +699,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               </Avatar>
               <div className="flex-1 space-y-3">
                 <Textarea
-                  placeholder="A cosa stai pensando?"
+                  placeholder={t.postPlaceholder}
                   value={postText}
                   onChange={(e) => setPostText(e.target.value)}
                   className="resize-none border-0 bg-muted/50 focus-visible:ring-1"
@@ -607,7 +719,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   </div>
                   <Button size="sm" onClick={handlePublishPost} disabled={!postText.trim()}>
                     <Send className="w-4 h-4 mr-1" />
-                    Pubblica
+                    {t.publish}
                   </Button>
                 </div>
               </div>
@@ -621,34 +733,34 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         <TabsList className="w-full grid grid-cols-6 p-1">
           <TabsTrigger value="posts" className="px-1 text-xs">
             <FileText className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Post</span>
+            <span className="hidden sm:inline">{t.posts}</span>
           </TabsTrigger>
           <TabsTrigger value="photos" className="px-1 text-xs">
             <ImageIcon className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Foto</span>
+           <span className="hidden sm:inline">{t.photos}</span>
           </TabsTrigger>
           <TabsTrigger value="videos" className="px-1 text-xs">
             <Video className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Video</span>
+            <span className="hidden sm:inline">{t.videos}</span>
           </TabsTrigger>
           <TabsTrigger value="messages" className="px-1 text-xs">
             <MessageCircle className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Messaggi</span>
+            <span className="hidden sm:inline">{t.messages}</span>
           </TabsTrigger>
           {isArtist && (
             <TabsTrigger value="songs" className="px-1 text-xs">
               <Music className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Canzoni</span>
+             <span className="hidden sm:inline">{t.songs}</span>
             </TabsTrigger>
           )}
          <TabsTrigger value="events" className="px-1 text-xs">
             <Calendar className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">Eventi</span>
+            <span className="hidden sm:inline">{t.events}</span>
           </TabsTrigger>
           {isFan && (
             <TabsTrigger value="connections" className="px-1 text-xs">
               <Users className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Connessioni</span>
+              <span className="hidden sm:inline">{t.connections}</span>
             </TabsTrigger>
           )}
         </TabsList>
@@ -755,7 +867,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   </CardContent>
                   {openComments.has(post.id) && (
                     <CardContent className="pt-0">
-                      <ArtistPostComments postId={post.id} postAuthorId={post.author.id} />
+                      <ArtistPostComments
+  postId={post.id}
+  postAuthorId={post.author.id}
+  commentPlaceholder={t.commentPlaceholder}
+/>
                     </CardContent>
                   )}
               </Card>
