@@ -1016,7 +1016,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   data-testid={`card-photo-${photo.id}`}
 >
                   <img src={photo.imageUrl ?? undefined} alt={photo.title} className="w-full h-32 object-cover" />
-               {photo.title && photo.title !== "Foto" && (
+               {photo.title && photo.title !== t.untitledPhoto && (
                     <CardContent className="p-2">
                       <p className="text-xs text-muted-foreground truncate">
   <MentionText text={photo.title} />
@@ -1320,7 +1320,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
       )}
     </div>
     <CardContent className="p-3">
-      {video.title && video.title !== "Video" && (
+      {video.title && video.title !== t.untitledVideo && (
         <h4 className="font-medium whitespace-pre-wrap break-words" data-testid={`text-video-title-${video.id}`}>
   <MentionText text={video.title} />
 </h4>
@@ -1702,8 +1702,8 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
     const shareUrl = buildContentShareUrl("video", selectedVideo.id);
 
     const result = await shareVibyngContent({
-      title: selectedVideo.title || "Video",
-      text: selectedVideo.title || "Video su Vibyng",
+      title: selectedVideo.title || t.untitledVideo,
+      text: selectedVideo.title || t.untitledVideo,
       mediaUrl: selectedVideo.videoUrl ?? undefined,
       fallbackUrl: shareUrl,
       shareUrl,
