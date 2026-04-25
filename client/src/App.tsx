@@ -461,9 +461,9 @@ function MessagesButton() {
   return (
     <Link href="/messages">
       <button
-        className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors relative ${
-          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-        }`}
+        className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors relative ${
+  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+}`}
       >
         <div className="relative">
           <MessageCircle className="w-5 h-5" />
@@ -473,7 +473,7 @@ function MessagesButton() {
             </span>
           )}
         </div>
-        <span className="text-xs font-medium">{t.messages}</span>
+        <span className="max-w-full truncate text-[11px] font-medium leading-none">{t.messages}</span>
       </button>
     </Link>
   );
@@ -497,9 +497,9 @@ function NotificationBell() {
   return (
     <Link href="/notifications">
       <button
-        className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors relative ${
-          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-        }`}
+        className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors relative ${
+  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+}`}
       >
         <div className="relative">
           <Bell className="w-5 h-5" />
@@ -509,7 +509,7 @@ function NotificationBell() {
             </span>
           )}
         </div>
-        <span className="text-xs font-medium">{t.notifications}</span>
+        <span className="max-w-full truncate text-[11px] font-medium leading-none">{t.notifications}</span>
       </button>
     </Link>
   );
@@ -571,13 +571,13 @@ function BottomNav() {
       <button
         key={item.path}
         onClick={handleFeedRefresh}
-        className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors ${
-          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-        }`}
+        className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors ${
+  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+}`}
         data-testid={`nav-${item.label.toLowerCase()}`}
       >
         <item.icon className="w-5 h-5" />
-        <span className="text-xs font-medium">{item.label}</span>
+        <span className="max-w-full truncate text-[11px] font-medium leading-none">{item.label}</span>
       </button>
     );
   }
@@ -585,13 +585,13 @@ function BottomNav() {
   return (
     <Link key={item.path} href={item.path}>
       <button
-        className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-md transition-colors ${
-          isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
-        }`}
+        className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors ${
+  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+}`}
         data-testid={`nav-${item.label.toLowerCase()}`}
       >
         <item.icon className="w-5 h-5" />
-        <span className="text-xs font-medium">{item.label}</span>
+        <span className="max-w-full truncate text-[11px] font-medium leading-none">{item.label}</span>
       </button>
     </Link>
   );
@@ -625,7 +625,7 @@ function BottomNav() {
         data-testid="input-media-upload"
       />
       <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50" data-testid="nav-bottom">
-        <div className="flex items-center justify-around h-16 max-w-md mx-auto">
+        <div className="grid grid-cols-5 items-center h-16 max-w-md mx-auto">
           {navItemsLeft.map(renderNavItem)}
          <NotificationBell />
           <MessagesButton />
