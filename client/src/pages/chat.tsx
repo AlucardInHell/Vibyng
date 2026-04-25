@@ -32,6 +32,44 @@ type StoryReplyMessagePayload = {
   reply: string;
 };
 
+type AppLanguage = "it" | "en";
+
+const chatTranslations = {
+  it: {
+    loading: "Caricamento...",
+    userNotFound: "Artista non trovato",
+    backToMessages: "Torna ai messaggi",
+    storyAlt: "Storia",
+    storyReplyLabel: "Risposta alla storia",
+    sharedContentLabel: "Contenuto condiviso",
+    openContent: "Apri contenuto",
+    noMessages: "Nessun messaggio ancora.",
+    startConversationPrefix: "Inizia una conversazione con",
+    messagePlaceholder: "Scrivi un messaggio...",
+  },
+
+  en: {
+    loading: "Loading...",
+    userNotFound: "User not found",
+    backToMessages: "Back to messages",
+    storyAlt: "Story",
+    storyReplyLabel: "Story reply",
+    sharedContentLabel: "Shared content",
+    openContent: "Open content",
+    noMessages: "No messages yet.",
+    startConversationPrefix: "Start a conversation with",
+    messagePlaceholder: "Write a message...",
+  },
+} as const;
+
+function getStoredLanguage(): AppLanguage {
+  try {
+    const stored = localStorage.getItem("vibyng-language");
+    if (stored === "it" || stored === "en") return stored;
+  } catch {}
+  return "it";
+}
+
 function parseStoryReplyMessage(content: string | null | undefined): StoryReplyMessagePayload | null {
   if (!content || !content.startsWith("__STORY_REPLY__")) return null;
 
@@ -58,6 +96,9 @@ export default function Chat() {
   const params = useParams<{ artistId: string }>();
   const artistId = Number(params.artistId);
   const CURRENT_USER_ID = getCurrentUserId();
+  const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+  const t = chatTranslations[language];
+  const timeLocale = language === "it" ? "it-IT" : "en-US";
   const [newMessage, setNewMessage] = useState("");
   const {
   mentionQuery,
@@ -67,6 +108,35 @@ export default function Chat() {
   closeMentions,
 } = useMention();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+  const syncLanguage = () => {
+    setLanguage(getStoredLanguage());
+  };
+
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+      return;
+    }
+
+    syncLanguage();
+  };
+
+  syncLanguage();
+
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+  window.addEventListener("storage", syncLanguage);
+  window.addEventListener("focus", syncLanguage);
+  window.addEventListener("pageshow", syncLanguage);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+    window.removeEventListener("storage", syncLanguage);
+    window.removeEventListener("focus", syncLanguage);
+    window.removeEventListener("pageshow", syncLanguage);
+  };
+}, []);
 
   const { data: artist, isLoading: artistLoading } = useQuery<User>({
     queryKey: ["/api/users", artistId],
@@ -129,7 +199,7 @@ useEffect(() => {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex flex-col items-center gap-2">
           <MessageCircle className="w-8 h-8 text-primary" />
-          <span className="text-muted-foreground">Caricamento...</span>
+          <span className="text-muted-foreground">{t.loading}</span>
         </div>
       </div>
     );
@@ -138,9 +208,9 @@ useEffect(() => {
   if (!artist) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-muted-foreground">Artista non trovato</p>
+        <p className="text-muted-foreground">{t.userNotFound}</p>
         <Link href="/messages">
-          <Button variant="outline">Torna ai messaggi</Button>
+          <Button variant="outline">{t.backToMessages}</Button>
         </Link>
       </div>
     );
@@ -195,13 +265,13 @@ useEffect(() => {
           {storyReply.storyImageUrl && (
             <img
               src={storyReply.storyImageUrl}
-              alt="Storia"
+              alt={t.storyAlt}
               className="w-full h-32 object-cover"
             />
           )}
           <div className="px-4 py-3">
             <p className={`text-xs mb-2 ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-              Risposta alla storia
+              {t.storyReplyLabel}
             </p>
 
             {storyReply.storyContent && (
@@ -242,7 +312,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
 
           <div className="px-4 py-3 space-y-2">
             <p className={`text-xs ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-              Contenuto condiviso
+              {t.sharedContentLabel}
             </p>
 
             <p className="text-sm font-semibold whitespace-pre-wrap break-words">
@@ -268,7 +338,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
                   isCurrentUser ? "text-primary-foreground" : "text-primary"
                 }`}
               >
-                Apri contenuto
+                {t.openContent}
                 <ExternalLink className="w-3 h-3" />
               </button>
             </Link>
@@ -291,7 +361,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
 
   <div className="px-4 pb-2">
     <span className={`text-xs ${isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground"} mt-1 block`}>
-      {msg.createdAt && new Date(msg.createdAt).toLocaleTimeString("it-IT", {
+      {msg.createdAt && new Date(msg.createdAt).toLocaleTimeString(timeLocale, {
         hour: "2-digit",
         minute: "2-digit",
       })}
@@ -305,10 +375,10 @@ const sharedContent = parseSharedContentMessage(msg.content);
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageCircle className="w-12 h-12 text-muted-foreground/50 mb-3" />
               <p className="text-muted-foreground">
-                Nessun messaggio ancora.
+                {t.noMessages}
               </p>
               <p className="text-sm text-muted-foreground">
-                Inizia una conversazione con {artist.displayName}!
+                {t.startConversationPrefix} {artist.displayName}!
               </p>
             </div>
           )}
@@ -319,7 +389,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
           <div className="flex items-center gap-2">
   <div className="relative flex-1">
     <Input
-      placeholder="Scrivi un messaggio..."
+      placeholder={t.messagePlaceholder}
       value={newMessage}
       onChange={(e) => {
         setNewMessage(e.target.value);
