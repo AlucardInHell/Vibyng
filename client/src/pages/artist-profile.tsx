@@ -69,6 +69,58 @@ const artistProfileTranslations = {
     supportThanksTitle: "Grazie per il supporto!",
     supportThanksDescription: "Hai guadagnato 50 VibyngPoints",
     supportErrorDescription: "Non è stato possibile completare il supporto",
+    copied: "Link copiato!",
+share: "Condividi",
+
+alreadyInPlaylistTitle: "Già nella playlist",
+alreadyInPlaylistDescription: "è già nella tua playlist",
+addedToPlaylistTitle: "Aggiunto alla playlist!",
+addedToPlaylistDescription: "è stato aggiunto",
+
+supportArtist: "Supporta l'artista",
+supportArtistDescriptionPrefix: "Aiuta",
+supportArtistDescriptionSuffix: "a raggiungere i suoi obiettivi!",
+supportButton: "Supporta",
+supportReward: "Riceverai 50 VibyngPoints per il tuo supporto!",
+
+noPosts: "Nessun post ancora.",
+noPhotos: "Nessuna foto disponibile",
+noVideos: "Nessun video disponibile",
+noSongs: "Nessuna canzone disponibile",
+noEvents: "Nessun evento in programma",
+noFollowers: "Nessun follower ancora",
+noFollowing: "Non segue ancora nessuno",
+
+untitledPhoto: "Foto",
+untitledVideo: "Video",
+photoShareText: "Foto su Vibyng",
+videoShareText: "Video su Vibyng",
+
+postBy: "Post di",
+postDeletedTitle: "Post eliminato",
+
+add: "Aggiungi",
+cancel: "Annulla",
+save: "Salva",
+eventName: "Nome evento *",
+city: "Città",
+venue: "Venue / Locale",
+eventDescription: "Descrizione (opzionale)",
+ticketUrl: "Link biglietti (opzionale)",
+eventRequiredError: "Compila nome e data",
+eventAddedTitle: "Evento aggiunto!",
+eventDeletedTitle: "Evento eliminato",
+attend: "Partecipo",
+eventAttendTitle: "Partecipi all'evento! 🎉",
+buyTickets: "Acquista biglietti",
+eventsAttending: "Eventi a cui partecipa",
+
+messageWith: "Messaggi con",
+privateMessageDescription: "Invia un messaggio privato per interagire direttamente!",
+startConversation: "Inizia una conversazione",
+
+activeGoal: "Obiettivo Attivo",
+goalReached: "raggiunto",
   },
 
   en: {
@@ -107,6 +159,58 @@ const artistProfileTranslations = {
     supportThanksTitle: "Thanks for your support!",
     supportThanksDescription: "You earned 50 VibyngPoints",
     supportErrorDescription: "Unable to complete the support",
+    copied: "Link copied!",
+share: "Share",
+
+alreadyInPlaylistTitle: "Already in playlist",
+alreadyInPlaylistDescription: "is already in your playlist",
+addedToPlaylistTitle: "Added to playlist!",
+addedToPlaylistDescription: "has been added",
+
+supportArtist: "Support artist",
+supportArtistDescriptionPrefix: "Help",
+supportArtistDescriptionSuffix: "reach their goals!",
+supportButton: "Support",
+supportReward: "You will receive 50 VibyngPoints for your support!",
+
+noPosts: "No posts yet.",
+noPhotos: "No photos available",
+noVideos: "No videos available",
+noSongs: "No songs available",
+noEvents: "No upcoming events",
+noFollowers: "No followers yet",
+noFollowing: "Not following anyone yet",
+
+untitledPhoto: "Photo",
+untitledVideo: "Video",
+photoShareText: "Photo on Vibyng",
+videoShareText: "Video on Vibyng",
+
+postBy: "Post by",
+postDeletedTitle: "Post deleted",
+
+add: "Add",
+cancel: "Cancel",
+save: "Save",
+eventName: "Event name *",
+city: "City",
+venue: "Venue / Venue name",
+eventDescription: "Description optional",
+ticketUrl: "Ticket link optional",
+eventRequiredError: "Please enter name and date",
+eventAddedTitle: "Event added!",
+eventDeletedTitle: "Event deleted",
+attend: "Attend",
+eventAttendTitle: "You are attending the event! 🎉",
+buyTickets: "Buy tickets",
+eventsAttending: "Events this user attends",
+
+messageWith: "Messages with",
+privateMessageDescription: "Send a private message to interact directly!",
+startConversation: "Start a conversation",
+
+activeGoal: "Active Goal",
+goalReached: "reached",
   },
 } as const;
 
@@ -539,7 +643,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     toast({ title: t.postPublishedTitle });
     setPostText("");
   } catch {
-    toast({ title: "Errore", variant: "destructive" });
+    toast({ title: t.error, variant: "destructive" });
   }
 };
 
@@ -550,7 +654,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       const playlist: Song[] = (songs || []).map(s => ({
         id: s.id,
         title: s.title,
-        artist: artist?.displayName || "Artista",
+        artist: artist?.displayName || t.roleArtist,
         audioUrl: s.audioUrl,
         coverUrl: s.coverUrl || undefined,
         duration: s.duration || undefined,
@@ -558,7 +662,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       playSong({
         id: song.id,
         title: song.title,
-        artist: artist?.displayName || "Artista",
+        artist: artist?.displayName || t.roleArtist,
         audioUrl: song.audioUrl,
         coverUrl: song.coverUrl || undefined,
         duration: song.duration || undefined,
@@ -568,7 +672,10 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
  const handleAddToPlaylist = async (song: ArtistSong) => {
     if (addedSongs.has(song.id)) {
-      toast({ title: "Già nella playlist", description: `"${song.title}" è già nella tua playlist` });
+     toast({
+  title: t.alreadyInPlaylistTitle,
+  description: `"${song.title}" ${t.alreadyInPlaylistDescription}`,
+});
       return;
     }
     try {
@@ -581,9 +688,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       });
       queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/songs`] });
       setAddedSongs(prev => new Set(prev).add(song.id));
-      toast({ title: "Aggiunto alla playlist!", description: `"${song.title}" è stato aggiunto` });
+      toast({
+  title: t.addedToPlaylistTitle,
+  description: `"${song.title}" ${t.addedToPlaylistDescription}`,
+});
     } catch {
-      toast({ title: "Errore", variant: "destructive" });
+      toast({ title: t.error, variant: "destructive" });
     }
   };
 
@@ -831,7 +941,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     const shareUrl = buildContentShareUrl("post", post.id);
 
     const result = await shareVibyngContent({
-      title: `Post di ${post.author.displayName}`,
+      title: `${t.postBy} ${post.author.displayName}`,
       text: post.content,
       mediaUrl: post.mediaUrl ?? undefined,
       fallbackUrl: shareUrl,
@@ -840,7 +950,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     });
 
     if (result === "copied") {
-      toast({ title: "Link copiato!" });
+      toast({ title: t.copied });
     }
   }}
 >
@@ -854,9 +964,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                                   await apiRequest("DELETE", `/api/posts/${post.id}`);
                                   queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "posts"] });
                                   queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-                                  toast({ title: "Post eliminato" });
+                                  toast({ title: t.postDeletedTitle });
                                 } catch {
-                                  toast({ title: "Errore", variant: "destructive" });
+                                  toast({ title: t.error, variant: "destructive" });
                                 }
                               }}
                             >🗑️</button>
@@ -881,12 +991,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     <CardHeader className="pb-2">
       <div className="flex items-center gap-2">
         <Heart className="w-5 h-5 text-primary" />
-        <CardTitle className="text-lg">Supporta l'artista</CardTitle>
+        <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
       </div>
     </CardHeader>
     <CardContent>
       <p className="text-sm text-muted-foreground mb-4">
-        Aiuta {artist.displayName} a raggiungere i suoi obiettivi!
+        {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
       </p>
       <div className="flex gap-2 mb-3">
         {["5", "10", "25", "50"].map((amount) => (
@@ -912,11 +1022,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           onClick={() => supportMutation.mutate(supportAmount)}
           disabled={supportMutation.isPending}
         >
-          {supportMutation.isPending ? "..." : "Supporta"}
+          {supportMutation.isPending ? "..." : t.supportButton}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground mt-2 text-center">
-        Riceverai 50 VibyngPoints per il tuo supporto!
+        {t.supportReward}
       </p>
     </CardContent>
   </Card>
@@ -1362,12 +1472,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     <CardHeader className="pb-2">
       <div className="flex items-center gap-2">
         <Heart className="w-5 h-5 text-primary" />
-        <CardTitle className="text-lg">Supporta l'artista</CardTitle>
+        <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
       </div>
     </CardHeader>
     <CardContent>
       <p className="text-sm text-muted-foreground mb-4">
-        Aiuta {artist.displayName} a raggiungere i suoi obiettivi!
+        {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
       </p>
       <div className="flex gap-2 mb-3">
         {["5", "10", "25", "50"].map((amount) => (
@@ -1393,11 +1503,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           onClick={() => supportMutation.mutate(supportAmount)}
           disabled={supportMutation.isPending}
         >
-          {supportMutation.isPending ? "..." : "Supporta"}
+          {supportMutation.isPending ? "..." : t.supportButton}
         </Button>
       </div>
       <p className="text-xs text-muted-foreground mt-2 text-center">
-        Riceverai 50 VibyngPoints per il tuo supporto!
+        {t.supportReward}
       </p>
     </CardContent>
   </Card>
