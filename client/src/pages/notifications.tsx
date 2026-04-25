@@ -18,6 +18,54 @@ function getCurrentUserId(): number {
   return 1;
 }
 
+type AppLanguage = "it" | "en";
+
+const notificationsTranslations = {
+  it: {
+    loading: "Caricamento...",
+    title: "Notifiche",
+    markAllRead: "Segna tutte come lette",
+    allReadToast: "Tutte le notifiche segnate come lette",
+    noNotifications: "Nessuna notifica",
+    emptyDescription: "Le tue notifiche appariranno qui",
+    delete: "Elimina",
+
+    now: "adesso",
+    minutesAgo: "m fa",
+    hoursAgo: "h fa",
+    daysAgo: "g fa",
+
+    storyReplySuffix: "ha risposto alla tua storia",
+    storyPreviewAlt: "Anteprima storia",
+  },
+
+  en: {
+    loading: "Loading...",
+    title: "Notifications",
+    markAllRead: "Mark all as read",
+    allReadToast: "All notifications marked as read",
+    noNotifications: "No notifications",
+    emptyDescription: "Your notifications will appear here",
+    delete: "Delete",
+
+    now: "now",
+    minutesAgo: "m ago",
+    hoursAgo: "h ago",
+    daysAgo: "d ago",
+
+    storyReplySuffix: "replied to your story",
+    storyPreviewAlt: "Story preview",
+  },
+} as const;
+
+function getStoredLanguage(): AppLanguage {
+  try {
+    const stored = localStorage.getItem("vibyng-language");
+    if (stored === "it" || stored === "en") return stored;
+  } catch {}
+  return "it";
+}
+
 function getNotificationIcon(type: string) {
   switch (type) {
     case "like": return <Heart className="w-4 h-4 text-red-500" />;
@@ -49,20 +97,23 @@ function parseStoryReplyNotification(message: string | null | undefined): StoryR
   }
 }
 
-function timeAgo(date: Date | string | null): string {
+function timeAgo(date: Date | string | null, t: typeof notificationsTranslations.it): string {
   if (!date) return "";
   const now = new Date();
   const d = new Date(date);
   const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
-  if (diff < 60) return "adesso";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m fa`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h fa`;
-  return `${Math.floor(diff / 86400)}g fa`;
+
+  if (diff < 60) return t.now;
+  if (diff < 3600) return `${Math.floor(diff / 60)}${t.minutesAgo}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}${t.hoursAgo}`;
+  return `${Math.floor(diff / 86400)}${t.daysAgo}`;
 }
 
 export default function Notifications() {
   const userId = getCurrentUserId();
   const { toast } = useToast();
+  const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+  const t = notificationsTranslations[language];
 
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey: ["/api/notifications", userId],
@@ -79,7 +130,7 @@ export default function Notifications() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications", userId] });
-      toast({ title: "Tutte le notifiche segnate come lette" });
+      toast({ title: t.allReadToast });
     },
   });
 
@@ -98,6 +149,35 @@ const [swipeOffsets, setSwipeOffsets] = useState<Record<number, number>>({});
 const [swipeStartY, setSwipeStartY] = useState(0);
 const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
 const [swipeEnabled, setSwipeEnabled] = useState(false);
+useEffect(() => {
+  const syncLanguage = () => {
+    setLanguage(getStoredLanguage());
+  };
+
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+      return;
+    }
+
+    syncLanguage();
+  };
+
+  syncLanguage();
+
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+  window.addEventListener("storage", syncLanguage);
+  window.addEventListener("focus", syncLanguage);
+  window.addEventListener("pageshow", syncLanguage);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+    window.removeEventListener("storage", syncLanguage);
+    window.removeEventListener("focus", syncLanguage);
+    window.removeEventListener("pageshow", syncLanguage);
+  };
+}, []);  
 
 const deleteNotificationMutation = useMutation({
   mutationFn: async (notificationId: number) => {
@@ -184,7 +264,7 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex flex-col items-center gap-2">
           <Bell className="w-8 h-8 text-primary" />
-          <span className="text-muted-foreground">Caricamento...</span>
+          <span className="text-muted-foreground">{t.loading}</span>
         </div>
       </div>
     );
@@ -195,7 +275,7 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
         <div className="flex items-center gap-2">
           <Bell className="w-5 h-5 text-primary" />
-          <h1 className="text-xl font-semibold">Notifiche</h1>
+          <h1 className="text-xl font-semibold">{t.title}</h1>
           {unreadCount > 0 && (
             <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5">
               {unreadCount}
@@ -210,7 +290,7 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
             disabled={markAllReadMutation.isPending}
           >
             <Check className="w-4 h-4 mr-1" />
-            Segna tutte come lette
+            {t.markAllRead}
           </Button>
         )}
       </div>
@@ -218,8 +298,8 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
       {notifications.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
           <Bell className="w-12 h-12 text-muted-foreground" />
-          <p className="text-muted-foreground">Nessuna notifica</p>
-          <p className="text-xs text-muted-foreground">Le tue notifiche appariranno qui</p>
+          <p className="text-muted-foreground">{t.noNotifications}</p>
+          <p className="text-xs text-muted-foreground">{t.emptyDescription}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -230,7 +310,7 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
     <div key={notification.id} className="relative overflow-hidden rounded-xl">
       {swipingId === notification.id && (
   <div className="absolute inset-y-0 right-0 w-24 bg-red-500 flex items-center justify-center text-white text-sm font-medium">
-    Elimina
+    {t.delete}
   </div>
 )}
 
@@ -266,14 +346,14 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
       return (
         <div className="space-y-2">
           <p className="text-sm">
-            <span className="font-medium">{storyReplyNotification.senderName}</span> ha risposto alla tua storia
+            <span className="font-medium">{storyReplyNotification.senderName}</span> {t.storyReplySuffix}
           </p>
 
           <div className="flex items-start gap-3">
             {storyReplyNotification.storyImageUrl && (
               <img
                 src={storyReplyNotification.storyImageUrl}
-                alt="Anteprima storia"
+                alt={t.storyPreviewAlt}
                 className="w-14 h-20 rounded-md object-cover flex-shrink-0"
               />
             )}
@@ -301,7 +381,7 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
   })()}
 
   <span className="text-xs text-muted-foreground">
-    {timeAgo(notification.createdAt)}
+    {timeAgo(notification.createdAt, t)}
   </span>
 </div>
                   {!notification.isRead && (
