@@ -1367,24 +1367,24 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               {isOwnProfile && (
                 <Button size="sm" variant="outline" onClick={() => setShowEventForm(!showEventForm)}>
                   <Plus className="w-4 h-4 mr-1" />
-                  Aggiungi
+                  {t.add}
                 </Button>
               )}
             </div>
             {isOwnProfile && showEventForm && (
               <Card className="mb-3">
                 <CardContent className="p-4 space-y-3">
-                  <Input placeholder="Nome evento *" value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} />
+                  <Input placeholder={t.eventName} value={eventForm.name} onChange={e => setEventForm(p => ({ ...p, name: e.target.value }))} />
                   <Input type="datetime-local" value={eventForm.eventDate} onChange={e => setEventForm(p => ({ ...p, eventDate: e.target.value }))} />
-                  <Input placeholder="Città" value={eventForm.city} onChange={e => setEventForm(p => ({ ...p, city: e.target.value }))} />
-                  <Input placeholder="Venue / Locale" value={eventForm.venue} onChange={e => setEventForm(p => ({ ...p, venue: e.target.value }))} />
-                  <Textarea placeholder="Descrizione (opzionale)" value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} rows={2} />
-                  <Input placeholder="Link biglietti (opzionale)" value={eventForm.ticketUrl} onChange={e => setEventForm(p => ({ ...p, ticketUrl: e.target.value }))} />
+                  <Input placeholder={t.city} value={eventForm.city} onChange={e => setEventForm(p => ({ ...p, city: e.target.value }))} />
+                  <Input placeholder={t.venue} value={eventForm.venue} onChange={e => setEventForm(p => ({ ...p, venue: e.target.value }))} />
+                  <Textarea placeholder={t.eventDescription} value={eventForm.description} onChange={e => setEventForm(p => ({ ...p, description: e.target.value }))} rows={2} />
+                  <Input placeholder={t.ticketUrl} value={eventForm.ticketUrl} onChange={e => setEventForm(p => ({ ...p, ticketUrl: e.target.value }))} />
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => setShowEventForm(false)}>Annulla</Button>
+                    <Button variant="outline" className="flex-1" onClick={() => setShowEventForm(false)}>{t.cancel}</Button>
                     <Button className="flex-1" onClick={async () => {
                       if (!eventForm.name || !eventForm.eventDate) {
-                        toast({ title: "Compila nome e data", variant: "destructive" });
+                        toast({ title: t.eventRequiredError, variant: "destructive" });
                         return;
                       }
                       try {
@@ -1392,11 +1392,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
                         setShowEventForm(false);
                         setEventForm({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
-                        toast({ title: "Evento aggiunto!" });
+                        toast({ title: t.eventAddedTitle });
                       } catch {
                         toast({ title: "Errore", variant: "destructive" });
                       }
-                    }}>Salva</Button>
+                    }}>{t.save}</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1423,7 +1423,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                           )}
                           {event.ticketUrl && (
                             <a href={event.ticketUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline mt-2 inline-block">
-                              🎟️ Acquista biglietti
+                              🎟️ {t.buyTickets}
                             </a>
                           )}
                         </div>
@@ -1440,14 +1440,14 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
     await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
     await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
-    toast({ title: "Partecipi all'evento! 🎉" });
+    toast({ title: t.eventAttendTitle });
   } catch {
-    toast({ title: "Errore", variant: "destructive" });
+    toast({ title: t.error, variant: "destructive" });
   }
 }}
                             >
                               <Calendar className="w-3 h-3 mr-1" />
-                              Partecipo
+                              {t.attend}
                             </Button>
                           )}
                           {isOwnProfile && (
@@ -1457,9 +1457,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                                 try {
                                   await apiRequest("DELETE", `/api/events/${event.id}`);
                                   queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/events`] });
-                                  toast({ title: "Evento eliminato" });
+                                  toast({ title: t.eventDeletedTitle });
                                 } catch {
-                                  toast({ title: "Errore", variant: "destructive" });
+                                  toast({ title: t.error, variant: "destructive" });
                                 }
                               }}
                             >🗑️</button>
@@ -1519,7 +1519,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               </div>
             ) : (!isArtist && profileAttendingEvents.length > 0) ? (
                 <div className="flex flex-col gap-3 mt-2">
-                  <p className="text-sm text-muted-foreground">Eventi a cui partecipa</p>
+                  <p className="text-sm text-muted-foreground">{t.eventsAttending}</p>
                   {profileAttendingEvents.map(({ event }) => (
                     <Card key={event.id} className="hover-elevate">
                       <CardContent className="p-4">
