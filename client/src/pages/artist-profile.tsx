@@ -1601,12 +1601,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center py-8">
                 <MessageCircle className="w-12 h-12 text-muted-foreground mb-4" />
-                <h3 className="font-medium mb-2">Messaggi con {artist.displayName}</h3>
+                <h3 className="font-medium mb-2">{t.messageWith} {artist.displayName}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Invia un messaggio privato per interagire direttamente!
+                  {t.privateMessageDescription}
                 </p>
                 <Link href={`/chat/${artist.id}`}>
-                  <Button>Inizia una conversazione</Button>
+                  <Button>{t.startConversation}
                 </Link>
               </div>
             </CardContent>
@@ -1620,7 +1620,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <Target className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">Obiettivo Attivo</CardTitle>
+              <CardTitle className="text-lg">{t.activeGoal}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -1634,7 +1634,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                 <span>{Number(activeGoal.targetAmount).toFixed(2)}</span>
               </div>
               <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">{progress.toFixed(1)}% raggiunto</p>
+              <p className="text-xs text-muted-foreground text-center">{progress.toFixed(1)}% {t.goalReached}</p>
             </div>
           </CardContent>
         </Card>
