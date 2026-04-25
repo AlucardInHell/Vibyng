@@ -14,10 +14,73 @@ function getCurrentUserId(): number {
   return 1;
 }
 
+type AppLanguage = "it" | "en";
+
+const messagesTranslations = {
+  it: {
+    loading: "Caricamento...",
+    messagesTitle: "Messaggi",
+    searchPlaceholder: "Cerca conversazioni...",
+    conversationsTitle: "Conversazioni",
+    openChat: "Clicca per aprire la chat",
+    noConversationFor: "Nessuna conversazione trovata per",
+    noConversations: "Nessuna conversazione ancora. Vai sul profilo di un utente e inizia a chattare!",
+  },
+
+  en: {
+    loading: "Loading...",
+    messagesTitle: "Messages",
+    searchPlaceholder: "Search conversations...",
+    conversationsTitle: "Conversations",
+    openChat: "Tap to open the chat",
+    noConversationFor: "No conversation found for",
+    noConversations: "No conversations yet. Go to a user profile and start chatting!",
+  },
+} as const;
+
+function getStoredLanguage(): AppLanguage {
+  try {
+    const stored = localStorage.getItem("vibyng-language");
+    if (stored === "it" || stored === "en") return stored;
+  } catch {}
+  return "it";
+}
+
 export default function Messages() {
   const userId = getCurrentUserId();
+  const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+  const t = messagesTranslations[language];
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  useEffect(() => {
+  const syncLanguage = () => {
+    setLanguage(getStoredLanguage());
+  };
+
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+      return;
+    }
+
+    syncLanguage();
+  };
+
+  syncLanguage();
+
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+  window.addEventListener("storage", syncLanguage);
+  window.addEventListener("focus", syncLanguage);
+  window.addEventListener("pageshow", syncLanguage);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+    window.removeEventListener("storage", syncLanguage);
+    window.removeEventListener("focus", syncLanguage);
+    window.removeEventListener("pageshow", syncLanguage);
+  };
+}, []);
 
   const { data: conversations = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users", userId, "conversations"],
@@ -61,7 +124,7 @@ export default function Messages() {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex flex-col items-center gap-2">
           <MessageCircle className="w-8 h-8 text-primary" />
-          <span className="text-muted-foreground">Caricamento...</span>
+          <span className="text-muted-foreground">{t.loading}</span>
         </div>
       </div>
     );
@@ -72,7 +135,7 @@ export default function Messages() {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <MessageCircle className="w-6 h-6 text-primary" />
-          <h1 className="text-xl font-bold">Messaggi</h1>
+          <h1 className="text-xl font-bold">{t.messagesTitle}</h1>
         </div>
         <button onClick={() => { setShowSearch(!showSearch); setSearchQuery(""); }} className="p-2 rounded-full hover:bg-muted transition-colors">
           {showSearch ? <X className="w-5 h-5 text-muted-foreground" /> : <Search className="w-5 h-5 text-muted-foreground" />}
@@ -85,7 +148,7 @@ export default function Messages() {
           <input
             autoFocus
             type="text"
-            placeholder="Cerca conversazioni..."
+            placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 rounded-lg bg-muted border-0 text-sm outline-none focus:ring-2 focus:ring-primary"
@@ -95,7 +158,7 @@ export default function Messages() {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Conversazioni</CardTitle>
+          <CardTitle className="text-base">{t.conversationsTitle}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           {filtered.length > 0 ? (
@@ -112,7 +175,7 @@ export default function Messages() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <h3 className={`font-medium truncate ${unread > 0 ? "text-primary" : ""}`}>{user.displayName}</h3>
-                      <p className="text-xs text-muted-foreground truncate">Clicca per aprire la chat</p>
+                      <p className="text-xs text-muted-foreground truncate">{t.openChat}</p>
                     </div>
                 <MessageCircle className={`w-5 h-5 ${unread > 0 ? "text-red-500" : "text-muted-foreground"}`} />
                   </div>
@@ -120,9 +183,13 @@ export default function Messages() {
               );
             })
           ) : searchQuery ? (
-            <p className="text-center text-muted-foreground py-4">Nessuna conversazione trovata per "{searchQuery}"</p>
+            <p className="text-center text-muted-foreground py-4">
+  {t.noConversationFor} "{searchQuery}"
+</p>
           ) : (
-            <p className="text-center text-muted-foreground py-8 text-sm">Nessuna conversazione ancora. Vai sul profilo di un utente e inizia a chattare!</p>
+            <p className="text-center text-muted-foreground py-8 text-sm">
+  {t.noConversations}
+</p>
           )}
         </CardContent>
       </Card>
