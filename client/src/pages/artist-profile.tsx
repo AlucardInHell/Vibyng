@@ -1606,8 +1606,8 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   {t.privateMessageDescription}
                 </p>
                 <Link href={`/chat/${artist.id}`}>
-                  <Button>{t.startConversation}
-                </Link>
+  <Button>{t.startConversation}</Button>
+</Link>
               </div>
             </CardContent>
           </Card>
