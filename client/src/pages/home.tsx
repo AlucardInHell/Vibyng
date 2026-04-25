@@ -1483,7 +1483,7 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
 
 if (result === "copied") {
     toast({
-      title: "Contenuto copiato!",
+      title: ({ title: t.copied }),
       description: "Il link diretto è stato copiato negli appunti.",
     });
   }
