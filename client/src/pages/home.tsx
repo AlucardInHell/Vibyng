@@ -54,6 +54,17 @@ const homeTranslations = {
     cancel: "Annulla",
     publish: "Pubblica",
     publishing: "Pubblicando...",
+    commentPlaceholder: "Scrivi un commento...",
+    comments: "Commenti",
+    share: "Condividi",
+    copied: "Link copiato!",
+    postBy: "Post di",
+    postDeletedTitle: "Post eliminato",
+    postDeleteErrorDescription: "Non è stato possibile eliminare il post",
+    noPosts: "Nessun post ancora.",
+    loadingFeed: "Caricamento feed...",
+    mediaAlt: "Contenuto multimediale",
+    exclusive: "Esclusivo",
 
     error: "Errore",
     selectImageTitle: "Seleziona un'immagine",
@@ -85,6 +96,17 @@ const homeTranslations = {
     cancel: "Cancel",
     publish: "Publish",
     publishing: "Publishing...",
+    commentPlaceholder: "Write a comment...",
+    comments: "Comments",
+    share: "Share",
+    copied: "Link copied!",
+    postBy: "Post by",
+    postDeletedTitle: "Post deleted",
+    postDeleteErrorDescription: "Unable to delete the post",
+    noPosts: "No posts yet.",
+    loadingFeed: "Loading feed...",
+    mediaAlt: "Media content",
+    exclusive: "Exclusive",
 
     error: "Error",
     selectImageTitle: "Select an image",
@@ -837,7 +859,7 @@ function Stories() {
                     {t.publishing}
                   </>
                 ) : (
-                  "t.publish"
+                  t.publish
                 )}
               </Button>
             </div>
@@ -848,7 +870,15 @@ function Stories() {
   );
 }
 
-function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAuthorId: number }) {
+function PhotoComments({
+  photoId,
+  photoAuthorId,
+  commentPlaceholder,
+}: {
+  photoId: number;
+  photoAuthorId: number;
+  commentPlaceholder: string;
+}) {
   const [newComment, setNewComment] = useState("");
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
@@ -876,7 +906,7 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
      <div className="flex items-center gap-2">
   <div className="relative flex-1">
     <Input
-      placeholder="Scrivi un commento..."
+      placeholder={commentPlaceholder}
       value={newComment}
       onChange={e => {
         setNewComment(e.target.value);
@@ -958,7 +988,15 @@ function PhotoComments({ photoId, photoAuthorId }: { photoId: number; photoAutho
     );
 }
 
-function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAuthorId: number }) {
+function VideoComments({
+  videoId,
+  videoAuthorId,
+  commentPlaceholder,
+}: {
+  videoId: number;
+  videoAuthorId: number;
+  commentPlaceholder: string;
+}) {
   const [newComment, setNewComment] = useState("");
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
@@ -991,7 +1029,7 @@ function VideoComments({ videoId, videoAuthorId }: { videoId: number; videoAutho
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Input
-            placeholder="Scrivi un commento..."
+            placeholder={commentPlaceholder}
             value={newComment}
             onChange={(e) => {
               setNewComment(e.target.value);
@@ -1134,7 +1172,7 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Input
-            placeholder="Scrivi un commento..."
+            placeholder={t.commentPlaceholder}
             value={newComment}
             onChange={(e) => {
               setNewComment(e.target.value);
@@ -1238,6 +1276,8 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
 const searchableUsers: { id: number; username: string; displayName: string; genre: string | null; role: string }[] = [];
 
 export default function Home() {
+const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+const t = homeTranslations[language];  
 const { toast } = useToast();
 const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
 const pendingLikesRef = useRef<Set<string>>(new Set());
@@ -1249,6 +1289,21 @@ const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
 const searchInputRef = useRef<HTMLInputElement>(null);
 const filteredUsers = searchResults;
+
+useEffect(() => {
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+    }
+  };
+
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+  };
+}, []);  
 
 useEffect(() => {
   if (!searchOpen) return;
@@ -1407,7 +1462,7 @@ queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
       ? `Foto di ${post.author.displayName}`
       : shareType === "video"
         ? `Video di ${post.author.displayName}`
-        : `Post di ${post.author.displayName}`;
+        : `${t.postBy} ${post.author.displayName}`;
 
   const result = await shareVibyngContent({
   title: shareTitle,
@@ -1431,7 +1486,7 @@ if (result === "copied") {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex flex-col items-center gap-2">
           <Music className="w-8 h-8 text-primary" />
-          <span className="text-muted-foreground">Caricamento...</span>
+          <span className="text-muted-foreground">{t.loadingFeed}...</span>
         </div>
       </div>
     );
@@ -1551,7 +1606,7 @@ if (result === "copied") {
                   )}
                   {post.isExclusive && (
                     <Badge className="text-xs bg-primary" data-testid={`badge-exclusive-${post.id}`}>
-                      Esclusivo
+                      {t.exclusive}
                     </Badge>
                   )}
                 </div>
@@ -1575,9 +1630,9 @@ if (result === "copied") {
                     }
                     queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                     queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-                    toast({ title: "Post eliminato" });
+                    toast({ title: t.postDeletedTitle });
                   } catch {
-                    toast({ title: "Errore", variant: "destructive" });
+                    toast({ title: t.error, variant: "destructive" });
                   }
                 }}
               >🗑️</button>
