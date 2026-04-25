@@ -112,22 +112,33 @@ export default function SearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    searchInputRef.current?.focus();
-  }, []);
+ useEffect(() => {
+  const syncLanguage = () => {
+    setLanguage(getStoredLanguage());
+  };
 
-  useEffect(() => {
   const handleLanguageChange = (event: Event) => {
     const customEvent = event as CustomEvent<AppLanguage>;
     if (customEvent.detail === "it" || customEvent.detail === "en") {
       setLanguage(customEvent.detail);
+      return;
     }
+
+    syncLanguage();
   };
 
+  syncLanguage();
+
   window.addEventListener("vibyng-language-change", handleLanguageChange);
+  window.addEventListener("storage", syncLanguage);
+  window.addEventListener("focus", syncLanguage);
+  window.addEventListener("pageshow", syncLanguage);
 
   return () => {
     window.removeEventListener("vibyng-language-change", handleLanguageChange);
+    window.removeEventListener("storage", syncLanguage);
+    window.removeEventListener("focus", syncLanguage);
+    window.removeEventListener("pageshow", syncLanguage);
   };
 }, []);
 
