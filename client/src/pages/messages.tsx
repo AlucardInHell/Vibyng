@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { User } from "@shared/schema";
 
 function getCurrentUserId(): number {
