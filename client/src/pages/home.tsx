@@ -1580,7 +1580,7 @@ if (result === "copied") {
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{user.displayName}</span>
                         {user.role === "artist" && (
-                          <Badge variant="secondary" className="text-xs">Artista</Badge>
+                          <Badge variant="secondary" className="text-xs">{t.roleArtist}</Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -1625,8 +1625,8 @@ if (result === "copied") {
                   </Link>
                   {post.author.role === "artist" && (
                     <Badge variant="secondary" className="text-xs" data-testid={`badge-artist-${post.authorId}`}>
-                      Artista
-                    </Badge>
+  {t.roleArtist}
+</Badge>
                   )}
                   {post.isExclusive && (
                     <Badge className="text-xs bg-primary" data-testid={`badge-exclusive-${post.id}`}>
