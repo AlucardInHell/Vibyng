@@ -84,6 +84,14 @@ const homeTranslations = {
     messageSentTitle: "Messaggio inviato",
     replySentDescriptionPrefix: "Hai risposto a",
     replySendErrorDescription: "Non è stato possibile inviare la risposta",
+
+    feedSearchPlaceholder: "Cerca utenti, artisti, generi...",
+roleArtist: "Artista",
+roleFan: "Fan",
+roleBusiness: "Azienda",
+roleRehearsalRoom: "Sala Prove",
+roleMusicStore: "Negozio Musica",
+roleRecordLabel: "Etichetta",
   },
 
   en: {
@@ -126,6 +134,14 @@ const homeTranslations = {
     messageSentTitle: "Message sent",
     replySentDescriptionPrefix: "You replied to",
     replySendErrorDescription: "Unable to send the reply",
+
+    feedSearchPlaceholder: "Search users, artists, genres...",
+roleArtist: "Artist",
+roleFan: "Fan",
+roleBusiness: "Business",
+roleRehearsalRoom: "Rehearsal Room",
+roleMusicStore: "Music Store",
+roleRecordLabel: "Label",
   },
 } as const;
 
@@ -1523,7 +1539,7 @@ if (result === "copied") {
             <Search className="w-4 h-4 text-muted-foreground" />
             <Input
               ref={searchInputRef}
-              placeholder="Cerca utenti, artisti, generi..."
+              placeholder={t.feedSearchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1"
