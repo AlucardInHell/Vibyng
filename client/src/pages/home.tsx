@@ -41,6 +41,79 @@ function getCurrentUserId(): number {
   return 1;
 }
 const CURRENT_USER_ID = getCurrentUserId();
+type AppLanguage = "it" | "en";
+
+const homeTranslations = {
+  it: {
+    now: "ora",
+    yourStory: "La tua",
+    addStoryTitle: "Aggiungi una storia",
+    previewAlt: "Anteprima",
+    selectImage: "Seleziona un'immagine",
+    storyContentPlaceholder: "Scrivi qualcosa per la tua storia...",
+    cancel: "Annulla",
+    publish: "Pubblica",
+    publishing: "Pubblicando...",
+
+    error: "Errore",
+    selectImageTitle: "Seleziona un'immagine",
+    selectImageDescription: "Devi selezionare un'immagine per la storia",
+    uploadErrorTitle: "Errore upload",
+    uploadImageErrorDescription: "Impossibile caricare l'immagine",
+    storyPublishedTitle: "Storia pubblicata!",
+    storyPublishedDescription: "La tua storia sarà visibile per 24 ore",
+    storyPublishErrorDescription: "Impossibile pubblicare la storia",
+
+    storyDeletedTitle: "Storia eliminata",
+    storyDeletedDescription: "La storia è stata rimossa con successo",
+    storyDeleteErrorDescription: "Impossibile eliminare la storia",
+    storyLikeErrorDescription: "Non è stato possibile aggiornare il like",
+
+    replyPlaceholderPrefix: "Rispondi a",
+    messageSentTitle: "Messaggio inviato",
+    replySentDescriptionPrefix: "Hai risposto a",
+    replySendErrorDescription: "Non è stato possibile inviare la risposta",
+  },
+
+  en: {
+    now: "now",
+    yourStory: "Your story",
+    addStoryTitle: "Add a story",
+    previewAlt: "Preview",
+    selectImage: "Select an image",
+    storyContentPlaceholder: "Write something for your story...",
+    cancel: "Cancel",
+    publish: "Publish",
+    publishing: "Publishing...",
+
+    error: "Error",
+    selectImageTitle: "Select an image",
+    selectImageDescription: "You need to select an image for the story",
+    uploadErrorTitle: "Upload error",
+    uploadImageErrorDescription: "Unable to upload the image",
+    storyPublishedTitle: "Story published!",
+    storyPublishedDescription: "Your story will be visible for 24 hours",
+    storyPublishErrorDescription: "Unable to publish the story",
+
+    storyDeletedTitle: "Story deleted",
+    storyDeletedDescription: "The story has been removed successfully",
+    storyDeleteErrorDescription: "Unable to delete the story",
+    storyLikeErrorDescription: "Unable to update the like",
+
+    replyPlaceholderPrefix: "Reply to",
+    messageSentTitle: "Message sent",
+    replySentDescriptionPrefix: "You replied to",
+    replySendErrorDescription: "Unable to send the reply",
+  },
+} as const;
+
+function getStoredLanguage(): AppLanguage {
+  try {
+    const stored = localStorage.getItem("vibyng-language");
+    if (stored === "it" || stored === "en") return stored;
+  } catch {}
+  return "it";
+}
 
 interface StoryUserGroup {
   userId: number;
@@ -58,16 +131,19 @@ interface StoryUserGroup {
 }[];
 }
 
-function formatStoryTime(date: Date): string {
+function formatStoryTime(date: Date, t: typeof homeTranslations.it): string {
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
-  if (hours < 1) return "ora";
+  if (hours < 1) return t.now;
   if (hours === 1) return "1h";
   return `${hours}h`;
 }
 
-function groupStoriesByUser(stories: StoryWithUser[]): StoryUserGroup[] {
+function groupStoriesByUser(
+  stories: StoryWithUser[],
+  t: typeof homeTranslations.it
+): StoryUserGroup[] {
   const groups: Record<number, StoryUserGroup> = {};
   
   for (const story of stories) {
@@ -85,7 +161,7 @@ function groupStoriesByUser(stories: StoryWithUser[]): StoryUserGroup[] {
   id: story.id,
   content: story.content,
   imageUrl: story.imageUrl,
-  timestamp: formatStoryTime(new Date(story.createdAt!)),
+  timestamp: formatStoryTime(new Date(story.createdAt!), t),
   likesCount: Number((story as any).likesCount ?? 0),
   likedByMe: Boolean((story as any).likedByMe),
 });
@@ -98,6 +174,8 @@ const STORY_DURATION = 5000;
 
 function Stories() {
   const { toast } = useToast();
+  const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+  const t = homeTranslations[language];
   const [viewedStories, setViewedStories] = useState<Set<number>>(new Set());
   const [activeStory, setActiveStory] = useState<StoryUserGroup | null>(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
@@ -127,6 +205,20 @@ function Stories() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+    }
+  };
+
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+  };
+}, []);
   const { uploadFile, isUploading } = useUpload();
   
   const { data: storiesFromDb = [] } = useQuery<StoryWithUser[]>({
@@ -140,7 +232,7 @@ function Stories() {
   refetchOnWindowFocus: true,
 });
   
-  const storiesData = useMemo(() => groupStoriesByUser(storiesFromDb), [storiesFromDb]);
+  const storiesData = useMemo(() => groupStoriesByUser(storiesFromDb, t), [storiesFromDb, t]);
   useEffect(() => {
   if (!activeStory) return;
 
@@ -197,17 +289,17 @@ function Stories() {
   onSuccess: async () => {
     await queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
     closeStory();
-    toast({
-      title: "Storia eliminata",
-      description: "La storia è stata rimossa con successo",
-    });
+   toast({
+  title: t.storyDeletedTitle,
+  description: t.storyDeletedDescription,
+});
   },
   onError: () => {
     toast({
-      title: "Errore",
-      description: "Impossibile eliminare la storia",
-      variant: "destructive",
-    });
+  title: t.error,
+  description: t.storyDeleteErrorDescription,
+  variant: "destructive",
+});
   },
 });
  
@@ -307,8 +399,8 @@ function Stories() {
  const handlePublishStory = async () => {
   if (!selectedFile) {
     toast({
-      title: "Seleziona un'immagine",
-      description: "Devi selezionare un'immagine per la storia",
+      title: t.selectImageTitle,
+      description: t.selectImageDescription,
       variant: "destructive",
     });
     return;
@@ -319,8 +411,8 @@ function Stories() {
 
     if (!uploadResult) {
       toast({
-        title: "Errore upload",
-        description: "Impossibile caricare l'immagine",
+        title: t.uploadErrorTitle,
+        description: t.uploadImageErrorDescription,
         variant: "destructive",
       });
       return;
@@ -335,8 +427,8 @@ function Stories() {
     await queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
 
     toast({
-      title: "Storia pubblicata!",
-      description: "La tua storia sarà visibile per 24 ore",
+     title: t.storyPublishedTitle,
+     description: t.storyPublishedDescription,
     });
 
     setShowAddDialog(false);
@@ -345,8 +437,8 @@ function Stories() {
     setSelectedFile(null);
   } catch {
     toast({
-      title: "Errore",
-      description: "Impossibile pubblicare la storia",
+      title: t.error,
+      description: t.storyPublishErrorDescription,
       variant: "destructive",
     });
   }
@@ -408,8 +500,8 @@ function Stories() {
     });
 
     toast({
-      title: "Errore",
-      description: "Non è stato possibile aggiornare il like",
+     title: t.error,
+     description: t.storyLikeErrorDescription,
       variant: "destructive",
     });
   }
@@ -430,8 +522,8 @@ function Stories() {
     });
 
     toast({
-      title: "Messaggio inviato",
-      description: `Hai risposto a ${activeStory.displayName}`,
+      title: t.messageSentTitle,
+      description: `${t.replySentDescriptionPrefix} ${activeStory.displayName}`,
     });
 
     setReplyText("");
@@ -440,8 +532,8 @@ function Stories() {
     setIsPaused(false);
   } catch {
     toast({
-      title: "Errore",
-      description: "Non è stato possibile inviare la risposta",
+      title: t.error,
+      description: t.replySendErrorDescription,
       variant: "destructive",
     });
   }
@@ -458,7 +550,7 @@ function Stories() {
           <div className="w-16 h-16 rounded-full border-2 border-dashed border-muted-foreground/50 flex items-center justify-center bg-muted/30">
             <Plus className="w-6 h-6 text-muted-foreground" />
           </div>
-          <span className="text-xs text-muted-foreground">La tua</span>
+          <span className="text-xs text-muted-foreground">{t.yourStory}</span>
         </button>
 
         {storiesData.map((story) => {
@@ -564,7 +656,7 @@ function Stories() {
                 <div className="absolute bottom-4 left-0 right-0 px-3 flex items-center gap-2">
                  <div className="relative flex-1">
   <Input
-    placeholder={`Rispondi a ${activeStory.displayName}...`}
+    placeholder={`${t.replyPlaceholderPrefix} ${activeStory.displayName}...`}
     value={replyText}
     onChange={(e) => {
       const value = e.target.value;
@@ -653,7 +745,7 @@ function Stories() {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-md" data-testid="dialog-add-story">
           <DialogHeader>
-            <DialogTitle>Aggiungi una storia</DialogTitle>
+            <DialogTitle>{t.addStoryTitle}</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
@@ -670,7 +762,7 @@ function Stories() {
               <div className="relative aspect-[9/16] max-h-[300px] rounded-md overflow-hidden bg-black">
                 <img 
                   src={previewImage} 
-                  alt="Anteprima" 
+                  alt={t.previewAlt}
                   className="w-full h-full object-contain"
                 />
                 <Button
@@ -693,13 +785,13 @@ function Stories() {
                 data-testid="button-select-image"
               >
                 <ImageIcon className="w-10 h-10 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Seleziona un'immagine</span>
+                <span className="text-sm text-muted-foreground">{t.selectImage}</span>
               </button>
             )}
             
             <div className="relative">
   <Textarea
-    placeholder="Scrivi qualcosa per la tua storia..."
+    placeholder={t.storyContentPlaceholder}
     value={storyContent}
     onChange={(e) => {
       setStoryContent(e.target.value);
@@ -731,7 +823,7 @@ function Stories() {
                 }}
                 data-testid="button-cancel-story"
               >
-                Annulla
+                {t.cancel}
               </Button>
               <Button
                 className="flex-1"
@@ -742,10 +834,10 @@ function Stories() {
                 {(isUploading || createStoryMutation.isPending) ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Pubblicando...
+                    {t.publishing}
                   </>
                 ) : (
-                  "Pubblica"
+                  "t.publish"
                 )}
               </Button>
             </div>
