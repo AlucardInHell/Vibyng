@@ -11,16 +11,76 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useLocation } from "wouter";
 
 type RoleFilter = "all" | "artist" | "fan" | "business" | "rehearsal_room" | "music_store" | "record_label";
+type AppLanguage = "it" | "en";
 
-const roleLabels: Record<RoleFilter, string> = {
-  all: "Tutti",
-  artist: "Artisti",
-  fan: "Fan",
-  business: "Aziende",
-  rehearsal_room: "Sale Prove",
-  music_store: "Negozi",
-  record_label: "Etichette",
-};
+const searchTranslations = {
+  it: {
+    searchPlaceholder: "Cerca artisti, fan, negozi...",
+    noResultsTitle: "Nessun risultato",
+    noResultsFor: "Nessun risultato per",
+    searchTitle: "Cerca su Vibyng",
+    searchSubtitle: "Trova artisti, fan, sale prove, negozi di musica e altro",
+
+    filterAll: "Tutti",
+    filterArtists: "Artisti",
+    filterFan: "Fan",
+    filterBusiness: "Aziende",
+    filterRehearsalRooms: "Sale Prove",
+    filterMusicStores: "Negozi",
+    filterRecordLabels: "Etichette",
+
+    roleArtist: "Artista",
+    roleFan: "Fan",
+    roleBusiness: "Azienda",
+    roleRehearsalRoom: "Sala Prove",
+    roleMusicStore: "Negozio Musica",
+    roleRecordLabel: "Etichetta",
+  },
+
+  en: {
+    searchPlaceholder: "Search artists, fans, stores...",
+    noResultsTitle: "No results",
+    noResultsFor: "No results for",
+    searchTitle: "Search on Vibyng",
+    searchSubtitle: "Find artists, fans, rehearsal rooms, music stores and more",
+
+    filterAll: "All",
+    filterArtists: "Artists",
+    filterFan: "Fans",
+    filterBusiness: "Businesses",
+    filterRehearsalRooms: "Rehearsal Rooms",
+    filterMusicStores: "Stores",
+    filterRecordLabels: "Labels",
+
+    roleArtist: "Artist",
+    roleFan: "Fan",
+    roleBusiness: "Business",
+    roleRehearsalRoom: "Rehearsal Room",
+    roleMusicStore: "Music Store",
+    roleRecordLabel: "Label",
+  },
+} as const;
+
+function getStoredLanguage(): AppLanguage {
+  try {
+    const stored = localStorage.getItem("vibyng-language");
+    if (stored === "it" || stored === "en") return stored;
+  } catch {}
+  return "it";
+}
+
+
+function getRoleLabels(t: typeof searchTranslations.it): Record<RoleFilter, string> {
+  return {
+    all: t.filterAll,
+    artist: t.filterArtists,
+    fan: t.filterFan,
+    business: t.filterBusiness,
+    rehearsal_room: t.filterRehearsalRooms,
+    music_store: t.filterMusicStores,
+    record_label: t.filterRecordLabels,
+  };
+}
 
 const roleIcons: Record<string, typeof Music> = {
   artist: Music,
@@ -42,6 +102,9 @@ const roleBadgeColors: Record<string, string> = {
 
 export default function SearchPage() {
   const [, setLocation] = useLocation();
+  const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
+  const t = searchTranslations[language];
+  const roleLabels = getRoleLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<RoleFilter>("all");
   const [searchResults, setSearchResults] = useState<User[]>([]);
@@ -52,6 +115,21 @@ export default function SearchPage() {
   useEffect(() => {
     searchInputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+  const handleLanguageChange = (event: Event) => {
+    const customEvent = event as CustomEvent<AppLanguage>;
+    if (customEvent.detail === "it" || customEvent.detail === "en") {
+      setLanguage(customEvent.detail);
+    }
+  };
+
+  window.addEventListener("vibyng-language-change", handleLanguageChange);
+
+  return () => {
+    window.removeEventListener("vibyng-language-change", handleLanguageChange);
+  };
+}, []);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -72,16 +150,16 @@ export default function SearchPage() {
   }, [searchQuery, activeFilter]);
 
   const getRoleLabel = (role: string): string => {
-    const labels: Record<string, string> = {
-      artist: "Artista",
-      fan: "Fan",
-      business: "Azienda",
-      rehearsal_room: "Sala Prove",
-      music_store: "Negozio Musica",
-      record_label: "Etichetta",
-    };
-    return labels[role] || role;
+  const labels: Record<string, string> = {
+    artist: t.roleArtist,
+    fan: t.roleFan,
+    business: t.roleBusiness,
+    rehearsal_room: t.roleRehearsalRoom,
+    music_store: t.roleMusicStore,
+    record_label: t.roleRecordLabel,
   };
+  return labels[role] || role;
+};
 
   const getProfileUrl = (user: User): string => {
     if (user.role === "artist") return `/artist/${user.id}`;
@@ -110,7 +188,7 @@ export default function SearchPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               ref={searchInputRef}
-              placeholder="Cerca artisti, fan, negozi..."
+              placeholder={t.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-9"
@@ -192,14 +270,16 @@ export default function SearchPage() {
         ) : hasSearched ? (
           <div className="text-center py-12">
             <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold mb-1">Nessun risultato</h3>
-            <p className="text-sm text-muted-foreground">Nessun risultato per "{searchQuery}"</p>
+            <h3 className="font-semibold mb-1">{t.noResultsTitle}</h3>
+<p className="text-sm text-muted-foreground">
+  {t.noResultsFor} "{searchQuery}"
+</p>
           </div>
         ) : (
           <div className="text-center py-12">
             <Search className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold mb-1">Cerca su Vibyng</h3>
-            <p className="text-sm text-muted-foreground">Trova artisti, fan, sale prove, negozi di musica e altro</p>
+            <h3 className="font-semibold mb-1">{t.searchTitle}</h3>
+<p className="text-sm text-muted-foreground">{t.searchSubtitle}</p>
           </div>
         )}
       </div>
