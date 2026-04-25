@@ -46,6 +46,7 @@ const artistProfileTranslations = {
     songs: "Canzoni",
     events: "Eventi",
     connections: "Connessioni",
+    comments: "Commenti",
 
     roleArtist: "Artista",
     roleRehearsalStudio: "Sala Prove",
@@ -136,6 +137,7 @@ goalReached: "raggiunto",
     songs: "Songs",
     events: "Events",
     connections: "Connections",
+    comments: "Comments",
 
     roleArtist: "Artist",
     roleRehearsalStudio: "Rehearsal Studio",
@@ -1035,7 +1037,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-8">Nessun post ancora.</p>
+            <p className="text-center text-muted-foreground py-8">{t.noPosts}</p>
           )}
         </TabsContent>
 
@@ -1054,10 +1056,10 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 >
   <img
     src={photo.imageUrl ?? undefined}
-    alt={photo.title || "Foto"}
+    alt={photo.title || t.untitledPhoto}
     className="w-full h-32 object-cover"
   />
-                  {photo.title && photo.title !== "Foto" && (
+                  {photo.title && photo.title !== t.untitledPhoto && (
                     <CardContent className="p-2">
                       <p className="text-xs text-muted-foreground truncate">
   <MentionText text={photo.title} />
@@ -1067,7 +1069,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                 </Card>
               ))
             ) : (
-              <p className="text-center text-muted-foreground py-8 col-span-2">Nessuna foto disponibile</p>
+              <p className="text-center text-muted-foreground py-8 col-span-2">{t.noPhotos}</p>
             )}
           </div>
         </TabsContent>
@@ -1100,7 +1102,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         )}
       </div>
       <CardContent className="p-3">
-        {video.title && video.title !== "Video" && (
+        {video.title && video.title !== t.untitledVideo && (
   <h4 className="font-medium whitespace-pre-wrap break-words">
   <MentionText text={video.title} />
 </h4>
@@ -1109,7 +1111,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     </Card>
   ))
 ) : (
-  <p className="text-center text-muted-foreground py-8">Nessun video disponibile</p>
+  <p className="text-center text-muted-foreground py-8">{t.noVideos}</p>
 )}
           </div>
         </TabsContent>
@@ -1120,7 +1122,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
               <video src={selectedVideo.videoUrl} controls className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black" />
               <div className="p-4">
-                {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium whitespace-pre-wrap break-words">
+                {selectedVideo.title && selectedVideo.title !== t.untitledVideo && <p className="font-medium whitespace-pre-wrap break-words">
   <MentionText text={selectedVideo.title} />
 </p>}
                 <p className="text-xs text-muted-foreground mb-3">
@@ -1165,8 +1167,8 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     const shareUrl = buildContentShareUrl("video", selectedVideo.id);
 
     const result = await shareVibyngContent({
-      title: selectedVideo.title || "Video",
-      text: selectedVideo.title || "Video su Vibyng",
+     title: selectedVideo.title || t.untitledVideo,
+     text: selectedVideo.title || t.videoShareText,
       mediaUrl: selectedVideo.videoUrl ?? undefined,
       fallbackUrl: shareUrl,
       shareUrl,
@@ -1174,12 +1176,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     });
 
     if (result === "copied") {
-      toast({ title: "Link copiato!" });
+      toast({ title: t.copied });
     }
   }}
 >
   <Share2 className="w-5 h-5" />
-  Condividi
+  {t.share}
 </button>
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
@@ -1260,7 +1262,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     <div className="relative flex-1">
       <input
         className="w-full h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 text-base placeholder:text-sm"
-        placeholder="Scrivi un commento..."
+        placeholder={t.commentPlaceholder}
         value={videoCommentInput}
         onChange={e => {
           setVideoCommentInput(e.target.value);
@@ -1353,7 +1355,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   </Card>
                 ))
               ) : (
-                <p className="text-center text-muted-foreground py-8">Nessuna canzone disponibile</p>
+                <p className="text-center text-muted-foreground py-8">{t.noSongs}</p>
               )}
             </div>
           </TabsContent>
@@ -1535,7 +1537,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   ))}
                 </div>
              ) : (
-              <p className="text-center text-muted-foreground py-8">Nessun evento in programma</p>
+              <p className="text-center text-muted-foreground py-8">{t.noEvents}</p>
             )}
           </TabsContent>
 
@@ -1563,7 +1565,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-4 text-sm">Nessun follower ancora</p>
+                  <p className="text-center text-muted-foreground py-4 text-sm">{t.noFollowers}</p>
                 )}
               </div>
               <div>
@@ -1586,7 +1588,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-4 text-sm">Non segue ancora nessuno</p>
+                  <p className="text-center text-muted-foreground py-4 text-sm">{t.noFollowing}</p>
                 )}
               </div>
             </div>
@@ -1686,7 +1688,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               : "px-4 pb-4"
           }
         >
-          {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
+          {selectedPhoto.title && selectedPhoto.title !== t.untitledPhoto && (
             <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
               <MentionText text={selectedPhoto.title} />
             </p>
@@ -1750,7 +1752,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               onClick={() => setPhotoCommentsOpen(true)}
             >
               <MessageCircle className="w-5 h-5" />
-              Commenti
+              {t.comments}
             </button>
 
             <button
@@ -1759,8 +1761,8 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
 
     const result = await shareVibyngContent({
-      title: selectedPhoto.title || "Foto",
-      text: selectedPhoto.title || "Foto su Vibyng",
+     title: selectedPhoto.title || t.untitledPhoto,
+     text: selectedPhoto.title || t.photoShareText,
       mediaUrl: selectedPhoto.imageUrl ?? undefined,
       fallbackUrl: shareUrl,
       shareUrl,
@@ -1768,12 +1770,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     });
 
     if (result === "copied") {
-      toast({ title: "Link copiato!" });
+      toast({ title: t.copied });
     }
   }}
 >
   <Share2 className="w-5 h-5" />
-  Condividi
+  {t.share}
 </button>
           </div>
         </div>
@@ -1869,7 +1871,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <div className="relative">
               <input
                 className="w-full text-sm border rounded-lg px-3 py-2 bg-background"
-                placeholder="Scrivi un commento..."
+                placeholder={t.commentPlaceholder}
                 value={commentInput}
                 onChange={(e) => {
                   setCommentInput(e.target.value);
@@ -1939,7 +1941,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     </div>
                   </div>
                 </Link>
-              )) : <p className="text-center text-muted-foreground py-4 text-sm">Nessun follower ancora</p>
+              )) : <p className="text-center text-muted-foreground py-4 text-sm">{t.noFollowers}</p>
             ) : (
               followingData && followingData.length > 0 ? followingData.map(user => (
                 <Link key={user.id} href={`/artist/${user.id}`} onClick={() => setConnectionsOpen(false)}>
@@ -1954,7 +1956,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     </div>
                   </div>
                 </Link>
-              )) : <p className="text-center text-muted-foreground py-4 text-sm">Non segue ancora nessuno</p>
+              )) : <p className="text-center text-muted-foreground py-4 text-sm">{t.noFollowing}</p>
             )}
           </div>
         </DialogContent>
