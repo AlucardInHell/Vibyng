@@ -1127,7 +1127,15 @@ function VideoComments({
   );
 }
 
-function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: number }) {
+function PostComments({
+  postId,
+  postAuthorId,
+  commentPlaceholder,
+}: {
+  postId: number;
+  postAuthorId: number;
+  commentPlaceholder: string;
+}) {
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const [newComment, setNewComment] = useState("");
 
@@ -1172,7 +1180,7 @@ function PostComments({ postId, postAuthorId }: { postId: number; postAuthorId: 
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Input
-            placeholder={t.commentPlaceholder}
+            placeholder={commentPlaceholder}
             value={newComment}
             onChange={(e) => {
               setNewComment(e.target.value);
