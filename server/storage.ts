@@ -70,6 +70,7 @@ export interface IStorage {
   // Goals
   getGoalsByArtist(artistId: number): Promise<ArtistGoal[]>;
   createGoal(goal: InsertArtistGoal): Promise<ArtistGoal>;
+  deleteGoal(goalId: number, artistId: number): Promise<boolean>;
 
   // Support
   createSupport(support: InsertSupport): Promise<Support>;
@@ -311,11 +312,20 @@ async likePost(postId: number, userId: number): Promise<void> {
     return await db.select().from(artistGoals).where(eq(artistGoals.artistId, artistId));
   }
 
-  async createGoal(insertGoal: InsertArtistGoal): Promise<ArtistGoal> {
+ async createGoal(insertGoal: InsertArtistGoal): Promise<ArtistGoal> {
     const [goal] = await db.insert(artistGoals).values(insertGoal).returning();
     return goal;
   }
 
+ async deleteGoal(goalId: number, artistId: number): Promise<boolean> {
+  const deleted = await db
+    .delete(artistGoals)
+    .where(and(eq(artistGoals.id, goalId), eq(artistGoals.artistId, artistId)))
+    .returning({ id: artistGoals.id });
+
+  return deleted.length > 0;
+ }
+  
   async createSupport(insertSupport: InsertSupport): Promise<Support> {
     const [support] = await db.insert(supports).values(insertSupport).returning();
 
