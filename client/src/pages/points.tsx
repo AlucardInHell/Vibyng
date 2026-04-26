@@ -33,6 +33,16 @@ function getCurrentUserId(): number {
 const CURRENT_USER_ID = getCurrentUserId();
 type AppLanguage = "it" | "en";
 
+const MB = 1024 * 1024;
+
+const MAX_PHOTO_SIZE_MB = 40;
+const MAX_VIDEO_SIZE_MB = 500;
+const MAX_AUDIO_SIZE_MB = 20;
+
+const MAX_PHOTO_SIZE_BYTES = MAX_PHOTO_SIZE_MB * MB;
+const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * MB;
+const MAX_AUDIO_SIZE_BYTES = MAX_AUDIO_SIZE_MB * MB;
+
 const pointsTranslations = {
   it: {
     commentPlaceholder: "Scrivi un commento...",
@@ -60,8 +70,9 @@ const pointsTranslations = {
     videoUploadedTitle: "Video caricato!",
 
     fileTooLargeTitle: "File troppo grande",
-    videoTooLargeDescription: "Il video deve essere inferiore a 50MB",
-    mp3TooLargeDescription: "Il file MP3 deve essere inferiore a 10MB",
+    photoTooLargeDescription: "La foto deve essere inferiore a 40MB",
+    videoTooLargeDescription: "Il video deve essere inferiore a 500MB",
+    mp3TooLargeDescription: "Il file MP3 deve essere inferiore a 20MB",
 
     songUploadedTitle: "Canzone caricata!",
     songUploadedDescription: "La tua canzone è ora visibile nel tuo profilo",
@@ -166,11 +177,12 @@ error: "Errore",
     songUploadError: "Unable to save the song",
 
     videoUploadedTitle: "Video uploaded!",
-
+    
     fileTooLargeTitle: "File too large",
-    videoTooLargeDescription: "The video must be under 50MB",
-    mp3TooLargeDescription: "The MP3 file must be under 10MB",
-
+    photoTooLargeDescription: "The photo must be under 40MB",
+    videoTooLargeDescription: "The video must be under 500MB",
+    mp3TooLargeDescription: "The MP3 file must be under 20MB",
+    
     songUploadedTitle: "Song uploaded!",
     songUploadedDescription: "Your song is now visible on your profile",
 
@@ -686,8 +698,19 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
 
  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingType("photo");
+if (!file) return;
+
+if (file.size > MAX_PHOTO_SIZE_BYTES) {
+  toast({
+    title: t.fileTooLargeTitle,
+    description: t.photoTooLargeDescription,
+    variant: "destructive",
+  });
+  if (photoInputRef.current) photoInputRef.current.value = "";
+  return;
+}
+
+setUploadingType("photo");
     try {
       const imageData = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -722,10 +745,15 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 50 * 1024 * 1024) {
-      toast({ title: t.fileTooLargeTitle, description: t.videoTooLargeDescription, variant: "destructive" });
-      return;
-    }
+    if (file.size > MAX_VIDEO_SIZE_BYTES) {
+  toast({
+    title: t.fileTooLargeTitle,
+    description: t.videoTooLargeDescription,
+    variant: "destructive",
+  });
+  if (videoInputRef.current) videoInputRef.current.value = "";
+  return;
+}
     setUploadingType("video");
     try {
       const reader = new FileReader();
@@ -750,10 +778,15 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
  const handleMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: t.fileTooLargeTitle, description: t.mp3TooLargeDescription, variant: "destructive" });
-      return;
-    }
+    if (file.size > MAX_AUDIO_SIZE_BYTES) {
+  toast({
+    title: t.fileTooLargeTitle,
+    description: t.mp3TooLargeDescription,
+    variant: "destructive",
+  });
+  if (musicInputRef.current) musicInputRef.current.value = "";
+  return;
+}
     setUploadingType("music");
     try {
       const reader = new FileReader();
