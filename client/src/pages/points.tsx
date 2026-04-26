@@ -856,7 +856,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
  currentUser?.role === "recording_studio" ? t.roleRecordingStudio :
  currentUser?.role === "record_label" ? t.roleRecordLabel : t.roleFan}
             </Badge>
-            <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center justify-center gap-3 mt-3">
             {currentUser?.role === "artist" ? (
   <button
     className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
@@ -879,13 +879,16 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   </div>
 )}
              <Link href="/vpoints">
-                <div className="flex items-center gap-1 text-primary cursor-pointer hover:opacity-80">
-                  <Zap className="w-4 h-4" />
-                  <span className="text-sm font-medium" data-testid="text-my-points">
-                    {vPointsStatus?.balance ?? currentUser?.vibyngPoints ?? 0} VibyngPoints
-                  </span>
-                </div>
-              </Link>
+  <div className="flex items-center gap-1 text-primary cursor-pointer hover:opacity-80 min-w-0">
+    <Zap className="w-4 h-4 shrink-0" />
+    <span
+      className="text-[12px] font-medium leading-none whitespace-nowrap"
+      data-testid="text-my-points"
+    >
+      {vPointsStatus?.balance ?? currentUser?.vibyngPoints ?? 0} VibyngPoints
+    </span>
+  </div>
+</Link>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mt-4 text-center" data-testid="text-my-bio">
