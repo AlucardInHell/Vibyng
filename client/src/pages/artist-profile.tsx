@@ -847,7 +847,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-6 p-1">
+        <TabsList className={`w-full grid ${isArtist ? "grid-cols-7" : "grid-cols-6"} p-1`}>
   <TabsTrigger value="posts" className="px-1 text-xs">
     <FileText className="w-4 h-4 sm:mr-1" />
     <span className="hidden sm:inline">{t.posts}</span>
@@ -868,6 +868,13 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     <span className="hidden sm:inline">{t.messages}</span>
   </TabsTrigger>
 
+  {isArtist && (
+  <TabsTrigger value="songs" className="px-1 text-xs">
+    <Music className="w-4 h-4 sm:mr-1" />
+    <span className="hidden sm:inline">{t.songs}</span>
+  </TabsTrigger>
+)}
+          
   {isArtist && (
     <TabsTrigger value="goals" className="px-1 text-xs">
       <Trophy className="w-4 h-4 sm:mr-1" />
