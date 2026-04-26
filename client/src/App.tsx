@@ -607,6 +607,22 @@ function BottomNav() {
     );
   }
 
+if (item.path === "/artists") {
+  return (
+    <button
+      key={item.path}
+      onClick={() => goToTop("/artists")}
+      className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors ${
+        isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+      }`}
+      data-testid={`nav-${item.label.toLowerCase()}`}
+    >
+      <item.icon className="w-5 h-5" />
+      <span className="max-w-full truncate text-[11px] font-medium leading-none">{item.label}</span>
+    </button>
+  );
+}
+    
 if (item.path === "/me") {
   return (
     <button
