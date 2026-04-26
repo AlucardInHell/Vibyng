@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus } from "lucide-react";
 import { Link } from "wouter";
@@ -19,7 +21,7 @@ import { useMention } from "@/hooks/use-mention";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
 import { shareVibyngContent, buildContentShareUrl } from "@/lib/share-content";
-import type { User, ArtistPhoto, ArtistVideo, Post } from "@shared/schema";
+import type { User, ArtistPhoto, ArtistVideo, ArtistGoal, Post } from "@shared/schema";
 
 function getCurrentUserId(): number {
   try {
@@ -86,6 +88,18 @@ const pointsTranslations = {
     posts: "Post",
     events: "Eventi",
     connections: "Connessioni",
+
+goals: "Obiettivi",
+followers: "Follower",
+following: "Seguiti",
+noGoals: "Nessun obiettivo ancora",
+addGoal: "Aggiungi obiettivo",
+goalTitle: "Titolo obiettivo *",
+goalDescription: "Descrizione obiettivo",
+goalTargetAmount: "Importo obiettivo *",
+goalCreatedTitle: "Obiettivo creato!",
+target: "Obiettivo",
+raised: "Raccolto",   
 
 noSongs: "Nessuna canzone disponibile",
 noPhotos: "Nessuna foto disponibile",
@@ -180,6 +194,18 @@ error: "Errore",
     posts: "Posts",
     events: "Events",
     connections: "Connections",
+
+goals: "Goals",
+followers: "Followers",
+following: "Following",
+noGoals: "No goals yet",
+addGoal: "Add goal",
+goalTitle: "Goal title *",
+goalDescription: "Goal description",
+goalTargetAmount: "Goal amount *",
+goalCreatedTitle: "Goal created!",
+target: "Target",
+raised: "Raised",    
 
 noSongs: "No songs available",
 noPhotos: "No photos available",
@@ -482,6 +508,15 @@ useEffect(() => {
   const isVideoLiked = videoLikeData?.liked ?? false;
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
+  const [connectionsOpen, setConnectionsOpen] = useState(false);
+  const [connectionsTab, setConnectionsTab] = useState<"followers" | "following">("followers");
+
+  const [showGoalForm, setShowGoalForm] = useState(false);
+  const [goalForm, setGoalForm] = useState({
+  title: "",
+  description: "",
+  targetAmount: "",
+ });
   
   const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/users", CURRENT_USER_ID],
@@ -556,6 +591,11 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   const { data: mySongs = [] } = useQuery<any[]>({
     queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`],
     enabled: true,
+  });
+
+  const { data: myArtistGoals = [] } = useQuery<ArtistGoal[]>({
+  queryKey: [`/api/artists/${CURRENT_USER_ID}/goals`],
+  enabled: currentUser?.role === "artist",
   });
   
   const unfollowMutation = useMutation({
@@ -817,12 +857,27 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
  currentUser?.role === "record_label" ? t.roleRecordLabel : t.roleFan}
             </Badge>
             <div className="flex items-center gap-4 mt-3">
-             <div className="flex items-center gap-1 text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span className="text-sm font-medium" data-testid="text-followers">
-                  {followersData?.count ?? 0} {t.follower}
-                </span>
-              </div>
+            {currentUser?.role === "artist" ? (
+  <button
+    className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+    onClick={() => {
+      setConnectionsTab("followers");
+      setConnectionsOpen(true);
+    }}
+  >
+    <Users className="w-4 h-4" />
+    <span className="text-sm font-medium">
+      {t.connections}
+    </span>
+  </button>
+) : (
+  <div className="flex items-center gap-1 text-muted-foreground">
+    <Users className="w-4 h-4" />
+    <span className="text-sm font-medium" data-testid="text-followers">
+      {followersData?.count ?? 0} {t.follower}
+    </span>
+  </div>
+)}
              <Link href="/vpoints">
                 <div className="flex items-center gap-1 text-primary cursor-pointer hover:opacity-80">
                   <Zap className="w-4 h-4" />
@@ -936,10 +991,16 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
             <Calendar className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">{t.events}</span>
           </TabsTrigger>
-         <TabsTrigger value="connections" className="px-1 text-xs">
-            <Users className="w-4 h-4 sm:mr-1" />
-           <span className="hidden sm:inline">{t.connections}</span>
-          </TabsTrigger>
+        <TabsTrigger value={currentUser?.role === "artist" ? "goals" : "connections"} className="px-1 text-xs">
+  {currentUser?.role === "artist" ? (
+    <Trophy className="w-4 h-4 sm:mr-1" />
+  ) : (
+    <Users className="w-4 h-4 sm:mr-1" />
+  )}
+  <span className="hidden sm:inline">
+    {currentUser?.role === "artist" ? t.goals : t.connections}
+  </span>
+</TabsTrigger>
           
         </TabsList>
 
@@ -1552,8 +1613,129 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
             <p className="text-center text-muted-foreground py-8">Non partecipi ancora a nessun evento</p>
           )}
         </TabsContent>
+
+{currentUser?.role === "artist" && (
+  <TabsContent value="goals" className="mt-4">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {t.goals} ({myArtistGoals.length})
+        </p>
+        <Button size="sm" variant="outline" onClick={() => setShowGoalForm(!showGoalForm)}>
+          <Plus className="w-4 h-4 mr-1" />
+          {t.addGoal}
+        </Button>
+      </div>
+
+      {showGoalForm && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <Input
+              placeholder={t.goalTitle}
+              value={goalForm.title}
+              onChange={(e) => setGoalForm((prev) => ({ ...prev, title: e.target.value }))}
+            />
+
+            <Textarea
+              placeholder={t.goalDescription}
+              value={goalForm.description}
+              onChange={(e) => setGoalForm((prev) => ({ ...prev, description: e.target.value }))}
+              rows={2}
+            />
+
+            <Input
+              type="number"
+              min="1"
+              placeholder={t.goalTargetAmount}
+              value={goalForm.targetAmount}
+              onChange={(e) => setGoalForm((prev) => ({ ...prev, targetAmount: e.target.value }))}
+            />
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowGoalForm(false);
+                  setGoalForm({ title: "", description: "", targetAmount: "" });
+                }}
+              >
+                {t.cancel}
+              </Button>
+
+              <Button
+                className="flex-1"
+                onClick={async () => {
+                  if (!goalForm.title.trim() || !goalForm.targetAmount.trim()) {
+                    toast({ title: t.eventRequiredError, variant: "destructive" });
+                    return;
+                  }
+
+                  try {
+                    await apiRequest("POST", "/api/goals", {
+                      artistId: CURRENT_USER_ID,
+                      title: goalForm.title.trim(),
+                      description: goalForm.description.trim(),
+                      targetAmount: goalForm.targetAmount,
+                    });
+
+                    await queryClient.invalidateQueries({
+                      queryKey: [`/api/artists/${CURRENT_USER_ID}/goals`],
+                    });
+
+                    setShowGoalForm(false);
+                    setGoalForm({ title: "", description: "", targetAmount: "" });
+                    toast({ title: t.goalCreatedTitle });
+                  } catch {
+                    toast({ title: t.error, variant: "destructive" });
+                  }
+                }}
+              >
+                {t.save}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {myArtistGoals.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          {myArtistGoals.map((goal) => {
+            const current = Number(goal.currentAmount ?? 0);
+            const target = Number(goal.targetAmount ?? 0);
+            const progress = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+
+            return (
+              <Card key={goal.id}>
+                <CardContent className="p-4 space-y-3">
+                  <div>
+                    <h4 className="font-medium">{goal.title}</h4>
+                    {goal.description && (
+                      <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
+                    )}
+                  </div>
+
+                  <Progress value={progress} className="h-2" />
+
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{t.raised}: €{current.toFixed(2)}</span>
+                    <span>{t.target}: €{target.toFixed(2)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-center text-muted-foreground py-8">{t.noGoals}</p>
+      )}
+    </div>
+  </TabsContent>
+)}
+
         
-<TabsContent value="connections" className="mt-4">
+{currentUser?.role !== "artist" && (
+  <TabsContent value="connections" className="mt-4">
           <div className="flex flex-col gap-6">
             <div>
               <p className="text-sm font-medium mb-2">Follower ({followersList.length})</p>
@@ -1620,8 +1802,95 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
             </div>
           </div>
         </TabsContent>
-       
+       )}
      </Tabs>
+
+      {currentUser?.role === "artist" && (
+  <Dialog open={connectionsOpen} onOpenChange={setConnectionsOpen}>
+    <DialogContent className="max-w-sm">
+      <DialogHeader>
+        <DialogTitle className="text-center">{t.connections}</DialogTitle>
+      </DialogHeader>
+
+      <div className="grid grid-cols-2 gap-2 mb-4">
+        <button
+          className={`py-2 rounded-xl text-sm font-medium transition ${
+            connectionsTab === "followers"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+          }`}
+          onClick={() => setConnectionsTab("followers")}
+        >
+          {t.followers} ({followersList.length})
+        </button>
+
+        <button
+          className={`py-2 rounded-xl text-sm font-medium transition ${
+            connectionsTab === "following"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+          }`}
+          onClick={() => setConnectionsTab("following")}
+        >
+          {t.following} ({followedArtists.length})
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
+        {connectionsTab === "followers" ? (
+          followersList.length > 0 ? (
+            followersList.map((user) => (
+              <Link key={user.id} href={`/artist/${user.id}`}>
+                <div
+                  className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer"
+                  onClick={() => setConnectionsOpen(false)}
+                >
+                  <Avatar className="w-10 h-10">
+                    {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {user.displayName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{user.displayName}</p>
+                    <p className="text-xs text-muted-foreground">@{user.username}</p>
+                  </div>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <p className="text-center text-muted-foreground py-4 text-sm">{t.noFollowers}</p>
+          )
+        ) : followedArtists.length > 0 ? (
+          followedArtists.map((user) => (
+            <Link key={user.id} href={`/artist/${user.id}`}>
+              <div
+                className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer"
+                onClick={() => setConnectionsOpen(false)}
+              >
+                <Avatar className="w-10 h-10">
+                  {user.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.displayName} />}
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {user.displayName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{user.displayName}</p>
+                  <p className="text-xs text-muted-foreground">@{user.username}</p>
+                </div>
+              </div>
+            </Link>
+          ))
+        ) : (
+          <p className="text-center text-muted-foreground py-4 text-sm">{t.noFollowing}</p>
+        )}
+      </div>
+    </DialogContent>
+  </Dialog>
+)}
+      
       {pendingVideo && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
