@@ -99,7 +99,9 @@ goalDescription: "Descrizione obiettivo",
 goalTargetAmount: "Importo obiettivo *",
 goalCreatedTitle: "Obiettivo creato!",
 target: "Obiettivo",
-raised: "Raccolto",   
+raised: "Raccolto",  
+goalDeletedTitle: "Obiettivo eliminato",
+goalDeleteError: "Non è stato possibile eliminare l'obiettivo",    
 
 noSongs: "Nessuna canzone disponibile",
 noPhotos: "Nessuna foto disponibile",
@@ -205,7 +207,9 @@ goalDescription: "Goal description",
 goalTargetAmount: "Goal amount *",
 goalCreatedTitle: "Goal created!",
 target: "Target",
-raised: "Raised",    
+raised: "Raised",
+goalDeletedTitle: "Goal deleted",
+goalDeleteError: "Unable to delete the goal",    
 
 noSongs: "No songs available",
 noPhotos: "No photos available",
@@ -1712,10 +1716,42 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
               <Card key={goal.id}>
                 <CardContent className="p-4 space-y-3">
                   <div>
-                    <h4 className="font-medium">{goal.title}</h4>
-                    {goal.description && (
-                      <p className="text-sm text-muted-foreground mt-1">{goal.description}</p>
-                    )}
+                    <div className="flex items-start justify-between gap-2">
+  <div className="min-w-0">
+    <h4 className="font-medium break-words">{goal.title}</h4>
+
+    {goal.description && (
+      <p className="text-sm text-muted-foreground mt-1 break-words">
+        {goal.description}
+      </p>
+    )}
+  </div>
+
+  <button
+    className="text-xs text-red-400 hover:text-red-600 shrink-0"
+    onClick={async () => {
+      try {
+        await apiRequest("DELETE", `/api/goals/${goal.id}`, {
+          artistId: CURRENT_USER_ID,
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: [`/api/artists/${CURRENT_USER_ID}/goals`],
+        });
+
+        toast({ title: t.goalDeletedTitle });
+      } catch {
+        toast({
+          title: t.error,
+          description: t.goalDeleteError,
+          variant: "destructive",
+        });
+      }
+    }}
+  >
+    🗑️
+  </button>
+</div>
                   </div>
 
                   <Progress value={progress} className="h-2" />
