@@ -495,7 +495,18 @@ useEffect(() => {
   });
   const [pendingPhoto, setPendingPhoto] = useState<{ imageData: string; title: string } | null>(null);
   const [pendingPostText, setPendingPostText] = useState("");
-  const [pendingVideo, setPendingVideo] = useState<{ videoData: string; title: string; url?: string } | null>(null);
+  const [pendingVideo, setPendingVideo] = useState<{
+  videoFile: File;
+  previewUrl: string;
+  title: string;
+} | null>(null);
+  useEffect(() => {
+  return () => {
+    if (pendingVideo?.previewUrl) {
+      URL.revokeObjectURL(pendingVideo.previewUrl);
+    }
+  };
+}, [pendingVideo?.previewUrl]);
   const [pendingVideoText, setPendingVideoText] = useState("");
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [videoCommentInput, setVideoCommentInput] = useState("");
@@ -742,38 +753,95 @@ setUploadingType("photo");
     }
   };
 
- const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_VIDEO_SIZE_BYTES) {
-  toast({
-    title: t.fileTooLargeTitle,
-    description: t.videoTooLargeDescription,
-    variant: "destructive",
+const uploadVideoDirectToCloudinary = async (file: File): Promise<string> => {
+  const signRes = await fetch("/api/cloudinary/sign-video-upload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: CURRENT_USER_ID }),
   });
-  if (videoInputRef.current) videoInputRef.current.value = "";
-  return;
-}
-    setUploadingType("video");
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-    const videoData = reader.result as string;
-          setPendingVideo({ videoData, title: file.name.replace(/\.[^/.]+$/, "") });
-        } catch {
-          toast({ title: t.error, description: t.videoUploadError, variant: "destructive" });
-        } finally {
-          setUploadingType(null);
-          if (videoInputRef.current) videoInputRef.current.value = "";
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      toast({ title: t.error, variant: "destructive" });
-      setUploadingType(null);
+
+  if (!signRes.ok) {
+    throw new Error("Impossibile preparare l'upload video");
+  }
+
+  const signData = await signRes.json();
+
+  const chunkSize = 20 * MB;
+  const uploadId = `${CURRENT_USER_ID}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  let finalResult: any = null;
+
+  for (let start = 0; start < file.size; start += chunkSize) {
+    const end = Math.min(start + chunkSize, file.size);
+    const chunk = file.slice(start, end);
+
+    const formData = new FormData();
+    formData.append("file", chunk, file.name);
+    formData.append("api_key", signData.apiKey);
+    formData.append("timestamp", String(signData.timestamp));
+    formData.append("signature", signData.signature);
+    formData.append("folder", signData.folder);
+    formData.append("public_id", signData.publicId);
+
+    const uploadRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${signData.cloudName}/video/upload`,
+      {
+        method: "POST",
+        headers: {
+          "X-Unique-Upload-Id": uploadId,
+          "Content-Range": `bytes ${start}-${end - 1}/${file.size}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (!uploadRes.ok) {
+      const errorText = await uploadRes.text();
+      throw new Error(errorText || "Upload video non riuscito");
     }
-  };
+
+    finalResult = await uploadRes.json();
+  }
+
+  if (!finalResult?.secure_url) {
+    throw new Error("Cloudinary non ha restituito l'URL del video");
+  }
+
+  return finalResult.secure_url;
+};
+  
+ const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > MAX_VIDEO_SIZE_BYTES) {
+    toast({
+      title: t.fileTooLargeTitle,
+      description: t.videoTooLargeDescription,
+      variant: "destructive",
+    });
+
+    if (videoInputRef.current) videoInputRef.current.value = "";
+    return;
+  }
+
+  try {
+    const previewUrl = URL.createObjectURL(file);
+
+    setPendingVideo({
+      videoFile: file,
+      previewUrl,
+      title: file.name.replace(/\.[^/.]+$/, ""),
+    });
+  } catch {
+    toast({
+      title: t.error,
+      description: t.videoUploadError,
+      variant: "destructive",
+    });
+  } finally {
+    if (videoInputRef.current) videoInputRef.current.value = "";
+  }
+};
 
  const handleMusicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1967,7 +2035,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-background rounded-xl w-full max-w-sm p-4 space-y-3">
             <h3 className="font-semibold">{t.shareToFeed}</h3>
-            <video src={pendingVideo.videoData} controls className="w-full rounded-lg max-h-48 object-cover" />
+            <video src={pendingVideo.previewUrl} controls className="w-full rounded-lg max-h-48 object-cover" />
             <div className="relative">
              <div className="relative">
               <textarea
@@ -1980,24 +2048,27 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
               <MentionDropdown query={videoMentionQuery} visible={showVideoMentions} onSelect={(username) => { setPendingVideoText(insertVideoMention(pendingVideoText, username)); closeVideoMentions(); }} />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => { setPendingVideo(null); setPendingVideoText(""); }}>
-               {t.dontShare}
-               </Button>
+              <Button
+  variant="outline"
+  className="flex-1"
+  onClick={() => {
+    setPendingVideo(null);
+    setPendingVideoText("");
+  }}
+>
+  {t.dontShare}
+</Button>
               
               <Button className="flex-1" disabled={uploadingType === "uploading-video"} onClick={async () => {
                 setUploadingType("uploading-video");
                 try {
-                  const uploadRes = await fetch("/api/uploads/video", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ videoData: pendingVideo.videoData, userId: CURRENT_USER_ID }),
-                  });
-                  const { url } = await uploadRes.json();
-                  await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
-                    title: pendingVideoText || t.untitledVideo,
-                    videoUrl: url,
-                    thumbnailUrl: url,
-                  });
+                  const url = await uploadVideoDirectToCloudinary(pendingVideo.videoFile);
+
+await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
+  title: pendingVideoText || t.untitledVideo,
+  videoUrl: url,
+  thumbnailUrl: url,
+});
                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                  toast({ title: t.videoUploadedTitle });
