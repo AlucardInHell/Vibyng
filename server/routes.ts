@@ -406,6 +406,61 @@ app.post("/api/auth/login", async (req, res) => {
       res.status(400).json({ message: "Errore nel caricamento audio", detail: err?.message });
     }
   });
+
+  // === CLOUDINARY SIGNED VIDEO UPLOAD ===
+app.post("/api/cloudinary/sign-video-upload", async (req, res) => {
+  try {
+    const userId = Number(req.body.userId);
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID mancante" });
+    }
+
+    const { v2: cloudinary } = await import("cloudinary");
+
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+
+    if (
+      !process.env.CLOUDINARY_CLOUD_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET
+    ) {
+      return res.status(500).json({ message: "Configurazione Cloudinary mancante" });
+    }
+
+    const timestamp = Math.round(Date.now() / 1000);
+    const folder = "vibyng/videos";
+    const publicId = `video_${userId}_${Date.now()}`;
+
+    const signature = cloudinary.utils.api_sign_request(
+      {
+        timestamp,
+        folder,
+        public_id: publicId,
+      },
+      process.env.CLOUDINARY_API_SECRET
+    );
+
+    res.json({
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      timestamp,
+      folder,
+      publicId,
+      signature,
+    });
+  } catch (err: any) {
+    console.error("[cloudinary-sign-video-upload] error:", err?.message);
+    res.status(400).json({
+      message: "Errore nella firma dell'upload video",
+      detail: err?.message,
+    });
+  }
+});
   // === VIDEO UPLOAD (Cloudinary) ===
   app.post("/api/uploads/video", async (req, res) => {
     try {
