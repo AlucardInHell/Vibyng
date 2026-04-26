@@ -847,46 +847,46 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={`w-full grid ${isArtist ? "grid-cols-7" : "grid-cols-6"} p-1`}>
-          <TabsTrigger value="posts" className="px-1 text-xs">
-            <FileText className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">{t.posts}</span>
-          </TabsTrigger>
-          <TabsTrigger value="photos" className="px-1 text-xs">
-            <ImageIcon className="w-4 h-4 sm:mr-1" />
-           <span className="hidden sm:inline">{t.photos}</span>
-          </TabsTrigger>
-          <TabsTrigger value="videos" className="px-1 text-xs">
-            <Video className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">{t.videos}</span>
-          </TabsTrigger>
-          <TabsTrigger value="messages" className="px-1 text-xs">
-            <MessageCircle className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">{t.messages}</span>
-          </TabsTrigger>
-          {isArtist && (
-  <TabsTrigger value="goals" className="px-1 text-xs">
-    <Trophy className="w-4 h-4 sm:mr-1" />
-    <span className="hidden sm:inline">{t.goals}</span>
+        <TabsList className="w-full grid grid-cols-6 p-1">
+  <TabsTrigger value="posts" className="px-1 text-xs">
+    <FileText className="w-4 h-4 sm:mr-1" />
+    <span className="hidden sm:inline">{t.posts}</span>
   </TabsTrigger>
-)}
-             {isArtist && (
-  <TabsTrigger value="goals" className="px-1 text-xs">
-    <Target className="w-4 h-4 sm:mr-1" />
-    <span className="hidden sm:inline">{t.goals}</span>
+
+  <TabsTrigger value="photos" className="px-1 text-xs">
+    <ImageIcon className="w-4 h-4 sm:mr-1" />
+    <span className="hidden sm:inline">{t.photos}</span>
   </TabsTrigger>
-)}
-         <TabsTrigger value="events" className="px-1 text-xs">
-            <Calendar className="w-4 h-4 sm:mr-1" />
-            <span className="hidden sm:inline">{t.events}</span>
-          </TabsTrigger>
-          {isFan && (
-            <TabsTrigger value="connections" className="px-1 text-xs">
-              <Users className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">{t.connections}</span>
-            </TabsTrigger>
-          )}
-        </TabsList>
+
+  <TabsTrigger value="videos" className="px-1 text-xs">
+    <Video className="w-4 h-4 sm:mr-1" />
+    <span className="hidden sm:inline">{t.videos}</span>
+  </TabsTrigger>
+
+  <TabsTrigger value="messages" className="px-1 text-xs">
+    <MessageCircle className="w-4 h-4 sm:mr-1" />
+    <span className="hidden sm:inline">{t.messages}</span>
+  </TabsTrigger>
+
+  {isArtist && (
+    <TabsTrigger value="goals" className="px-1 text-xs">
+      <Trophy className="w-4 h-4 sm:mr-1" />
+      <span className="hidden sm:inline">{t.goals}</span>
+    </TabsTrigger>
+  )}
+
+  <TabsTrigger value="events" className="px-1 text-xs">
+    <Calendar className="w-4 h-4 sm:mr-1" />
+    <span className="hidden sm:inline">{t.events}</span>
+  </TabsTrigger>
+
+  {isFan && (
+    <TabsTrigger value="connections" className="px-1 text-xs">
+      <Users className="w-4 h-4 sm:mr-1" />
+      <span className="hidden sm:inline">{t.connections}</span>
+    </TabsTrigger>
+  )}
+</TabsList>
 
         {/* Tab Post */}
         <TabsContent value="posts" className="mt-4">
