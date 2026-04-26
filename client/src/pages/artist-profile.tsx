@@ -1005,54 +1005,8 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                     </CardContent>
                   )}
               </Card>
-
-{isArtist && !isOwnProfile && index === 0 && (
-  <Card className="mt-3">
-    <CardHeader className="pb-2">
-      <div className="flex items-center gap-2">
-        <Heart className="w-5 h-5 text-primary" />
-        <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <p className="text-sm text-muted-foreground mb-4">
-        {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
-      </p>
-      <div className="flex gap-2 mb-3">
-        {["5", "10", "25", "50"].map((amount) => (
-          <Button
-            key={amount}
-            variant={supportAmount === amount ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSupportAmount(amount)}
-          >
-            {amount}€
-          </Button>
+           </>
         ))}
-      </div>
-      <div className="flex gap-2">
-        <Input
-          type="number"
-          value={supportAmount}
-          onChange={(e) => setSupportAmount(e.target.value)}
-          min="1"
-          className="flex-1"
-        />
-        <Button
-          onClick={() => supportMutation.mutate(supportAmount)}
-          disabled={supportMutation.isPending}
-        >
-          {supportMutation.isPending ? "..." : t.supportButton}
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground mt-2 text-center">
-        {t.supportReward}
-      </p>
-    </CardContent>
-  </Card>
-)}
-  </>
-))}
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">{t.noPosts}</p>
@@ -1382,9 +1336,9 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 {/* Tab Obiettivi — solo Artista */}
 {isArtist && (
   <TabsContent value="goals" className="mt-4">
-    {goals && goals.length > 0 ? (
-      <div className="flex flex-col gap-3">
-        {goals.map((goal) => {
+    <div className="flex flex-col gap-3">
+      {goals && goals.length > 0 ? (
+        goals.map((goal) => {
           const current = Number(goal.currentAmount ?? 0);
           const target = Number(goal.targetAmount ?? 0);
           const goalProgress = target > 0 ? Math.min(100, (current / target) * 100) : 0;
@@ -1394,6 +1348,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               <CardContent className="p-4 space-y-3">
                 <div>
                   <h4 className="font-medium">{goal.title}</h4>
+
                   {goal.description && (
                     <p className="text-sm text-muted-foreground mt-1">
                       {goal.description}
@@ -1414,60 +1369,67 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
               </CardContent>
             </Card>
           );
-        })}
+        })
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <Trophy className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">{t.noGoals}</p>
+          </CardContent>
+        </Card>
+      )}
 
-        {isArtist && !isOwnProfile && (
-          <Card className="mt-1">
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
-              </p>
+      {!isOwnProfile && (
+        <Card className="mt-1">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-primary" />
+              <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
+            </div>
+          </CardHeader>
 
-              <div className="flex gap-2 mb-3">
-                {["5", "10", "25", "50"].map((amount) => (
-                  <Button
-                    key={amount}
-                    variant={supportAmount === amount ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSupportAmount(amount)}
-                  >
-                    {amount}€
-                  </Button>
-                ))}
-              </div>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
+            </p>
 
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  value={supportAmount}
-                  onChange={(e) => setSupportAmount(e.target.value)}
-                  min="1"
-                  className="flex-1"
-                />
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {["5", "10", "25", "50"].map((amount) => (
                 <Button
-                  onClick={() => supportMutation.mutate(supportAmount)}
-                  disabled={supportMutation.isPending}
+                  key={amount}
+                  variant={supportAmount === amount ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSupportAmount(amount)}
                 >
-                  {supportMutation.isPending ? "..." : t.supportButton}
+                  {amount}€
                 </Button>
-              </div>
+              ))}
+            </div>
 
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                {t.supportReward}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    ) : (
-      <p className="text-center text-muted-foreground py-8">{t.noGoals}</p>
-    )}
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                value={supportAmount}
+                onChange={(e) => setSupportAmount(e.target.value)}
+                min="1"
+                className="flex-1"
+              />
+
+              <Button
+                onClick={() => supportMutation.mutate(supportAmount)}
+                disabled={supportMutation.isPending}
+              >
+                {supportMutation.isPending ? "..." : t.supportButton}
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              {t.supportReward}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   </TabsContent>
 )}
 
@@ -1579,54 +1541,8 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                       </div>
                     </CardContent>
                  </Card>
-
-{isArtist && !isOwnProfile && index === 0 && (
-  <Card className="mt-3">
-    <CardHeader className="pb-2">
-      <div className="flex items-center gap-2">
-        <Heart className="w-5 h-5 text-primary" />
-        <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
-      </div>
-    </CardHeader>
-    <CardContent>
-      <p className="text-sm text-muted-foreground mb-4">
-        {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
-      </p>
-      <div className="flex gap-2 mb-3">
-        {["5", "10", "25", "50"].map((amount) => (
-          <Button
-            key={amount}
-            variant={supportAmount === amount ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSupportAmount(amount)}
-          >
-            {amount}€
-          </Button>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <Input
-          type="number"
-          value={supportAmount}
-          onChange={(e) => setSupportAmount(e.target.value)}
-          min="1"
-          className="flex-1"
-        />
-        <Button
-          onClick={() => supportMutation.mutate(supportAmount)}
-          disabled={supportMutation.isPending}
-        >
-          {supportMutation.isPending ? "..." : t.supportButton}
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground mt-2 text-center">
-        {t.supportReward}
-      </p>
-    </CardContent>
-  </Card>
-)}
-  </>
-))}
+                 </>
+               ))}
               </div>
             ) : (!isArtist && profileAttendingEvents.length > 0) ? (
                 <div className="flex flex-col gap-3 mt-2">
