@@ -444,12 +444,21 @@ function Router() {
 }
 function MessagesButton() {
   const { t } = useLanguage();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const isActive = location === "/messages";
+  const goToMessages = () => {
+  if (location !== "/messages") {
+    setLocation("/messages");
+  }
+
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, 0);
+};
   const storedUser = localStorage.getItem("vibyng-user");
   const userId = storedUser ? JSON.parse(storedUser).id : 0;
   const { data: unreadCount = 0 } = useQuery<number>({
-    queryKey: ["/api/messages/unread", userId],
+   queryKey: ["/api/messages/unread", userId],
    queryFn: async () => {
       const res = await fetch(`/api/messages/unread/${userId}?t=${Date.now()}`);
       return res.json();
@@ -459,8 +468,8 @@ function MessagesButton() {
   });
 
   return (
-    <Link href="/messages">
-      <button
+    <button
+  onClick={goToMessages}
         className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors relative ${
   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
 }`}
@@ -475,13 +484,21 @@ function MessagesButton() {
         </div>
         <span className="max-w-full truncate text-[11px] font-medium leading-none">{t.messages}</span>
       </button>
-    </Link>
   );
 }
 function NotificationBell() {
   const { t } = useLanguage();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const isActive = location === "/notifications";
+  const goToNotifications = () => {
+  if (location !== "/notifications") {
+    setLocation("/notifications");
+  }
+
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, 0);
+};
   const storedUser = localStorage.getItem("vibyng-user");
   const userId = storedUser ? JSON.parse(storedUser).id : 0;
   const { data: notifications = [] } = useQuery<any[]>({
@@ -495,8 +512,8 @@ function NotificationBell() {
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
 
   return (
-    <Link href="/notifications">
-      <button
+    <button
+  onClick={goToNotifications}
         className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors relative ${
   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
 }`}
@@ -511,7 +528,6 @@ function NotificationBell() {
         </div>
         <span className="max-w-full truncate text-[11px] font-medium leading-none">{t.notifications}</span>
       </button>
-    </Link>
   );
 }
 function BottomNav() {
@@ -582,6 +598,22 @@ function BottomNav() {
     );
   }
 
+if (item.path === "/me") {
+  return (
+    <button
+      key={item.path}
+      onClick={() => goToTop("/me")}
+      className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors ${
+        isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+      }`}
+      data-testid={`nav-${item.label.toLowerCase()}`}
+    >
+      <item.icon className="w-5 h-5" />
+      <span className="max-w-full truncate text-[11px] font-medium leading-none">{item.label}</span>
+    </button>
+  );
+}
+    
   return (
     <Link key={item.path} href={item.path}>
       <button
@@ -1152,6 +1184,16 @@ function SettingsMenu() {
 }
 function AppLayout() {
   const [location, setLocation] = useLocation();
+
+  const goToTop = (path: string) => {
+  if (location !== path) {
+    setLocation(path);
+  }
+
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, 0);
+};
 
   const handleLogoClick = () => {
     if (location !== "/") {
