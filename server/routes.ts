@@ -727,6 +727,30 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
     }
   });
 
+  app.delete("/api/goals/:goalId", async (req, res) => {
+  try {
+    const goalId = Number(req.params.goalId);
+    const artistId = Number(req.body.artistId);
+
+    if (!goalId || !artistId) {
+      return res.status(400).json({ message: "Dati mancanti" });
+    }
+
+    const deleted = await storage.deleteGoal(goalId, artistId);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Obiettivo non trovato o non autorizzato" });
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({
+      message: "Errore nell'eliminazione dell'obiettivo",
+      detail: err?.message,
+    });
+  }
+}); 
+  
   // === SUPPORTS ===
 app.post(api.supports.create.path, async (req, res) => {
     try {
