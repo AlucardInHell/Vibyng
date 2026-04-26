@@ -758,7 +758,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             {artist.genre && (
               <Badge variant="secondary" className="mt-1">{artist.genre}</Badge>
             )}
-           <div className="flex items-center gap-4 mt-3">
+           <div className="flex items-center justify-center gap-3 mt-3">
               {isArtist && !isOwnProfile ? (
                 <button
                   className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
@@ -773,10 +773,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                   <span className="text-sm font-medium">{followersData?.count ?? 0} {t.follower}</span>
                 </div>
               )}
-              <div className="flex items-center gap-1 text-primary">
-                <Zap className="w-4 h-4" />
-                <span className="text-sm font-medium">{artist.vibyngPoints} VibyngPoints</span>
-              </div>
+             <div className="flex items-center gap-1 text-primary min-w-0">
+  <Zap className="w-4 h-4 shrink-0" />
+  <span className="text-[12px] font-medium leading-none whitespace-nowrap">
+    {artist.vibyngPoints} VibyngPoints
+  </span>
+</div>
             </div>
             {!isOwnProfile && (
               <Button
