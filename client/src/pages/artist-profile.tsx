@@ -122,6 +122,10 @@ startConversation: "Inizia una conversazione",
 
 activeGoal: "Obiettivo Attivo",
 goalReached: "raggiunto",
+goals: "Obiettivi",
+noGoals: "Nessun obiettivo disponibile",
+raised: "Raccolto",
+target: "Obiettivo",    
   },
 
   en: {
@@ -213,6 +217,10 @@ startConversation: "Start a conversation",
 
 activeGoal: "Active Goal",
 goalReached: "reached",
+goals: "Goals",
+noGoals: "No goals available",
+raised: "Raised",
+target: "Target",    
   },
 } as const;
 
@@ -717,11 +725,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
   const isArtist = artist.role === "artist";
   const isFan = artist.role === "fan" || !artist.role;
 
-  const activeGoal = goals?.find((g) => !g.isCompleted);
-  const progress = activeGoal
-    ? (Number(activeGoal.currentAmount) / Number(activeGoal.targetAmount)) * 100
-    : 0;
-
   return (
     <div className="flex flex-col gap-4">
 
@@ -844,7 +847,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-6 p-1">
+        <TabsList className={`w-full grid ${isArtist ? "grid-cols-7" : "grid-cols-6"} p-1`}>
           <TabsTrigger value="posts" className="px-1 text-xs">
             <FileText className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">{t.posts}</span>
@@ -867,6 +870,12 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
              <span className="hidden sm:inline">{t.songs}</span>
             </TabsTrigger>
           )}
+             {isArtist && (
+  <TabsTrigger value="goals" className="px-1 text-xs">
+    <Target className="w-4 h-4 sm:mr-1" />
+    <span className="hidden sm:inline">{t.goals}</span>
+  </TabsTrigger>
+)}
          <TabsTrigger value="events" className="px-1 text-xs">
             <Calendar className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">{t.events}</span>
@@ -1363,6 +1372,99 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
           </TabsContent>
         )}
 
+{/* Tab Obiettivi — solo Artista */}
+{isArtist && (
+  <TabsContent value="goals" className="mt-4">
+    {goals && goals.length > 0 ? (
+      <div className="flex flex-col gap-3">
+        {goals.map((goal) => {
+          const current = Number(goal.currentAmount ?? 0);
+          const target = Number(goal.targetAmount ?? 0);
+          const goalProgress = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+
+          return (
+            <Card key={goal.id} className="hover-elevate">
+              <CardContent className="p-4 space-y-3">
+                <div>
+                  <h4 className="font-medium">{goal.title}</h4>
+                  {goal.description && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {goal.description}
+                    </p>
+                  )}
+                </div>
+
+                <Progress value={goalProgress} className="h-2" />
+
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{t.raised}: €{current.toFixed(2)}</span>
+                  <span>{t.target}: €{target.toFixed(2)}</span>
+                </div>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  {goalProgress.toFixed(1)}% {t.goalReached}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
+
+        {isArtist && !isOwnProfile && (
+          <Card className="mt-1">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
+              </p>
+
+              <div className="flex gap-2 mb-3">
+                {["5", "10", "25", "50"].map((amount) => (
+                  <Button
+                    key={amount}
+                    variant={supportAmount === amount ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSupportAmount(amount)}
+                  >
+                    {amount}€
+                  </Button>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={supportAmount}
+                  onChange={(e) => setSupportAmount(e.target.value)}
+                  min="1"
+                  className="flex-1"
+                />
+                <Button
+                  onClick={() => supportMutation.mutate(supportAmount)}
+                  disabled={supportMutation.isPending}
+                >
+                  {supportMutation.isPending ? "..." : t.supportButton}
+                </Button>
+              </div>
+
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                {t.supportReward}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    ) : (
+      <p className="text-center text-muted-foreground py-8">{t.noGoals}</p>
+    )}
+  </TabsContent>
+)}
+
+        
         {/* Tab Eventi — solo Artista */}
           <TabsContent value="events" className="mt-4">
             <div className="flex items-center justify-between mb-2">
@@ -1616,31 +1718,6 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
         </TabsContent>
       </Tabs>
 
-      {/* Obiettivo attivo — solo Artista */}
-      {isArtist && activeGoal && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">{t.activeGoal}</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <h3 className="font-medium mb-1">{activeGoal.title}</h3>
-            {activeGoal.description && (
-              <p className="text-sm text-muted-foreground mb-3">{activeGoal.description}</p>
-            )}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{Number(activeGoal.currentAmount).toFixed(2)}</span>
-                <span>{Number(activeGoal.targetAmount).toFixed(2)}</span>
-              </div>
-              <Progress value={progress} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">{progress.toFixed(1)}% {t.goalReached}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
    
      {selectedPhoto && (
   <>
