@@ -42,6 +42,9 @@ function getCurrentUserId(): number {
 }
 const CURRENT_USER_ID = getCurrentUserId();
 type AppLanguage = "it" | "en";
+const MB = 1024 * 1024;
+const MAX_STORY_IMAGE_SIZE_MB = 40;
+const MAX_STORY_IMAGE_SIZE_BYTES = MAX_STORY_IMAGE_SIZE_MB * MB;
 
 const homeTranslations = {
   it: {
@@ -71,6 +74,8 @@ const homeTranslations = {
     selectImageDescription: "Devi selezionare un'immagine per la storia",
     uploadErrorTitle: "Errore upload",
     uploadImageErrorDescription: "Impossibile caricare l'immagine",
+    fileTooLargeTitle: "File troppo grande",
+    storyImageTooLargeDescription: "La foto della storia deve essere inferiore a 40MB",
     storyPublishedTitle: "Storia pubblicata!",
     storyPublishedDescription: "La tua storia sarà visibile per 24 ore",
     storyPublishErrorDescription: "Impossibile pubblicare la storia",
@@ -121,6 +126,8 @@ roleRecordLabel: "Etichetta",
     selectImageDescription: "You need to select an image for the story",
     uploadErrorTitle: "Upload error",
     uploadImageErrorDescription: "Unable to upload the image",
+    fileTooLargeTitle: "File too large",
+    storyImageTooLargeDescription: "The story photo must be under 40MB",
     storyPublishedTitle: "Story published!",
     storyPublishedDescription: "Your story will be visible for 24 hours",
     storyPublishErrorDescription: "Unable to publish the story",
@@ -423,16 +430,30 @@ function Stories() {
   };
   
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPreviewImage(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > MAX_STORY_IMAGE_SIZE_BYTES) {
+    toast({
+      title: t.fileTooLargeTitle,
+      description: t.storyImageTooLargeDescription,
+      variant: "destructive",
+    });
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setSelectedFile(null);
+    setPreviewImage(null);
+    return;
+  }
+
+  setSelectedFile(file);
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    setPreviewImage(event.target?.result as string);
   };
+  reader.readAsDataURL(file);
+};
   
  const handlePublishStory = async () => {
   if (!selectedFile) {
