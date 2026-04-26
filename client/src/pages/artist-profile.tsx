@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Music2, Target, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar, Share2 } from "lucide-react";
+import { Music2, Trophy, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar, Share2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
@@ -865,11 +865,11 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
             <span className="hidden sm:inline">{t.messages}</span>
           </TabsTrigger>
           {isArtist && (
-            <TabsTrigger value="songs" className="px-1 text-xs">
-              <Music className="w-4 h-4 sm:mr-1" />
-             <span className="hidden sm:inline">{t.songs}</span>
-            </TabsTrigger>
-          )}
+  <TabsTrigger value="goals" className="px-1 text-xs">
+    <Trophy className="w-4 h-4 sm:mr-1" />
+    <span className="hidden sm:inline">{t.goals}</span>
+  </TabsTrigger>
+)}
              {isArtist && (
   <TabsTrigger value="goals" className="px-1 text-xs">
     <Target className="w-4 h-4 sm:mr-1" />
