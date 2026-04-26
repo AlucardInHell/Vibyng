@@ -476,6 +476,25 @@ useEffect(() => {
     enabled: !!artist && artist.role === "artist",
   });
 
+  const { data: myPlaylistSongs = [] } = useQuery<ArtistSong[]>({
+  queryKey: [`/api/artists/${currentUserId}/songs`],
+  enabled: !!currentUserId,
+});
+
+  const isSongAlreadyInPlaylist = (song: ArtistSong): boolean => {
+  return (
+    addedSongs.has(song.id) ||
+    myPlaylistSongs.some((playlistSong: ArtistSong) => {
+      const sameAudio = playlistSong.audioUrl && playlistSong.audioUrl === song.audioUrl;
+      const sameTitleAndDuration =
+        playlistSong.title === song.title &&
+        Number(playlistSong.duration ?? 0) === Number(song.duration ?? 0);
+
+      return Boolean(sameAudio || sameTitleAndDuration);
+    })
+  );
+};
+
   const { data: followersData } = useQuery<{ count: number }>({
     queryKey: [`/api/artists/${id}/followers/count`],
   });
@@ -680,32 +699,38 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     }
   };
 
- const handleAddToPlaylist = async (song: ArtistSong) => {
-    if (addedSongs.has(song.id)) {
-     toast({
-  title: t.alreadyInPlaylistTitle,
-  description: `"${song.title}" ${t.alreadyInPlaylistDescription}`,
-});
-      return;
-    }
-    try {
-      await apiRequest("POST", `/api/artists/${currentUserId}/songs`, {
-        artistId: currentUserId,
-        title: song.title,
-        audioUrl: song.audioUrl,
-        coverUrl: song.coverUrl,
-        duration: song.duration,
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/songs`] });
-      setAddedSongs(prev => new Set(prev).add(song.id));
-      toast({
-  title: t.addedToPlaylistTitle,
-  description: `"${song.title}" ${t.addedToPlaylistDescription}`,
-});
-    } catch {
-      toast({ title: t.error, variant: "destructive" });
-    }
-  };
+const handleAddToPlaylist = async (song: ArtistSong) => {
+  if (isSongAlreadyInPlaylist(song)) {
+    toast({
+      title: t.alreadyInPlaylistTitle,
+      description: `"${song.title}" ${t.alreadyInPlaylistDescription}`,
+    });
+    return;
+  }
+
+  try {
+    await apiRequest("POST", `/api/artists/${currentUserId}/songs`, {
+      artistId: currentUserId,
+      title: song.title,
+      audioUrl: song.audioUrl,
+      coverUrl: song.coverUrl,
+      duration: song.duration,
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: [`/api/artists/${currentUserId}/songs`],
+    });
+
+    setAddedSongs((prev) => new Set(prev).add(song.id));
+
+    toast({
+      title: t.addedToPlaylistTitle,
+      description: `"${song.title}" ${t.addedToPlaylistDescription}`,
+    });
+  } catch {
+    toast({ title: t.error, variant: "destructive" });
+  }
+};
 
   if (artistLoading) {
     return (
@@ -1316,10 +1341,19 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
                         {song.duration && <span className="text-xs text-muted-foreground">{formatDuration(song.duration)}</span>}
                       </div>
                      {!isOwnProfile && (
-                        <Button size="icon" variant="ghost" onClick={() => handleAddToPlaylist(song)}>
-                          {addedSongs.has(song.id) ? <Check className="w-5 h-5 text-green-500" /> : <Plus className="w-5 h-5" />}
-                        </Button>
-                      )}
+  <Button
+    size="icon"
+    variant="ghost"
+    onClick={() => handleAddToPlaylist(song)}
+    disabled={isSongAlreadyInPlaylist(song)}
+  >
+    {isSongAlreadyInPlaylist(song) ? (
+      <Check className="w-5 h-5 text-green-500" />
+    ) : (
+      <Plus className="w-5 h-5" />
+    )}
+  </Button>
+)}
                       <Button size="icon" variant="ghost" onClick={() => handlePlaySong(song)}>
                         {currentSong?.id === song.id && isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                       </Button>
