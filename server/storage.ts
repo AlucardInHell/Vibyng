@@ -83,6 +83,7 @@ export interface IStorage {
   getAllVideosForFeed(): Promise<any[]>;
   getSongsByArtist(artistId: number): Promise<ArtistSong[]>;
   createSong(song: InsertArtistSong): Promise<ArtistSong>;
+  songAlreadyExistsForArtist(artistId: number, audioUrl: string): Promise<boolean>;
 
   // Followers
   getFollowersCount(artistId: number): Promise<number>;
@@ -372,6 +373,16 @@ async likePost(postId: number, userId: number): Promise<void> {
       .where(eq(artistSongs.artistId, artistId))
       .orderBy(desc(artistSongs.createdAt));
   }
+
+  async songAlreadyExistsForArtist(artistId: number, audioUrl: string): Promise<boolean> {
+  const existing = await db
+    .select({ id: artistSongs.id })
+    .from(artistSongs)
+    .where(and(eq(artistSongs.artistId, artistId), eq(artistSongs.audioUrl, audioUrl)))
+    .limit(1);
+
+  return existing.length > 0;
+}
 
   async createSong(insertSong: InsertArtistSong): Promise<ArtistSong> {
     const [song] = await db.insert(artistSongs).values(insertSong).returning();
