@@ -1097,6 +1097,21 @@ app.post("/api/artists/:artistId/songs", async (req, res) => {
     try {
       const artistId = Number(req.params.artistId);
       const { title, audioUrl, coverUrl, duration } = req.body;
+      const artistId = Number(req.params.artistId);
+const audioUrl = String(req.body.audioUrl ?? "");
+
+if (!audioUrl) {
+  return res.status(400).json({ message: "Audio URL mancante" });
+}
+
+const alreadyExists = await storage.songAlreadyExistsForArtist(artistId, audioUrl);
+
+if (alreadyExists) {
+  return res.status(409).json({
+    message: "Canzone già presente nella playlist",
+    code: "SONG_ALREADY_IN_PLAYLIST",
+  });
+}
       const song = await storage.createSong({ artistId, title, audioUrl, coverUrl, duration });
       res.status(201).json(song);
     } catch (err: any) {
