@@ -146,17 +146,18 @@ useEffect(() => {
   }, [savedVideoIds]);
 
   useEffect(() => {
-    if (!flowVideos.length) return;
-    setLikeCounts((prev) => {
-      const next = { ...prev };
-      flowVideos.forEach((video) => {
-        if (next[video.id] === undefined) {
-          next[video.id] = Number((video as any).likesCount ?? 0);
-        }
-      });
-      return next;
+  if (!flowVideos.length) return;
+
+  setLikeCounts((prev) => {
+    const next = { ...prev };
+
+    flowVideos.forEach((video) => {
+      next[video.id] = Number((video as any).likesCount ?? 0);
     });
-  }, [flowVideos]);
+
+    return next;
+  });
+}, [flowVideos]);
 
   const forYouVideos = useMemo(() => {
     return [...flowVideos].sort(
@@ -302,7 +303,22 @@ useEffect(() => {
     }
 
     await refetchActiveLiked();
-    await queryClient.invalidateQueries({ queryKey: ["/api/users", video.artist.id, "videos"] });
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/users", video.artist.id, "videos"],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/flow/client"],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/videos", video.id, "liked", currentUserId],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/posts"],
+});
   };
 
   const handleShare = async (video: FlowVideo) => {
