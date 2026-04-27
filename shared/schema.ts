@@ -23,6 +23,8 @@ export const users = pgTable("users", {
   city: text("city"), // Città
   emailVerified: boolean("email_verified").notNull().default(false),
   verificationToken: text("verification_token"),
+  stripeConnectedAccountId: text("stripe_connected_account_id"),
+  stripeOnboardingComplete: boolean("stripe_onboarding_complete").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -54,9 +56,15 @@ export const supports = pgTable("supports", {
   id: serial("id").primaryKey(),
   fanId: integer("fan_id").notNull().references(() => users.id),
   artistId: integer("artist_id").notNull().references(() => users.id),
+  goalId: integer("goal_id").references(() => artistGoals.id, { onDelete: "set null" }),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   message: text("message"),
   isSubscription: boolean("is_subscription").notNull().default(false),
+  status: text("status").notNull().default("paid"),
+  stripeSessionId: text("stripe_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeInvoiceId: text("stripe_invoice_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -233,6 +241,10 @@ export const supportsRelations = relations(supports, ({ one }) => ({
     fields: [supports.artistId],
     references: [users.id],
     relationName: "artist",
+  }),
+  goal: one(artistGoals, {
+    fields: [supports.goalId],
+    references: [artistGoals.id],
   }),
 }));
 
