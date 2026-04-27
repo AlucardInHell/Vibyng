@@ -84,6 +84,19 @@ supportArtistDescriptionSuffix: "a raggiungere i suoi obiettivi!",
 supportButton: "Supporta",
 supportReward: "Riceverai 50 VibyngPoints per il tuo supporto!",
 
+supportThisGoal: "Supporta questo obiettivo",
+openSupportModal: "Apri supporto",
+oneTimeSupport: "Una tantum",
+monthlySupport: "Mensile",
+monthlySupportTitle: "Supporter mensile",
+monthlySupportPrice: "€4,99 / mese",
+monthlySupportDescription: "Sostieni questo artista ogni mese",
+customAmount: "Importo libero",
+continueToStripe: "Continua con Stripe",
+secureStripePayment: "Pagamento sicuro gestito da Stripe",
+invalidSupportAmount: "Inserisci un importo valido",
+stripeCheckoutError: "Non è stato possibile aprire il pagamento Stripe",    
+
 noPosts: "Nessun post ancora.",
 noPhotos: "Nessuna foto disponibile",
 noVideos: "Nessun video disponibile",
@@ -178,6 +191,19 @@ supportArtistDescriptionPrefix: "Help",
 supportArtistDescriptionSuffix: "reach their goals!",
 supportButton: "Support",
 supportReward: "You will receive 50 VibyngPoints for your support!",
+
+supportThisGoal: "Support this goal",
+openSupportModal: "Open support",
+oneTimeSupport: "One-time",
+monthlySupport: "Monthly",
+monthlySupportTitle: "Monthly supporter",
+monthlySupportPrice: "€4.99 / month",
+monthlySupportDescription: "Support this artist every month",
+customAmount: "Custom amount",
+continueToStripe: "Continue with Stripe",
+secureStripePayment: "Secure payment powered by Stripe",
+invalidSupportAmount: "Enter a valid amount",
+stripeCheckoutError: "Unable to open Stripe payment",    
 
 noPosts: "No posts yet.",
 noPhotos: "No photos available",
@@ -337,6 +363,9 @@ export default function ArtistProfile() {
   const { mentionQuery: photoCommentMentionQuery, showMentions: showPhotoCommentMentions, handleTextChange: handlePhotoCommentTextChange, insertMention: insertPhotoCommentMention, closeMentions: closePhotoCommentMentions } = useMention();
   const { mentionQuery: videoCommentMentionQuery, showMentions: showVideoCommentMentions, handleTextChange: handleVideoCommentTextChange, insertMention: insertVideoCommentMention, closeMentions: closeVideoCommentMentions } = useMention();
   const [supportAmount, setSupportAmount] = useState("5");
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [supportMode, setSupportMode] = useState<"one_time" | "monthly">("one_time");
+  const [supportGoalId, setSupportGoalId] = useState<number | null>(null);
   const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
   const [postText, setPostText] = useState("");
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
@@ -605,28 +634,53 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
   });
 
   const supportMutation = useMutation({
-    mutationFn: async (amount: string) => {
-      return apiRequest("POST", "/api/supports", {
-        fanId: currentUserId,
-        artistId: artistId,
-        amount: amount,
-        message: "Supporto dall'app Vibyng",
-        isSubscription: false,
-      });
-    },
-    onSuccess: async () => {
-  await queryClient.invalidateQueries({ queryKey: [`/api/artists/${id}/goals`] });
-  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
-  await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
-  await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
-  await queryClient.invalidateQueries({ queryKey: [`/api/users/${id}`] });
+  mutationFn: async ({
+    mode,
+    amount,
+    goalId,
+  }: {
+    mode: "one_time" | "monthly";
+    amount: string;
+    goalId: number | null;
+  }) => {
+    const numericAmount = Number(amount);
 
-  toast({ title: t.supportThanksTitle, description: t.supportThanksDescription });
-},
-    onError: () => {
-      toast({ title: t.error, description: t.supportErrorDescription, variant: "destructive" });
-    },
-  });
+    if (mode === "one_time" && (!numericAmount || numericAmount < 1)) {
+      throw new Error(t.invalidSupportAmount);
+    }
+
+    const res = await apiRequest("POST", "/api/stripe/create-support-checkout-session", {
+      fanId: currentUserId,
+      artistId,
+      goalId,
+      mode,
+      amount: mode === "monthly" ? 4.99 : numericAmount,
+    });
+
+    return res.json();
+  },
+
+  onSuccess: (data: { url?: string }) => {
+    if (!data?.url) {
+      toast({
+        title: t.error,
+        description: t.stripeCheckoutError,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    window.location.href = data.url;
+  },
+
+  onError: () => {
+    toast({
+      title: t.error,
+      description: t.stripeCheckoutError,
+      variant: "destructive",
+    });
+  },
+});
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isOwnProfile) return;
@@ -1400,6 +1454,21 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
                 <p className="text-xs text-muted-foreground text-center">
                   {goalProgress.toFixed(1)}% {t.goalReached}
                 </p>
+                {!isOwnProfile && (
+  <Button
+    variant="outline"
+    size="sm"
+    className="w-full"
+    onClick={() => {
+      setSupportGoalId(goal.id);
+      setSupportMode("one_time");
+      setSupportAmount("5");
+      setSupportOpen(true);
+    }}
+  >
+    {t.supportThisGoal}
+  </Button>
+)}
               </CardContent>
             </Card>
           );
@@ -1414,55 +1483,34 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
       )}
 
       {!isOwnProfile && (
-        <Card className="mt-1">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
-            </div>
-          </CardHeader>
+  <Card className="mt-1">
+    <CardHeader className="pb-2">
+      <div className="flex items-center gap-2">
+        <Heart className="w-5 h-5 text-primary" />
+        <CardTitle className="text-lg">{t.supportArtist}</CardTitle>
+      </div>
+    </CardHeader>
 
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
-            </p>
+    <CardContent className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
+      </p>
 
-            <div className="grid grid-cols-4 gap-2 mb-3">
-              {["5", "10", "25", "50"].map((amount) => (
-                <Button
-                  key={amount}
-                  variant={supportAmount === amount ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSupportAmount(amount)}
-                >
-                  {amount}€
-                </Button>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                value={supportAmount}
-                onChange={(e) => setSupportAmount(e.target.value)}
-                min="1"
-                className="flex-1"
-              />
-
-              <Button
-                onClick={() => supportMutation.mutate(supportAmount)}
-                disabled={supportMutation.isPending}
-              >
-                {supportMutation.isPending ? "..." : t.supportButton}
-              </Button>
-            </div>
-
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              {t.supportReward}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      <Button
+        className="w-full"
+        onClick={() => {
+          setSupportGoalId(null);
+          setSupportMode("one_time");
+          setSupportAmount("5");
+          setSupportOpen(true);
+        }}
+      >
+        <Heart className="w-4 h-4 mr-2" />
+        {t.openSupportModal}
+      </Button>
+    </CardContent>
+  </Card>
+)}
     </div>
   </TabsContent>
 )}
@@ -1675,6 +1723,95 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
         </TabsContent>
       </Tabs>
 
+      <Dialog open={supportOpen} onOpenChange={setSupportOpen}>
+  <DialogContent className="max-w-sm">
+    <DialogHeader>
+      <DialogTitle>{t.supportArtist}</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {t.supportArtistDescriptionPrefix} {artist.displayName} {t.supportArtistDescriptionSuffix}
+      </p>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant={supportMode === "one_time" ? "default" : "outline"}
+          onClick={() => setSupportMode("one_time")}
+        >
+          {t.oneTimeSupport}
+        </Button>
+
+        <Button
+          variant={supportMode === "monthly" ? "default" : "outline"}
+          onClick={() => setSupportMode("monthly")}
+        >
+          {t.monthlySupport}
+        </Button>
+      </div>
+
+      {supportMode === "one_time" ? (
+        <div className="space-y-3">
+          <div className="grid grid-cols-4 gap-2">
+            {["5", "10", "25", "50"].map((amount) => (
+              <Button
+                key={amount}
+                variant={supportAmount === amount ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSupportAmount(amount)}
+              >
+                {amount}€
+              </Button>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">{t.customAmount}</p>
+            <Input
+              type="number"
+              min="1"
+              value={supportAmount}
+              onChange={(e) => setSupportAmount(e.target.value)}
+            />
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-primary" />
+              <h4 className="font-semibold">{t.monthlySupportTitle}</h4>
+            </div>
+
+            <p className="text-lg font-bold">{t.monthlySupportPrice}</p>
+
+            <p className="text-sm text-muted-foreground">
+              {t.monthlySupportDescription}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Button
+        className="w-full"
+        disabled={supportMutation.isPending}
+        onClick={() => {
+          supportMutation.mutate({
+            mode: supportMode,
+            amount: supportMode === "monthly" ? "4.99" : supportAmount,
+            goalId: supportGoalId,
+          });
+        }}
+      >
+        {supportMutation.isPending ? "..." : t.continueToStripe}
+      </Button>
+
+      <p className="text-xs text-muted-foreground text-center">
+        {t.secureStripePayment}
+      </p>
+    </div>
+  </DialogContent>
+</Dialog>
    
      {selectedPhoto && (
   <>
