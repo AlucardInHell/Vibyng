@@ -2185,7 +2185,8 @@ app.get("/api/content/:type/:id", async (req, res) => {
 
   app.post("/api/messages", async (req, res) => {
     try {
-      const { senderId, receiverId, content } = req.body;
+      const { content } = req.body;
+
       const senderId = Number(req.body.senderId);
       const receiverId = Number(req.body.receiverId);
 
