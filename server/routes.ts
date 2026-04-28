@@ -9,8 +9,11 @@ import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import crypto from "crypto";
 import { Resend } from "resend";
+import Stripe from "stripe";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
@@ -241,7 +244,134 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
       res.status(400).json({ message: "Errore nel riscatto dei VibyngPoints", detail: err?.message });
     }
   });
-  
+
+// === STRIPE SUPPORT CHECKOUT ===
+  app.post("/api/stripe/create-support-checkout-session", async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({
+          message: "Configurazione Stripe mancante",
+          detail: "STRIPE_SECRET_KEY non è impostata nelle variabili ambiente",
+        });
+      }
+
+      const fanId = Number(req.body.fanId);
+      const artistId = Number(req.body.artistId);
+      const goalId = req.body.goalId ? Number(req.body.goalId) : null;
+      const mode = String(req.body.mode || "one_time");
+      const amount = Number(req.body.amount);
+
+      if (!fanId || !artistId) {
+        return res.status(400).json({
+          message: "Dati mancanti",
+          detail: "fanId e artistId sono obbligatori",
+        });
+      }
+
+      if (fanId === artistId) {
+        return res.status(400).json({
+          message: "Operazione non consentita",
+          detail: "Non puoi supportare economicamente il tuo stesso profilo",
+        });
+      }
+
+      const fan = await storage.getUser(fanId);
+      const artist = await storage.getUser(artistId);
+
+      if (!fan) {
+        return res.status(404).json({
+          message: "Fan non trovato",
+        });
+      }
+
+      if (!artist) {
+        return res.status(404).json({
+          message: "Artista non trovato",
+        });
+      }
+
+      const isMonthly = mode === "monthly";
+      const checkoutMode: Stripe.Checkout.SessionCreateParams.Mode = isMonthly
+        ? "subscription"
+        : "payment";
+
+      const finalAmount = isMonthly ? 4.99 : amount;
+
+      if (!Number.isFinite(finalAmount) || finalAmount < 1) {
+        return res.status(400).json({
+          message: "Importo non valido",
+          detail: "L'importo deve essere almeno pari a 1 euro",
+        });
+      }
+
+      const unitAmount = Math.round(finalAmount * 100);
+
+      const appUrl = (
+        process.env.APP_URL ||
+        req.headers.origin ||
+        "https://vibyng-production.up.railway.app"
+      ).replace(/\/$/, "");
+
+      const productName = isMonthly
+        ? `Supporto mensile a ${artist.displayName}`
+        : `Supporto a ${artist.displayName}`;
+
+      const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: productName,
+            description: goalId
+              ? "Supporto economico collegato a un obiettivo artista su Vibyng"
+              : "Supporto economico artista su Vibyng",
+          },
+          unit_amount: unitAmount,
+          ...(isMonthly
+            ? {
+                recurring: {
+                  interval: "month",
+                },
+              }
+            : {}),
+        },
+        quantity: 1,
+      };
+
+      const session = await stripe.checkout.sessions.create({
+        mode: checkoutMode,
+        payment_method_types: ["card"],
+        customer_email: fan.email || undefined,
+        line_items: [lineItem],
+        success_url: `${appUrl}/artist/${artistId}?support=success`,
+        cancel_url: `${appUrl}/artist/${artistId}?support=cancelled`,
+        client_reference_id: `support_${fanId}_${artistId}_${Date.now()}`,
+        submit_type: isMonthly ? "subscribe" : "donate",
+        metadata: {
+          fanId: String(fanId),
+          artistId: String(artistId),
+          goalId: goalId ? String(goalId) : "",
+          mode,
+          amount: String(finalAmount),
+          source: "vibyng_support",
+        },
+      });
+
+      if (!session.url) {
+        return res.status(500).json({
+          message: "URL Stripe non generato",
+        });
+      }
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("[stripe-support-checkout] error:", err?.message || err);
+
+      res.status(500).json({
+        message: "Errore nella creazione del pagamento Stripe",
+        detail: err?.message,
+      });
+    }
+  });
   // === OBJECT STORAGE ===
   // === AUTH ===
 app.post("/api/auth/register", async (req, res) => {
