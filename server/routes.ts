@@ -374,7 +374,7 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
         payment_method_types: ["card"],
         customer_email: fan.email || undefined,
         line_items: [lineItem],
-        success_url: `${appUrl}/artist/${artistId}?support=success`,
+        success_url: `${appUrl}/artist/${artistId}?support=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${appUrl}/artist/${artistId}?support=cancelled`,
         client_reference_id: `support_${fanId}_${artistId}_${Date.now()}`,
         submit_type: isMonthly ? "subscribe" : "donate",
