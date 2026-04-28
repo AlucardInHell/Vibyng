@@ -194,6 +194,55 @@ await db.execute(sql`
   ON supports (stripe_session_id)
   WHERE stripe_session_id IS NOT NULL
 `);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS user_blocks (
+    id serial PRIMARY KEY,
+    blocker_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    blocked_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamp DEFAULT now(),
+    CONSTRAINT user_blocks_no_self_block CHECK (blocker_id <> blocked_id)
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS user_blocks_blocker_blocked_idx
+  ON user_blocks (blocker_id, blocked_id)
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS user_blocks_blocked_idx
+  ON user_blocks (blocked_id)
+`);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS content_reports (
+    id serial PRIMARY KEY,
+    reporter_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    target_type text NOT NULL,
+    target_id text NOT NULL,
+    target_owner_id integer REFERENCES users(id) ON DELETE SET NULL,
+    reason text NOT NULL,
+    details text,
+    status text NOT NULL DEFAULT 'pending',
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS content_reports_target_idx
+  ON content_reports (target_type, target_id)
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS content_reports_reporter_idx
+  ON content_reports (reporter_id)
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS content_reports_status_idx
+  ON content_reports (status)
+`);
   
   // === USERS ===
   app.get(api.users.artists.path, async (_req, res) => {
