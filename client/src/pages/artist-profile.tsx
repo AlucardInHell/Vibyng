@@ -682,6 +682,7 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
 
     console.error("[stripe-checkout-frontend]", error);
   },
+});
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isOwnProfile) return;
