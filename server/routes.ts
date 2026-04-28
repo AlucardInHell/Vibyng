@@ -41,6 +41,22 @@ async function sendMentionNotifications(content: string, authorId: number) {
   } catch {}
 }
 
+async function hasAnyUserBlock(userAId: number, userBId: number): Promise<boolean> {
+  if (!userAId || !userBId) return false;
+
+  const result = await db.execute(sql`
+    SELECT id
+    FROM user_blocks
+    WHERE
+      (blocker_id = ${userAId} AND blocked_id = ${userBId})
+      OR
+      (blocker_id = ${userBId} AND blocked_id = ${userAId})
+    LIMIT 1
+  `);
+
+  return result.rows.length > 0;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -2170,6 +2186,23 @@ app.get("/api/content/:type/:id", async (req, res) => {
   app.post("/api/messages", async (req, res) => {
     try {
       const { senderId, receiverId, content } = req.body;
+      const senderId = Number(req.body.senderId);
+      const receiverId = Number(req.body.receiverId);
+
+      if (!senderId || !receiverId) {
+        return res.status(400).json({
+          message: "Mittente o destinatario non valido",
+        });
+      }
+
+      const blocked = await hasAnyUserBlock(senderId, receiverId);
+
+      if (blocked) {
+        return res.status(403).json({
+          message: "Non puoi inviare messaggi a questo profilo perché tra voi esiste un blocco.",
+          code: "USER_BLOCKED",
+        });
+      }
       const message = await storage.sendMessage({ senderId, receiverId, content });
       res.status(201).json(message);
     } catch (err) {
