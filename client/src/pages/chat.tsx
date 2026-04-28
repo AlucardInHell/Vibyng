@@ -46,6 +46,9 @@ const chatTranslations = {
     noMessages: "Nessun messaggio ancora.",
     startConversationPrefix: "Inizia una conversazione con",
     messagePlaceholder: "Scrivi un messaggio...",
+    blockedConversationTitle: "Conversazione non disponibile",
+    blockedConversationDescription: "Non puoi visualizzare o inviare messaggi perché tra voi esiste un blocco.",
+    messageBlockedError: "Non puoi inviare messaggi a questo profilo perché tra voi esiste un blocco.",
   },
 
   en: {
@@ -59,6 +62,9 @@ const chatTranslations = {
     noMessages: "No messages yet.",
     startConversationPrefix: "Start a conversation with",
     messagePlaceholder: "Write a message...",
+    blockedConversationTitle: "Conversation unavailable",
+    blockedConversationDescription: "You cannot view or send messages because one of you has blocked the other.",
+    messageBlockedError: "You cannot send messages to this profile because one of you has blocked the other.",
   },
 } as const;
 
@@ -100,6 +106,7 @@ export default function Chat() {
   const t = chatTranslations[language];
   const timeLocale = language === "it" ? "it-IT" : "en-US";
   const [newMessage, setNewMessage] = useState("");
+  const [isConversationBlocked, setIsConversationBlocked] = useState(false);
   const {
   mentionQuery,
   showMentions,
@@ -150,14 +157,22 @@ export default function Chat() {
     return () => clearTimeout(timer);
   }, []);
   
- const { data: messages = [], isLoading: messagesLoading } = useQuery<MessageWithSender[]>({
+    const { data: messages = [], isLoading: messagesLoading } = useQuery<MessageWithSender[]>({
     queryKey: ["/api/messages", CURRENT_USER_ID, artistId],
     queryFn: async () => {
       const res = await fetch(`/api/messages/${CURRENT_USER_ID}/${artistId}`);
+
+      if (res.status === 403) {
+        setIsConversationBlocked(true);
+        return [];
+      }
+
+      setIsConversationBlocked(false);
+
       if (!res.ok) return [];
       return res.json();
     },
-   refetchInterval: 2000,
+   refetchInterval: isConversationBlocked ? false : 2000,
     staleTime: 0,
   });
 
@@ -177,9 +192,14 @@ useEffect(() => {
       queryClient.refetchQueries({ queryKey: ["/api/messages", CURRENT_USER_ID, artistId] });
       setNewMessage("");
     },
+    onError: () => {
+      setIsConversationBlocked(true);
+    },
   });
 
   const handleSend = () => {
+    if (isConversationBlocked) return;
+
     if (newMessage.trim()) {
       sendMessageMutation.mutate(newMessage.trim());
     }
@@ -240,7 +260,17 @@ useEffect(() => {
         </CardHeader>
 
         <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide [&::-webkit-scrollbar]:hidden">
-          {messages && messages.length > 0 ? (
+          {isConversationBlocked ? (
+            <div className="flex flex-col items-center justify-center h-full text-center px-6">
+              <MessageCircle className="w-12 h-12 text-muted-foreground/50 mb-3" />
+              <p className="font-semibold text-foreground">
+                {t.blockedConversationTitle}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t.blockedConversationDescription}
+              </p>
+            </div>
+          ) : messages && messages.length > 0 ? (
             messages.map((msg) => {
               const isCurrentUser = msg.senderId === CURRENT_USER_ID;
               return (
@@ -389,7 +419,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
           <div className="flex items-center gap-2">
   <div className="relative flex-1">
     <Input
-      placeholder={t.messagePlaceholder}
+      placeholder={isConversationBlocked ? t.messageBlockedError : t.messagePlaceholder}
       value={newMessage}
       onChange={(e) => {
         setNewMessage(e.target.value);
@@ -397,6 +427,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
       }}
       onKeyDown={handleKeyPress}
       className="w-full"
+      disabled={isConversationBlocked}
       data-testid="input-message"
     />
     <MentionDropdown
@@ -412,7 +443,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
   <Button
     size="icon"
     onClick={handleSend}
-    disabled={!newMessage.trim() || sendMessageMutation.isPending}
+    disabled={isConversationBlocked || !newMessage.trim() || sendMessageMutation.isPending}
     data-testid="button-send"
   >
     <Send className="w-4 h-4" />
