@@ -429,6 +429,167 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
       });
     }
   });
+
+  // === STRIPE WEBHOOK ===
+  app.post("/api/stripe/webhook", async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(500).json({
+          message: "Configurazione Stripe mancante",
+          detail: "STRIPE_SECRET_KEY non è impostata nelle variabili ambiente",
+        });
+      }
+
+      if (!stripeWebhookSecret) {
+        return res.status(500).json({
+          message: "Configurazione webhook Stripe mancante",
+          detail: "STRIPE_WEBHOOK_SECRET non è impostata nelle variabili ambiente",
+        });
+      }
+
+      const signature = req.headers["stripe-signature"];
+
+      if (!signature || typeof signature !== "string") {
+        return res.status(400).json({
+          message: "Firma Stripe mancante",
+        });
+      }
+
+      const rawBody = req.rawBody;
+
+      if (!Buffer.isBuffer(rawBody)) {
+        return res.status(400).json({
+          message: "Raw body non disponibile per la verifica Stripe",
+        });
+      }
+
+      let event: Stripe.Event;
+
+      try {
+        event = stripe.webhooks.constructEvent(
+          rawBody,
+          signature,
+          stripeWebhookSecret
+        );
+      } catch (err: any) {
+        console.error("[stripe-webhook] signature error:", err?.message || err);
+
+        return res.status(400).json({
+          message: "Firma webhook Stripe non valida",
+          detail: err?.message,
+        });
+      }
+
+      if (event.type !== "checkout.session.completed") {
+        return res.json({
+          received: true,
+          ignored: true,
+          type: event.type,
+        });
+      }
+
+      const session = event.data.object as Stripe.Checkout.Session;
+
+      const fanId = Number(session.metadata?.fanId);
+      const artistId = Number(session.metadata?.artistId);
+      const goalIdRaw = session.metadata?.goalId;
+      const goalId = goalIdRaw ? Number(goalIdRaw) : null;
+      const mode = session.metadata?.mode || "one_time";
+      const amountFromMetadata = Number(session.metadata?.amount);
+      const amountFromStripe = session.amount_total
+        ? session.amount_total / 100
+        : null;
+
+      const finalAmount = Number.isFinite(amountFromMetadata) && amountFromMetadata > 0
+        ? amountFromMetadata
+        : amountFromStripe;
+
+      if (!fanId || !artistId || !finalAmount || !Number.isFinite(finalAmount)) {
+        return res.status(400).json({
+          message: "Metadata pagamento Stripe non valide",
+          detail: {
+            fanId,
+            artistId,
+            goalId,
+            mode,
+            finalAmount,
+          },
+        });
+      }
+
+      const support = await storage.createSupport({
+        fanId,
+        artistId,
+        goalId,
+        amount: finalAmount.toFixed(2),
+        message: null,
+        isSubscription: mode === "monthly",
+        status: "paid",
+        stripeSessionId: session.id,
+        stripePaymentIntentId:
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : null,
+        stripeSubscriptionId:
+          typeof session.subscription === "string"
+            ? session.subscription
+            : null,
+        stripeInvoiceId:
+          typeof session.invoice === "string"
+            ? session.invoice
+            : null,
+      });
+
+      try {
+        await awardPoints({
+          userId: fanId,
+          action: "support_artist",
+          referenceType: "support",
+          referenceId: Number(support.id),
+        });
+      } catch (pointsErr: any) {
+        console.error("[points-support-artist]", pointsErr?.message || pointsErr);
+      }
+
+      try {
+        const fan = await storage.getUser(fanId);
+
+        await storage.createNotification({
+          userId: artistId,
+          type: "support",
+          message: `${fan?.displayName || "Un fan"} ti ha supportato con €${finalAmount.toFixed(2)}`,
+          relatedUserId: fanId,
+        });
+      } catch (notificationErr: any) {
+        console.error("[support-notification]", notificationErr?.message || notificationErr);
+      }
+
+      res.json({
+        received: true,
+        supportId: support.id,
+      });
+    } catch (err: any) {
+      const message = String(err?.message || "");
+
+      if (
+        message.includes("supports_stripe_session_id_idx") ||
+        message.includes("duplicate key value")
+      ) {
+        return res.json({
+          received: true,
+          duplicate: true,
+        });
+      }
+
+      console.error("[stripe-webhook] error:", err?.message || err);
+
+      res.status(500).json({
+        message: "Errore nella gestione del webhook Stripe",
+        detail: err?.message,
+      });
+    }
+  });
+
   // === OBJECT STORAGE ===
   // === AUTH ===
 app.post("/api/auth/register", async (req, res) => {
