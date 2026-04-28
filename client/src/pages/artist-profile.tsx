@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Music2, Trophy, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar, Share2 } from "lucide-react";
+import { Music2, Trophy, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar, Share2, Ban } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
@@ -132,6 +132,13 @@ eventsAttending: "Eventi a cui partecipa",
 messageWith: "Messaggi con",
 privateMessageDescription: "Invia un messaggio privato per interagire direttamente!",
 startConversation: "Inizia una conversazione",
+blockProfile: "Blocca profilo",
+unblockProfile: "Sblocca profilo",
+profileBlockedTitle: "Profilo bloccato",
+profileBlockedDescription: "Questo profilo non potrà più inviarti messaggi.",
+profileUnblockedTitle: "Profilo sbloccato",
+profileUnblockedDescription: "Questo profilo può nuovamente interagire con te.",
+blockErrorDescription: "Non è stato possibile aggiornare il blocco.",    
 
 activeGoal: "Obiettivo Attivo",
 goalReached: "raggiunto",
@@ -240,6 +247,13 @@ eventsAttending: "Events this user attends",
 messageWith: "Messages with",
 privateMessageDescription: "Send a private message to interact directly!",
 startConversation: "Start a conversation",
+blockProfile: "Block profile",
+unblockProfile: "Unblock profile",
+profileBlockedTitle: "Profile blocked",
+profileBlockedDescription: "This profile can no longer send you messages.",
+profileUnblockedTitle: "Profile unblocked",
+profileUnblockedDescription: "This profile can interact with you again.",
+blockErrorDescription: "Unable to update block status.",    
 
 activeGoal: "Active Goal",
 goalReached: "reached",
@@ -557,6 +571,19 @@ useEffect(() => {
     enabled: !isOwnProfile,
   });
 
+const { data: blockStatus, refetch: refetchBlockStatus } = useQuery<{
+    blockedByViewer: boolean;
+    blockedViewer: boolean;
+    anyBlock: boolean;
+  }>({
+    queryKey: ["/api/users", currentUserId, "blocked", artistId],
+    queryFn: async () => {
+      const res = await fetch(`/api/users/${currentUserId}/blocked/${artistId}`);
+      return res.json();
+    },
+    enabled: !isOwnProfile,
+  });
+  
   const { data: artistPosts = [] } = useQuery<(Post & { author: User })[]>({
     queryKey: ["/api/users", artistId, "posts"],
     refetchInterval: 30000,
@@ -607,6 +634,34 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
       return res.json();
     },
     enabled: !!artist && artist.role !== "artist",
+  });
+
+const blockMutation = useMutation({
+    mutationFn: async () => {
+      if (blockStatus?.blockedByViewer) {
+        return apiRequest("DELETE", `/api/users/${currentUserId}/block/${artistId}`);
+      }
+
+      return apiRequest("POST", `/api/users/${currentUserId}/block/${artistId}`);
+    },
+    onSuccess: async () => {
+      await refetchBlockStatus();
+      await queryClient.invalidateQueries({ queryKey: ["/api/messages", currentUserId, artistId] });
+
+      toast({
+        title: blockStatus?.blockedByViewer ? t.profileUnblockedTitle : t.profileBlockedTitle,
+        description: blockStatus?.blockedByViewer
+          ? t.profileUnblockedDescription
+          : t.profileBlockedDescription,
+      });
+    },
+    onError: () => {
+      toast({
+        title: t.error,
+        description: t.blockErrorDescription,
+        variant: "destructive",
+      });
+    },
   });
   
   const followMutation = useMutation({
@@ -864,21 +919,33 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   </span>
 </div>
             </div>
-            {!isOwnProfile && (
-              <Button
-                className="mt-3"
-                variant={isFollowingData?.isFollowing ? "outline" : "default"}
-                size="sm"
-                onClick={() => followMutation.mutate()}
-                disabled={followMutation.isPending}
-              >
-                {isFollowingData?.isFollowing ? (
-                  <><UserMinus className="w-4 h-4 mr-1" /> {t.unfollow}</>
-                ) : (
-                  <><UserPlus className="w-4 h-4 mr-1" /> {t.follow}</>
-                )}
-              </Button>
-            )}
+           {!isOwnProfile && (
+  <div className="mt-3 flex flex-wrap justify-center gap-2">
+    <Button
+      variant={isFollowingData?.isFollowing ? "outline" : "default"}
+      size="sm"
+      onClick={() => followMutation.mutate()}
+      disabled={followMutation.isPending}
+    >
+      {isFollowingData?.isFollowing ? (
+        <><UserMinus className="w-4 h-4 mr-1" /> {t.unfollow}</>
+      ) : (
+        <><UserPlus className="w-4 h-4 mr-1" /> {t.follow}</>
+      )}
+    </Button>
+
+    <Button
+      variant={blockStatus?.blockedByViewer ? "secondary" : "destructive"}
+      size="sm"
+      onClick={() => blockMutation.mutate()}
+      disabled={blockMutation.isPending}
+      className="gap-2"
+    >
+      <Ban className="w-4 h-4" />
+      {blockStatus?.blockedByViewer ? t.unblockProfile : t.blockProfile}
+    </Button>
+  </div>
+)}
           </div>
           {artist.bio && (
             <p className="text-sm text-muted-foreground mt-4 text-center">{artist.bio}</p>
