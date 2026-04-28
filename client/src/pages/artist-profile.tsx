@@ -673,14 +673,15 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     window.location.href = data.url;
   },
 
-  onError: () => {
+ onError: (error: any) => {
     toast({
       title: t.error,
-      description: t.stripeCheckoutError,
+      description: error?.message || t.stripeCheckoutError,
       variant: "destructive",
     });
+
+    console.error("[stripe-checkout-frontend]", error);
   },
-});
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isOwnProfile) return;
