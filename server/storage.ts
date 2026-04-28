@@ -330,19 +330,41 @@ async likePost(postId: number, userId: number): Promise<void> {
   async createSupport(insertSupport: InsertSupport): Promise<Support> {
     const [support] = await db.insert(supports).values(insertSupport).returning();
 
-    // Update goal if applicable
-    const goals = await this.getGoalsByArtist(insertSupport.artistId);
-    const activeGoal = goals.find(g => !g.isCompleted);
-    if (activeGoal) {
-      const newAmount = Number(activeGoal.currentAmount) + Number(insertSupport.amount);
-      await db.update(artistGoals)
-        .set({ 
-          currentAmount: newAmount.toString(),
-          isCompleted: newAmount >= Number(activeGoal.targetAmount)
-        })
-        .where(eq(artistGoals.id, activeGoal.id));
+    const amount = Number(insertSupport.amount);
+
+    if (Number.isFinite(amount) && amount > 0) {
+      let goalToUpdate: ArtistGoal | undefined;
+
+      if (insertSupport.goalId) {
+        const [selectedGoal] = await db
+          .select()
+          .from(artistGoals)
+          .where(
+            and(
+              eq(artistGoals.id, insertSupport.goalId),
+              eq(artistGoals.artistId, insertSupport.artistId)
+            )
+          );
+
+        goalToUpdate = selectedGoal;
+      } else {
+        const goals = await this.getGoalsByArtist(insertSupport.artistId);
+        goalToUpdate = goals.find((goal) => !goal.isCompleted);
+      }
+
+      if (goalToUpdate) {
+        const newAmount = Number(goalToUpdate.currentAmount) + amount;
+
+        await db
+          .update(artistGoals)
+          .set({
+            currentAmount: newAmount.toString(),
+            isCompleted: newAmount >= Number(goalToUpdate.targetAmount),
+          })
+          .where(eq(artistGoals.id, goalToUpdate.id));
+      }
     }
-    
+
     return support;
   }
 
