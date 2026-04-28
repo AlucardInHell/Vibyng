@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Music2, Trophy, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar, Share2, Ban } from "lucide-react";
+import { Music2, Trophy, Heart, Zap, Video, Music, Play, Pause, Users, MessageCircle, Plus, Check, Camera, Send, ImagePlus, UserPlus, UserMinus, ImageIcon, FileText, Calendar, Share2, Ban, MoreVertical } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
@@ -138,7 +138,9 @@ profileBlockedTitle: "Profilo bloccato",
 profileBlockedDescription: "Questo profilo non potrà più inviarti messaggi.",
 profileUnblockedTitle: "Profilo sbloccato",
 profileUnblockedDescription: "Questo profilo può nuovamente interagire con te.",
-blockErrorDescription: "Non è stato possibile aggiornare il blocco.",    
+blockErrorDescription: "Non è stato possibile aggiornare il blocco.",
+profileActions: "Azioni profilo",
+profileActionsDescription: "Gestisci le interazioni con questo profilo.",    
 
 activeGoal: "Obiettivo Attivo",
 goalReached: "raggiunto",
@@ -253,7 +255,9 @@ profileBlockedTitle: "Profile blocked",
 profileBlockedDescription: "This profile can no longer send you messages.",
 profileUnblockedTitle: "Profile unblocked",
 profileUnblockedDescription: "This profile can interact with you again.",
-blockErrorDescription: "Unable to update block status.",    
+blockErrorDescription: "Unable to update block status.",
+profileActions: "Profile actions",
+profileActionsDescription: "Manage your interactions with this profile.",    
 
 activeGoal: "Active Goal",
 goalReached: "reached",
@@ -378,6 +382,7 @@ export default function ArtistProfile() {
   const { mentionQuery: videoCommentMentionQuery, showMentions: showVideoCommentMentions, handleTextChange: handleVideoCommentTextChange, insertMention: insertVideoCommentMention, closeMentions: closeVideoCommentMentions } = useMention();
   const [supportAmount, setSupportAmount] = useState("5");
   const [supportOpen, setSupportOpen] = useState(false);
+  const [profileActionsOpen, setProfileActionsOpen] = useState(false);
   const [supportMode, setSupportMode] = useState<"one_time" | "monthly">("one_time");
   const [supportGoalId, setSupportGoalId] = useState<number | null>(null);
   const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
@@ -645,10 +650,11 @@ const blockMutation = useMutation({
       return apiRequest("POST", `/api/users/${currentUserId}/block/${artistId}`);
     },
     onSuccess: async () => {
-      await refetchBlockStatus();
-      await queryClient.invalidateQueries({ queryKey: ["/api/messages", currentUserId, artistId] });
+  await refetchBlockStatus();
+  await queryClient.invalidateQueries({ queryKey: ["/api/messages", currentUserId, artistId] });
+  setProfileActionsOpen(false);
 
-      toast({
+  toast({
         title: blockStatus?.blockedByViewer ? t.profileUnblockedTitle : t.profileBlockedTitle,
         description: blockStatus?.blockedByViewer
           ? t.profileUnblockedDescription
@@ -864,8 +870,43 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   return (
     <div className="flex flex-col gap-4">
 
+     <Dialog open={profileActionsOpen} onOpenChange={setProfileActionsOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t.profileActions}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {t.profileActionsDescription}
+          </p>
+
+          <Button
+            variant={blockStatus?.blockedByViewer ? "secondary" : "destructive"}
+            className="w-full justify-start gap-2"
+            onClick={() => blockMutation.mutate()}
+            disabled={blockMutation.isPending}
+          >
+            <Ban className="w-4 h-4" />
+            {blockStatus?.blockedByViewer ? t.unblockProfile : t.blockProfile}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>    
+
       {/* Card Profilo */}
-      <Card>
+     <Card className="relative">
+       {!isOwnProfile && (
+  <Button
+    variant="ghost"
+    size="icon"
+    className="absolute right-3 top-3 z-10"
+    onClick={() => setProfileActionsOpen(true)}
+    aria-label={t.profileActions}
+  >
+    <MoreVertical className="w-5 h-5" />
+  </Button>
+)}
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center">
             <div className="relative mb-3">
@@ -919,7 +960,7 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   </span>
 </div>
             </div>
-           {!isOwnProfile && (
+         {!isOwnProfile && (
   <div className="mt-3 flex flex-wrap justify-center gap-2">
     <Button
       variant={isFollowingData?.isFollowing ? "outline" : "default"}
@@ -932,17 +973,6 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
       ) : (
         <><UserPlus className="w-4 h-4 mr-1" /> {t.follow}</>
       )}
-    </Button>
-
-    <Button
-      variant={blockStatus?.blockedByViewer ? "secondary" : "destructive"}
-      size="sm"
-      onClick={() => blockMutation.mutate()}
-      disabled={blockMutation.isPending}
-      className="gap-2"
-    >
-      <Ban className="w-4 h-4" />
-      {blockStatus?.blockedByViewer ? t.unblockProfile : t.blockProfile}
     </Button>
   </div>
 )}
