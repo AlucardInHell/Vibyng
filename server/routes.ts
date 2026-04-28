@@ -12,7 +12,7 @@ import { Resend } from "resend";
 import Stripe from "stripe";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 function hashPassword(password: string): string {
@@ -295,12 +295,30 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
         ? "subscription"
         : "payment";
 
+      const monthlyPriceId = process.env.STRIPE_MONTHLY_SUPPORT_PRICE_ID?.trim();
+      const applicationFeePercentRaw = process.env.STRIPE_APPLICATION_FEE_PERCENT?.trim();
+      const applicationFeePercent = applicationFeePercentRaw
+        ? Number(applicationFeePercentRaw)
+        : null;
+
       const finalAmount = isMonthly ? 4.99 : amount;
 
       if (!Number.isFinite(finalAmount) || finalAmount < 1) {
         return res.status(400).json({
           message: "Importo non valido",
           detail: "L'importo deve essere almeno pari a 1 euro",
+        });
+      }
+
+      if (
+        applicationFeePercent !== null &&
+        (!Number.isFinite(applicationFeePercent) ||
+          applicationFeePercent < 0 ||
+          applicationFeePercent > 100)
+      ) {
+        return res.status(400).json({
+          message: "Commissione piattaforma non valida",
+          detail: "STRIPE_APPLICATION_FEE_PERCENT deve essere un numero tra 0 e 100",
         });
       }
 
@@ -316,28 +334,34 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
         ? `Supporto mensile a ${artist.displayName}`
         : `Supporto a ${artist.displayName}`;
 
-      const lineItem: Stripe.Checkout.SessionCreateParams.LineItem = {
-        price_data: {
-          currency: "eur",
-          product_data: {
-            name: productName,
-            description: goalId
-              ? "Supporto economico collegato a un obiettivo artista su Vibyng"
-              : "Supporto economico artista su Vibyng",
-          },
-          unit_amount: unitAmount,
-          ...(isMonthly
-            ? {
-                recurring: {
-                  interval: "month",
+     const lineItem: Stripe.Checkout.SessionCreateParams.LineItem =
+        isMonthly && monthlyPriceId
+          ? {
+              price: monthlyPriceId,
+              quantity: 1,
+            }
+          : {
+              price_data: {
+                currency: "eur",
+                product_data: {
+                  name: productName,
+                  description: goalId
+                    ? "Supporto economico collegato a un obiettivo artista su Vibyng"
+                    : "Supporto economico artista su Vibyng",
                 },
-              }
-            : {}),
-        },
-        quantity: 1,
-      };
+                unit_amount: unitAmount,
+                ...(isMonthly
+                  ? {
+                      recurring: {
+                        interval: "month",
+                      },
+                    }
+                  : {}),
+              },
+              quantity: 1,
+            };
 
-      const session = await stripe.checkout.sessions.create({
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: checkoutMode,
         payment_method_types: ["card"],
         customer_email: fan.email || undefined,
@@ -354,7 +378,32 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
           amount: String(finalAmount),
           source: "vibyng_support",
         },
-      });
+      };
+
+      const artistConnectedAccountId = artist.stripeConnectedAccountId;
+      const artistStripeReady = Boolean(
+        artistConnectedAccountId && artist.stripeOnboardingComplete
+      );
+
+      if (artistStripeReady && applicationFeePercent !== null) {
+        if (isMonthly) {
+          sessionParams.subscription_data = {
+            application_fee_percent: applicationFeePercent,
+            transfer_data: {
+              destination: artistConnectedAccountId!,
+            },
+          };
+        } else {
+          sessionParams.payment_intent_data = {
+            application_fee_amount: Math.round(unitAmount * (applicationFeePercent / 100)),
+            transfer_data: {
+              destination: artistConnectedAccountId!,
+            },
+          };
+        }
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams);
 
       if (!session.url) {
         return res.status(500).json({
