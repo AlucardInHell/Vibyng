@@ -896,19 +896,20 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
 
       {/* Card Profilo */}
      <Card className="relative">
-       {!isOwnProfile && (
-  <Button
-    variant="ghost"
-    size="icon"
-    className="absolute top-3 z-20 h-11 w-11 rounded-full"
-    style={{ right: "0.75rem", left: "auto" }}
-    onClick={() => setProfileActionsOpen(true)}
-    aria-label={t.profileActions}
-  >
-    <MoreVertical className="w-7 h-7" />
-  </Button>
-)}
         <CardContent className="pt-6">
+      {!isOwnProfile && (
+  <div className="flex justify-end -mt-2 mb-1">
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-12 w-12 rounded-full"
+      onClick={() => setProfileActionsOpen(true)}
+      aria-label={t.profileActions}
+    >
+      <MoreVertical className="w-7 h-7" />
+    </Button>
+  </div>
+)}    
           <div className="flex flex-col items-center text-center">
             <div className="relative mb-3">
               <Avatar className="w-20 h-20">
