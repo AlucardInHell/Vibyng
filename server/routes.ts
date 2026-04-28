@@ -243,6 +243,227 @@ await db.execute(sql`
   CREATE INDEX IF NOT EXISTS content_reports_status_idx
   ON content_reports (status)
 `);
+
+// === BLOCKS & REPORTS ===
+  app.post("/api/users/:blockerId/block/:blockedId", async (req, res) => {
+    try {
+      const blockerId = Number(req.params.blockerId);
+      const blockedId = Number(req.params.blockedId);
+
+      if (!blockerId || !blockedId) {
+        return res.status(400).json({ message: "ID utente non valido" });
+      }
+
+      if (blockerId === blockedId) {
+        return res.status(400).json({ message: "Non puoi bloccare il tuo stesso profilo" });
+      }
+
+      const blocker = await storage.getUser(blockerId);
+      const blocked = await storage.getUser(blockedId);
+
+      if (!blocker || !blocked) {
+        return res.status(404).json({ message: "Utente non trovato" });
+      }
+
+      await db.execute(sql`
+        INSERT INTO user_blocks (blocker_id, blocked_id)
+        VALUES (${blockerId}, ${blockedId})
+        ON CONFLICT (blocker_id, blocked_id) DO NOTHING
+      `);
+
+      res.json({ success: true, blocked: true });
+    } catch (err: any) {
+      console.error("[block-user] error:", err?.message || err);
+      res.status(400).json({
+        message: "Errore nel blocco del profilo",
+        detail: err?.message,
+      });
+    }
+  });
+
+  app.delete("/api/users/:blockerId/block/:blockedId", async (req, res) => {
+    try {
+      const blockerId = Number(req.params.blockerId);
+      const blockedId = Number(req.params.blockedId);
+
+      if (!blockerId || !blockedId) {
+        return res.status(400).json({ message: "ID utente non valido" });
+      }
+
+      await db.execute(sql`
+        DELETE FROM user_blocks
+        WHERE blocker_id = ${blockerId}
+          AND blocked_id = ${blockedId}
+      `);
+
+      res.json({ success: true, blocked: false });
+    } catch (err: any) {
+      console.error("[unblock-user] error:", err?.message || err);
+      res.status(400).json({
+        message: "Errore nello sblocco del profilo",
+        detail: err?.message,
+      });
+    }
+  });
+
+  app.get("/api/users/:viewerId/blocked/:targetId", async (req, res) => {
+    try {
+      const viewerId = Number(req.params.viewerId);
+      const targetId = Number(req.params.targetId);
+
+      if (!viewerId || !targetId) {
+        return res.status(400).json({ message: "ID utente non valido" });
+      }
+
+      const directBlock = await db.execute(sql`
+        SELECT id
+        FROM user_blocks
+        WHERE blocker_id = ${viewerId}
+          AND blocked_id = ${targetId}
+        LIMIT 1
+      `);
+
+      const reverseBlock = await db.execute(sql`
+        SELECT id
+        FROM user_blocks
+        WHERE blocker_id = ${targetId}
+          AND blocked_id = ${viewerId}
+        LIMIT 1
+      `);
+
+      res.json({
+        blockedByViewer: directBlock.rows.length > 0,
+        blockedViewer: reverseBlock.rows.length > 0,
+        anyBlock: directBlock.rows.length > 0 || reverseBlock.rows.length > 0,
+      });
+    } catch (err: any) {
+      console.error("[check-block] error:", err?.message || err);
+      res.status(400).json({
+        message: "Errore nella verifica del blocco",
+        detail: err?.message,
+      });
+    }
+  });
+
+  app.get("/api/users/:userId/blocked-users", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+
+      if (!userId) {
+        return res.status(400).json({ message: "ID utente non valido" });
+      }
+
+      const result = await db.execute(sql`
+        SELECT
+          u.id,
+          u.username,
+          u.display_name,
+          u.avatar_url,
+          u.role,
+          ub.created_at AS blocked_at
+        FROM user_blocks ub
+        JOIN users u ON u.id = ub.blocked_id
+        WHERE ub.blocker_id = ${userId}
+        ORDER BY ub.created_at DESC
+      `);
+
+      res.json(result.rows);
+    } catch (err: any) {
+      console.error("[blocked-users] error:", err?.message || err);
+      res.status(400).json({
+        message: "Errore nel recupero dei profili bloccati",
+        detail: err?.message,
+      });
+    }
+  });
+
+  app.post("/api/reports", async (req, res) => {
+    try {
+      const reporterId = Number(req.body.reporterId);
+      const targetType = String(req.body.targetType || "").trim();
+      const targetId = String(req.body.targetId || "").trim();
+      const targetOwnerId = req.body.targetOwnerId ? Number(req.body.targetOwnerId) : null;
+      const reason = String(req.body.reason || "").trim();
+      const details = req.body.details ? String(req.body.details).trim() : null;
+
+      const allowedTargetTypes = new Set([
+        "user",
+        "post",
+        "photo",
+        "video",
+        "comment",
+        "story",
+        "message",
+      ]);
+
+      const allowedReasons = new Set([
+        "offensive",
+        "violent",
+        "pornographic",
+        "harassment",
+        "hate",
+        "spam",
+        "self_harm",
+        "fake_profile",
+        "other",
+      ]);
+
+      if (!reporterId) {
+        return res.status(400).json({ message: "Reporter non valido" });
+      }
+
+      if (!allowedTargetTypes.has(targetType)) {
+        return res.status(400).json({ message: "Tipo contenuto non valido" });
+      }
+
+      if (!targetId) {
+        return res.status(400).json({ message: "ID contenuto non valido" });
+      }
+
+      if (!allowedReasons.has(reason)) {
+        return res.status(400).json({ message: "Motivo segnalazione non valido" });
+      }
+
+      const reporter = await storage.getUser(reporterId);
+
+      if (!reporter) {
+        return res.status(404).json({ message: "Utente segnalante non trovato" });
+      }
+
+      const result = await db.execute(sql`
+        INSERT INTO content_reports (
+          reporter_id,
+          target_type,
+          target_id,
+          target_owner_id,
+          reason,
+          details,
+          status
+        )
+        VALUES (
+          ${reporterId},
+          ${targetType},
+          ${targetId},
+          ${targetOwnerId},
+          ${reason},
+          ${details},
+          'pending'
+        )
+        RETURNING *
+      `);
+
+      res.status(201).json({
+        success: true,
+        report: result.rows[0],
+      });
+    } catch (err: any) {
+      console.error("[create-report] error:", err?.message || err);
+      res.status(400).json({
+        message: "Errore nella creazione della segnalazione",
+        detail: err?.message,
+      });
+    }
+  });
   
   // === USERS ===
   app.get(api.users.artists.path, async (_req, res) => {
