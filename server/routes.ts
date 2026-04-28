@@ -2164,7 +2164,20 @@ app.get("/api/content/:type/:id", async (req, res) => {
     try {
       const userId1 = Number(req.params.userId1);
       const userId2 = Number(req.params.userId2);
-      if (isNaN(userId1) || isNaN(userId2)) return res.json([]);
+
+      if (isNaN(userId1) || isNaN(userId2)) {
+        return res.json([]);
+      }
+
+      const blocked = await hasAnyUserBlock(userId1, userId2);
+
+      if (blocked) {
+        return res.status(403).json({
+          message: "Non puoi visualizzare questa conversazione perché tra voi esiste un blocco.",
+          code: "USER_BLOCKED",
+        });
+      }
+
       const messages = await storage.getConversation(userId1, userId2);
       res.json(messages);
     } catch (err) {
