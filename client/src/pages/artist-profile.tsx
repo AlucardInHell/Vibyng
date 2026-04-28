@@ -900,11 +900,11 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   <Button
     variant="ghost"
     size="icon"
-    className="absolute right-3 top-3 z-10"
+    className="absolute top-3 right-3 z-20 h-11 w-11 rounded-full"
     onClick={() => setProfileActionsOpen(true)}
     aria-label={t.profileActions}
   >
-    <MoreVertical className="w-5 h-5" />
+    <MoreVertical className="w-6 h-6" />
   </Button>
 )}
         <CardContent className="pt-6">
