@@ -446,32 +446,75 @@ await db.execute(sql`
         return res.status(404).json({ message: "Utente segnalante non trovato" });
       }
 
-      const result = await db.execute(sql`
-        INSERT INTO content_reports (
-          reporter_id,
-          target_type,
-          target_id,
-          target_owner_id,
-          reason,
-          details,
-          status
-        )
-        VALUES (
-          ${reporterId},
-          ${targetType},
-          ${targetId},
-          ${targetOwnerId},
-          ${reason},
-          ${details},
-          'pending'
-        )
-        RETURNING *
-      `);
+     const result = await db.execute(sql`
+  INSERT INTO content_reports (
+    reporter_id,
+    target_type,
+    target_id,
+    target_owner_id,
+    reason,
+    details,
+    status
+  )
+  VALUES (
+    ${reporterId},
+    ${targetType},
+    ${targetId},
+    ${targetOwnerId},
+    ${reason},
+    ${details},
+    'pending'
+  )
+  RETURNING *
+`);
 
-      res.status(201).json({
-        success: true,
-        report: result.rows[0],
-      });
+try {
+  const reportsEmail = process.env.REPORTS_EMAIL?.trim();
+
+  if (reportsEmail) {
+    const reportedUser = targetOwnerId ? await storage.getUser(targetOwnerId) : null;
+
+    await resend.emails.send({
+      from: "Vibyng <noreply@mail.vibyng.com>",
+      to: reportsEmail,
+      subject: `Nuova segnalazione Vibyng: ${targetType}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 640px; margin: 0 auto; padding: 24px;">
+          <h2>Nuova segnalazione su Vibyng</h2>
+
+          <p><strong>ID segnalazione:</strong> ${result.rows[0]?.id}</p>
+          <p><strong>Tipo contenuto:</strong> ${targetType}</p>
+          <p><strong>ID contenuto/profilo:</strong> ${targetId}</p>
+          <p><strong>Motivo:</strong> ${reason}</p>
+          <p><strong>Dettagli:</strong> ${details || "Nessun dettaglio fornito"}</p>
+
+          <hr />
+
+          <p><strong>Segnalante ID:</strong> ${reporterId}</p>
+          <p><strong>Segnalante:</strong> ${reporter.displayName} (@${reporter.username})</p>
+
+          ${
+            reportedUser
+              ? `
+                <p><strong>Profilo segnalato ID:</strong> ${reportedUser.id}</p>
+                <p><strong>Profilo segnalato:</strong> ${reportedUser.displayName} (@${reportedUser.username})</p>
+              `
+              : ""
+          }
+
+          <p><strong>Status:</strong> pending</p>
+        </div>
+      `,
+    });
+  }
+} catch (emailErr: any) {
+  console.error("[report-email] error:", emailErr?.message || emailErr);
+}
+
+res.status(201).json({
+  success: true,
+  report: result.rows[0],
+});
     } catch (err: any) {
       console.error("[create-report] error:", err?.message || err);
       res.status(400).json({
