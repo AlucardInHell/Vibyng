@@ -145,6 +145,51 @@ await db.execute(sql`
 `);
 
 await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS goal_id integer REFERENCES artist_goals(id) ON DELETE SET NULL
+`);
+
+await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS message text
+`);
+
+await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS is_subscription boolean NOT NULL DEFAULT false
+`);
+
+await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'paid'
+`);
+
+await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS stripe_session_id text
+`);
+
+await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS stripe_payment_intent_id text
+`);
+
+await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS stripe_subscription_id text
+`);
+
+await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS stripe_invoice_id text
+`);
+
+await db.execute(sql`
+  ALTER TABLE supports
+  ADD COLUMN IF NOT EXISTS created_at timestamp DEFAULT now()
+`);
+
+await db.execute(sql`
   CREATE UNIQUE INDEX IF NOT EXISTS supports_stripe_session_id_idx
   ON supports (stripe_session_id)
   WHERE stripe_session_id IS NOT NULL
