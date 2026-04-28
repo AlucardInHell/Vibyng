@@ -419,6 +419,9 @@ export default function ArtistProfile() {
   const [supportAmount, setSupportAmount] = useState("5");
   const [supportOpen, setSupportOpen] = useState(false);
   const [profileActionsOpen, setProfileActionsOpen] = useState(false);
+  const [reportProfileOpen, setReportProfileOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("offensive");
+  const [reportDetails, setReportDetails] = useState("");
   const [supportMode, setSupportMode] = useState<"one_time" | "monthly">("one_time");
   const [supportGoalId, setSupportGoalId] = useState<number | null>(null);
   const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
@@ -705,6 +708,37 @@ const blockMutation = useMutation({
       });
     },
   });
+
+const reportProfileMutation = useMutation({
+  mutationFn: async () => {
+    return apiRequest("POST", "/api/reports", {
+      reporterId: currentUserId,
+      targetType: "user",
+      targetId: String(artistId),
+      targetOwnerId: artistId,
+      reason: reportReason,
+      details: reportDetails.trim() || null,
+    });
+  },
+  onSuccess: () => {
+    setReportProfileOpen(false);
+    setProfileActionsOpen(false);
+    setReportReason("offensive");
+    setReportDetails("");
+
+    toast({
+      title: t.reportSuccessTitle,
+      description: t.reportSuccessDescription,
+    });
+  },
+  onError: () => {
+    toast({
+      title: t.error,
+      description: t.reportErrorDescription,
+      variant: "destructive",
+    });
+  },
+});
   
   const followMutation = useMutation({
     mutationFn: async () => {
@@ -906,29 +940,97 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   return (
     <div className="flex flex-col gap-4">
 
-     <Dialog open={profileActionsOpen} onOpenChange={setProfileActionsOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t.profileActions}</DialogTitle>
-        </DialogHeader>
+    <Dialog open={profileActionsOpen} onOpenChange={setProfileActionsOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>{t.profileActions}</DialogTitle>
+    </DialogHeader>
 
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {t.profileActionsDescription}
-          </p>
+    <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        {t.profileActionsDescription}
+      </p>
 
-          <Button
-            variant={blockStatus?.blockedByViewer ? "secondary" : "destructive"}
-            className="w-full justify-start gap-2"
-            onClick={() => blockMutation.mutate()}
-            disabled={blockMutation.isPending}
-          >
-            <Ban className="w-4 h-4" />
-            {blockStatus?.blockedByViewer ? t.unblockProfile : t.blockProfile}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>    
+      <Button
+        variant={blockStatus?.blockedByViewer ? "secondary" : "destructive"}
+        className="w-full justify-start gap-2"
+        onClick={() => blockMutation.mutate()}
+        disabled={blockMutation.isPending}
+      >
+        <Ban className="w-4 h-4" />
+        {blockStatus?.blockedByViewer ? t.unblockProfile : t.blockProfile}
+      </Button>
+
+      <Button
+        variant="outline"
+        className="w-full justify-start gap-2"
+        onClick={() => {
+          setProfileActionsOpen(false);
+          setReportProfileOpen(true);
+        }}
+      >
+        <Flag className="w-4 h-4" />
+        {t.reportProfile}
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+
+<Dialog open={reportProfileOpen} onOpenChange={setReportProfileOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>{t.reportProfileTitle}</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {t.reportProfileDescription}
+      </p>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t.reportReason}
+        </label>
+
+        <select
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={reportReason}
+          onChange={(e) => setReportReason(e.target.value)}
+        >
+          <option value="offensive">{t.reportReasonOffensive}</option>
+          <option value="violent">{t.reportReasonViolent}</option>
+          <option value="pornographic">{t.reportReasonPornographic}</option>
+          <option value="harassment">{t.reportReasonHarassment}</option>
+          <option value="hate">{t.reportReasonHate}</option>
+          <option value="spam">{t.reportReasonSpam}</option>
+          <option value="fake_profile">{t.reportReasonFakeProfile}</option>
+          <option value="other">{t.reportReasonOther}</option>
+        </select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t.reportDetails}
+        </label>
+
+        <Textarea
+          value={reportDetails}
+          onChange={(e) => setReportDetails(e.target.value)}
+          placeholder={t.reportDetailsPlaceholder}
+          rows={4}
+        />
+      </div>
+
+      <Button
+        className="w-full"
+        onClick={() => reportProfileMutation.mutate()}
+        disabled={reportProfileMutation.isPending}
+      >
+        {t.reportSubmit}
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
 
       {/* Card Profilo */}
      <Card className="relative">
