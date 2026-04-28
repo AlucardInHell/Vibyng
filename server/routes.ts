@@ -543,12 +543,12 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
       try {
         await awardPoints({
           userId: fanId,
-          action: "support_artist",
+          action: "support_sent",
           referenceType: "support",
           referenceId: Number(support.id),
         });
       } catch (pointsErr: any) {
-        console.error("[points-support-artist]", pointsErr?.message || pointsErr);
+        console.error("[points-support-sent]", pointsErr?.message || pointsErr);
       }
 
       try {
