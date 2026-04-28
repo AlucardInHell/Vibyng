@@ -13,7 +13,9 @@ import Stripe from "stripe";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
+
 
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
@@ -140,6 +142,12 @@ await db.execute(sql`
     points_spent integer NOT NULL,
     created_at timestamp DEFAULT now()
   )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS supports_stripe_session_id_idx
+  ON supports (stripe_session_id)
+  WHERE stripe_session_id IS NOT NULL
 `);
   
   // === USERS ===
