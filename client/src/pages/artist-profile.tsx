@@ -2151,59 +2151,69 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
     </div>
   </DialogContent>
 </Dialog>
-   
-     {selectedPhoto && (
+   {selectedPhoto && (
   <>
-   <div
-  className="absolute inset-x-0 top-4 z-[100] flex justify-end gap-2 px-4 pointer-events-none"
-  onClick={(e) => e.stopPropagation()}
-  onMouseDown={(e) => e.stopPropagation()}
-  onPointerDown={(e) => e.stopPropagation()}
-  onTouchStart={(e) => e.stopPropagation()}
->
-  {Number(selectedPhoto.artistId) !== Number(currentUserId) && (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white pointer-events-auto"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const photoId = String(selectedPhoto.id);
-        const photoOwnerId = Number(selectedPhoto.artistId);
-
+    <div
+      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
+      onClick={() => {
         setSelectedPhoto(null);
         setPhotoCommentsOpen(false);
-
-        setTimeout(() => {
-          openReport({
-            targetType: "photo",
-            targetId: photoId,
-            targetOwnerId: photoOwnerId,
-            title: t.reportPhoto,
-            description: t.reportContentDescription,
-          });
-        }, 0);
       }}
-      aria-label={t.reportPhoto}
     >
-      <MoreVertical className="w-6 h-6" />
-    </Button>
-  )}
+      <div
+        className="relative flex-1 flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="absolute inset-x-0 top-4 z-[100] flex justify-end gap-2 px-4 pointer-events-none"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+        >
+          {Number(selectedPhoto.artistId) !== Number(currentUserId) && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white pointer-events-auto"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
 
-  <button
-    className="h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center pointer-events-auto"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setSelectedPhoto(null);
-      setPhotoCommentsOpen(false);
-    }}
-  >
-    ✕
-  </button>
-</div>
+                const photoId = String(selectedPhoto.id);
+                const photoOwnerId = Number(selectedPhoto.artistId);
+
+                setSelectedPhoto(null);
+                setPhotoCommentsOpen(false);
+
+                setTimeout(() => {
+                  openReport({
+                    targetType: "photo",
+                    targetId: photoId,
+                    targetOwnerId: photoOwnerId,
+                    title: t.reportPhoto,
+                    description: t.reportContentDescription,
+                  });
+                }, 0);
+              }}
+              aria-label={t.reportPhoto}
+            >
+              <MoreVertical className="w-6 h-6" />
+            </Button>
+          )}
+
+          <button
+            className="h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center pointer-events-auto"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setSelectedPhoto(null);
+              setPhotoCommentsOpen(false);
+            }}
+          >
+            ✕
+          </button>
+        </div>
 
         <div
           className={
@@ -2213,13 +2223,13 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
           }
         >
           <img
-  src={selectedPhoto.imageUrl ?? undefined}
-  alt={selectedPhoto.title}
-  className={
-    selectedPhotoIsTall
-      ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
-      : "w-full h-full max-h-[62dvh] sm:max-h-[68vh] object-contain"
-  }
+            src={selectedPhoto.imageUrl ?? undefined}
+            alt={selectedPhoto.title}
+            className={
+              selectedPhotoIsTall
+                ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
+                : "w-full h-full max-h-[62dvh] sm:max-h-[68vh] object-contain"
+            }
           />
         </div>
 
@@ -2298,27 +2308,27 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
             </button>
 
             <button
-  className="flex items-center gap-1 text-sm text-white/80"
-  onClick={async () => {
-    const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
+              className="flex items-center gap-1 text-sm text-white/80"
+              onClick={async () => {
+                const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
 
-    const result = await shareVibyngContent({
-     title: selectedPhoto.title || t.untitledPhoto,
-     text: selectedPhoto.title || t.photoShareText,
-      mediaUrl: selectedPhoto.imageUrl ?? undefined,
-      fallbackUrl: shareUrl,
-      shareUrl,
-      fileName: `foto-${selectedPhoto.id}`,
-    });
+                const result = await shareVibyngContent({
+                  title: selectedPhoto.title || t.untitledPhoto,
+                  text: selectedPhoto.title || t.photoShareText,
+                  mediaUrl: selectedPhoto.imageUrl ?? undefined,
+                  fallbackUrl: shareUrl,
+                  shareUrl,
+                  fileName: `foto-${selectedPhoto.id}`,
+                });
 
-    if (result === "copied") {
-      toast({ title: t.copied });
-    }
-  }}
->
-  <Share2 className="w-5 h-5" />
-  {t.share}
-</button>
+                if (result === "copied") {
+                  toast({ title: t.copied });
+                }
+              }}
+            >
+              <Share2 className="w-5 h-5" />
+              {t.share}
+            </button>
           </div>
         </div>
       </div>
