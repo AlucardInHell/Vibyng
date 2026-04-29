@@ -72,7 +72,8 @@ const homeTranslations = {
 reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
 reportPost: "Segnala post",
 reportPhoto: "Segnala foto",
-reportVideo: "Segnala video",    
+reportVideo: "Segnala video",
+reportComment: "Segnala commento",
 reportReason: "Motivo della segnalazione",
 reportDetails: "Dettagli opzionali",
 reportDetailsPlaceholder: "Aggiungi dettagli utili alla verifica...",
@@ -144,7 +145,8 @@ reportContentTitle: "Report content",
 reportContentDescription: "Help us understand what is wrong with this content.",
 reportPost: "Report post",
 reportPhoto: "Report photo",
-reportVideo: "Report video",    
+reportVideo: "Report video",
+reportComment: "Report comment",
 reportReason: "Report reason",
 reportDetails: "Optional details",
 reportDetailsPlaceholder: "Add useful details for review...",
@@ -961,10 +963,12 @@ function PhotoComments({
   photoId,
   photoAuthorId,
   commentPlaceholder,
+  onReportComment,
 }: {
   photoId: number;
   photoAuthorId: number;
   commentPlaceholder: string;
+  onReportComment: (comment: any) => void;
 }) {
   const [newComment, setNewComment] = useState("");
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
@@ -1023,9 +1027,25 @@ function PhotoComments({
                   <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
                 </Avatar>
               </Link>
-              <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                <p className="text-sm font-semibold">{c.display_name}</p>
-                <p className="text-sm whitespace-pre-wrap break-words">
+              <div className="relative flex-1 bg-muted rounded-lg px-3 py-2 pr-10">
+  {Number(c.author_id) !== Number(CURRENT_USER_ID_LOCAL) && (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="absolute top-1 right-1 h-8 w-8 rounded-full"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onReportComment(c);
+      }}
+      aria-label="Segnala commento"
+    >
+      <MoreVertical className="w-4 h-4" />
+    </Button>
+  )}
+
+  <p className="text-sm font-semibold pr-7">{c.display_name}</p>
+  <p className="text-sm whitespace-pre-wrap break-words">
   <MentionText text={c.content} />
 </p>
         <div className="flex items-center justify-between mt-1">
@@ -1079,10 +1099,12 @@ function VideoComments({
   videoId,
   videoAuthorId,
   commentPlaceholder,
+  onReportComment,
 }: {
   videoId: number;
   videoAuthorId: number;
   commentPlaceholder: string;
+  onReportComment: (comment: any) => void;
 }) {
   const [newComment, setNewComment] = useState("");
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
@@ -1153,11 +1175,27 @@ function VideoComments({
             </Avatar>
           </Link>
 
-          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-            <p className="text-sm font-semibold">{c.display_name}</p>
-            <p className="text-sm whitespace-pre-wrap break-words">
-              <MentionText text={c.content} />
-            </p>
+          <div className="relative flex-1 bg-muted rounded-lg px-3 py-2 pr-10">
+  {Number(c.author_id) !== Number(CURRENT_USER_ID_LOCAL) && (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="absolute top-1 right-1 h-8 w-8 rounded-full"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onReportComment(c);
+      }}
+      aria-label="Segnala commento"
+    >
+      <MoreVertical className="w-4 h-4" />
+    </Button>
+  )}
+
+  <p className="text-sm font-semibold pr-7">{c.display_name}</p>
+  <p className="text-sm whitespace-pre-wrap break-words">
+    <MentionText text={c.content} />
+  </p>
 
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-muted-foreground">
@@ -1218,10 +1256,12 @@ function PostComments({
   postId,
   postAuthorId,
   commentPlaceholder,
+  onReportComment,
 }: {
   postId: number;
   postAuthorId: number;
   commentPlaceholder: string;
+  onReportComment: (comment: any) => void;
 }) {
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const [newComment, setNewComment] = useState("");
@@ -1314,9 +1354,25 @@ function PostComments({
                   </AvatarFallback>
                 </Avatar>
               </Link>
-              <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-                <p className="text-sm font-semibold">{comment.author.displayName}</p>
-                <p className="text-sm whitespace-pre-wrap break-words">
+              <div className="relative flex-1 bg-muted rounded-lg px-3 py-2 pr-10">
+  {Number(comment.authorId) !== Number(CURRENT_USER_ID) && (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="absolute top-1 right-1 h-8 w-8 rounded-full"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onReportComment(comment);
+      }}
+      aria-label="Segnala commento"
+    >
+      <MoreVertical className="w-4 h-4" />
+    </Button>
+  )}
+
+  <p className="text-sm font-semibold pr-7">{comment.author.displayName}</p>
+  <p className="text-sm whitespace-pre-wrap break-words">
   <MentionText text={comment.content} />
 </p>
                 <div className="flex items-center justify-between mt-1">
@@ -1942,7 +1998,7 @@ const openFeedItemReport = (post: PostWithAuthor) => {
                   disabled={post.authorId === CURRENT_USER_ID}
                 >
                 <Heart className={`w-4 h-4 ${(String(post.id).startsWith("photo_") || String(post.id).startsWith("video_")) ? (likedPosts.has(String(post.id) as any) ? "fill-red-500 text-red-500" : "") : (likedPosts.has(Number(post.id)) ? "fill-red-500 text-red-500" : "")}`} />
-              <span className="text-xs ml-1">{likeCounts[String(post.id)] ?? post.likesCount ?? 0}</span>
+                <span className="text-xs ml-1">{likeCounts[String(post.id)] ?? post.likesCount ?? 0}</span>
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -1972,14 +2028,53 @@ const openFeedItemReport = (post: PostWithAuthor) => {
     <PhotoComments
       photoId={Number(String(post.id).replace("photo_", ""))}
       photoAuthorId={post.authorId}
+      commentPlaceholder={t.commentPlaceholder}
+      onReportComment={(comment) => {
+        const commentOwnerId = Number(comment.author_id ?? comment.authorId ?? comment.author?.id);
+
+        openReport({
+          targetType: "comment",
+          targetId: String(comment.id),
+          targetOwnerId: Number.isFinite(commentOwnerId) ? commentOwnerId : null,
+          title: t.reportComment,
+          description: t.reportContentDescription,
+        });
+      }}
     />
   ) : String(post.id).startsWith("video_") ? (
     <VideoComments
       videoId={Number(String(post.id).replace("video_", ""))}
       videoAuthorId={post.authorId}
+      commentPlaceholder={t.commentPlaceholder}
+      onReportComment={(comment) => {
+        const commentOwnerId = Number(comment.author_id ?? comment.authorId ?? comment.author?.id);
+
+        openReport({
+          targetType: "comment",
+          targetId: String(comment.id),
+          targetOwnerId: Number.isFinite(commentOwnerId) ? commentOwnerId : null,
+          title: t.reportComment,
+          description: t.reportContentDescription,
+        });
+      }}
     />
   ) : (
-    <PostComments postId={post.id as number} postAuthorId={post.authorId} />
+    <PostComments
+      postId={post.id as number}
+      postAuthorId={post.authorId}
+      commentPlaceholder={t.commentPlaceholder}
+      onReportComment={(comment) => {
+        const commentOwnerId = Number(comment.authorId ?? comment.author_id ?? comment.author?.id);
+
+        openReport({
+          targetType: "comment",
+          targetId: String(comment.id),
+          targetOwnerId: Number.isFinite(commentOwnerId) ? commentOwnerId : null,
+          title: t.reportComment,
+          description: t.reportContentDescription,
+        });
+      }}
+    />
   )
 )}
             </CardContent>
