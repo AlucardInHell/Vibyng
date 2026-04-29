@@ -2154,34 +2154,37 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
    
      {selectedPhoto && (
   <>
-    <div
-      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
-      onClick={() => {
-        setSelectedPhoto(null);
-        setPhotoCommentsOpen(false);
-      }}
-    >
-      <div
-        className="relative flex-1 flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="absolute inset-x-0 top-4 z-30 flex justify-end gap-2 px-4">
+   <div
+  className="absolute inset-x-0 top-4 z-[100] flex justify-end gap-2 px-4 pointer-events-none"
+  onClick={(e) => e.stopPropagation()}
+  onMouseDown={(e) => e.stopPropagation()}
+  onPointerDown={(e) => e.stopPropagation()}
+  onTouchStart={(e) => e.stopPropagation()}
+>
   {Number(selectedPhoto.artistId) !== Number(currentUserId) && (
     <Button
       variant="ghost"
       size="icon"
-      className="h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white"
+      className="h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white pointer-events-auto"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        openReport({
-          targetType: "photo",
-          targetId: String(selectedPhoto.id),
-          targetOwnerId: Number(selectedPhoto.artistId),
-          title: t.reportPhoto,
-          description: t.reportContentDescription,
-        });
+        const photoId = String(selectedPhoto.id);
+        const photoOwnerId = Number(selectedPhoto.artistId);
+
+        setSelectedPhoto(null);
+        setPhotoCommentsOpen(false);
+
+        setTimeout(() => {
+          openReport({
+            targetType: "photo",
+            targetId: photoId,
+            targetOwnerId: photoOwnerId,
+            title: t.reportPhoto,
+            description: t.reportContentDescription,
+          });
+        }, 0);
       }}
       aria-label={t.reportPhoto}
     >
@@ -2190,8 +2193,10 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   )}
 
   <button
-    className="h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center"
-    onClick={() => {
+    className="h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center pointer-events-auto"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
       setSelectedPhoto(null);
       setPhotoCommentsOpen(false);
     }}
