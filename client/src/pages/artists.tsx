@@ -190,21 +190,45 @@ useEffect(() => {
 
   const activeVideo = activeList[activeIndex] ?? null;
 
-  const { data: activeLikedData, refetch: refetchActiveLiked } = useQuery<{ liked: boolean }>({
-    queryKey: ["/api/videos", activeVideo?.id, "liked", currentUserId],
-    enabled: !!activeVideo?.id,
-    queryFn: async () => {
-      const res = await fetch(`/api/videos/${activeVideo!.id}/liked/${currentUserId}`);
-      return res.json();
-    },
-    staleTime: 0,
-  });
+useEffect(() => {
+  if (!flowVideos.length || !currentUserId) return;
 
-  useEffect(() => {
-    if (activeVideo?.id && activeLikedData) {
-      setLikedMap((prev) => ({ ...prev, [activeVideo.id]: activeLikedData.liked }));
+  let cancelled = false;
+
+  const loadLikedStatuses = async () => {
+    try {
+      const entries = await Promise.all(
+        flowVideos.map(async (video) => {
+          const res = await fetch(`/api/videos/${video.id}/liked/${currentUserId}`);
+          if (!res.ok) return [video.id, false] as const;
+
+          const data = await res.json();
+          return [video.id, Boolean(data?.liked)] as const;
+        })
+      );
+
+      if (cancelled) return;
+
+      setLikedMap((prev) => {
+        const next = { ...prev };
+
+        entries.forEach(([videoId, liked]) => {
+          next[videoId] = liked;
+        });
+
+        return next;
+      });
+    } catch {
+      // Non blocchiamo il Flow se uno stato like non viene caricato.
     }
-  }, [activeLikedData, activeVideo]);
+  };
+
+  loadLikedStatuses();
+
+  return () => {
+    cancelled = true;
+  };
+}, [flowVideos, currentUserId]);
 
   const { data: comments = [], refetch: refetchComments } = useQuery<any[]>({
     queryKey: ["/api/videos", commentsOpenId, "comments", currentUserId],
@@ -302,23 +326,26 @@ useEffect(() => {
       setLikeCounts((prev) => ({ ...prev, [video.id]: currentCount + 1 }));
     }
 
-    await refetchActiveLiked();
+    const likedRes = await fetch(`/api/videos/${video.id}/liked/${currentUserId}`);
+    if (likedRes.ok) {
+      const likedData = await likedRes.json();
+      setLikedMap((prev) => ({
+        ...prev,
+        [video.id]: Boolean(likedData?.liked),
+      }));
+    }
 
-await queryClient.invalidateQueries({
-  queryKey: ["/api/users", video.artist.id, "videos"],
-});
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/users", video.artist.id, "videos"],
+    });
 
-await queryClient.invalidateQueries({
-  queryKey: ["/api/flow/client"],
-});
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/flow/client"],
+    });
 
-await queryClient.invalidateQueries({
-  queryKey: ["/api/videos", video.id, "liked", currentUserId],
-});
-
-await queryClient.invalidateQueries({
-  queryKey: ["/api/posts"],
-});
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/posts"],
+    });
   };
 
   const handleShare = async (video: FlowVideo) => {
