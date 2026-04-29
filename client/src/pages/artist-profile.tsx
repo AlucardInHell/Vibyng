@@ -71,7 +71,7 @@ const artistProfileTranslations = {
     supportThanksDescription: "Hai guadagnato 50 VibyngPoints",
     supportErrorDescription: "Non è stato possibile completare il supporto",
     copied: "Link copiato!",
-share: "Condividi",
+    share: "Condividi",
 
 alreadyInPlaylistTitle: "Già nella playlist",
 alreadyInPlaylistDescription: "è già nella tua playlist",
@@ -142,6 +142,12 @@ blockErrorDescription: "Non è stato possibile aggiornare il blocco.",
 profileActions: "Azioni profilo",
 profileActionsDescription: "Gestisci le interazioni con questo profilo.",
 reportProfile: "Segnala profilo",
+reportContentTitle: "Segnala contenuto",
+reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
+reportPost: "Segnala post",
+reportPhoto: "Segnala foto",
+reportVideo: "Segnala video",
+reportComment: "Segnala commento",    
 reportProfileTitle: "Segnala profilo",
 reportProfileDescription: "Aiutaci a capire cosa non va in questo profilo.",
 reportReason: "Motivo della segnalazione",
@@ -277,6 +283,12 @@ blockErrorDescription: "Unable to update block status.",
 profileActions: "Profile actions",
 profileActionsDescription: "Manage your interactions with this profile.",
 reportProfile: "Report profile",
+reportContentTitle: "Report content",
+reportContentDescription: "Help us understand what is wrong with this content.",
+reportPost: "Report post",
+reportPhoto: "Report photo",
+reportVideo: "Report video",
+reportComment: "Report comment",    
 reportProfileTitle: "Report profile",
 reportProfileDescription: "Help us understand what is wrong with this profile.",
 reportReason: "Report reason",
@@ -420,8 +432,15 @@ export default function ArtistProfile() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [profileActionsOpen, setProfileActionsOpen] = useState(false);
   const [reportProfileOpen, setReportProfileOpen] = useState(false);
-  const [reportReason, setReportReason] = useState("offensive");
-  const [reportDetails, setReportDetails] = useState("");
+  const [reportTarget, setReportTarget] = useState<{
+  targetType: "user" | "post" | "photo" | "video" | "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+} | null>(null);
+const [reportReason, setReportReason] = useState("offensive");
+const [reportDetails, setReportDetails] = useState("");
   const [supportMode, setSupportMode] = useState<"one_time" | "monthly">("one_time");
   const [supportGoalId, setSupportGoalId] = useState<number | null>(null);
   const [addedSongs, setAddedSongs] = useState<Set<number>>(new Set());
@@ -680,6 +699,20 @@ const { data: profileAttendingEvents = [] } = useQuery<{ event: any }[]>({
     enabled: !!artist && artist.role !== "artist",
   });
 
+const openReport = (target: {
+  targetType: "user" | "post" | "photo" | "video" | "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+}) => {
+  setReportTarget(target);
+  setReportReason("offensive");
+  setReportDetails("");
+  setProfileActionsOpen(false);
+  setReportProfileOpen(true);
+};
+  
 const blockMutation = useMutation({
     mutationFn: async () => {
       if (blockStatus?.blockedByViewer) {
@@ -711,11 +744,15 @@ const blockMutation = useMutation({
 
 const reportProfileMutation = useMutation({
   mutationFn: async () => {
+    if (!reportTarget) {
+      throw new Error("Target segnalazione mancante");
+    }
+
     return apiRequest("POST", "/api/reports", {
       reporterId: currentUserId,
-      targetType: "user",
-      targetId: String(artistId),
-      targetOwnerId: artistId,
+      targetType: reportTarget.targetType,
+      targetId: reportTarget.targetId,
+      targetOwnerId: reportTarget.targetOwnerId,
       reason: reportReason,
       details: reportDetails.trim() || null,
     });
@@ -723,6 +760,7 @@ const reportProfileMutation = useMutation({
   onSuccess: () => {
     setReportProfileOpen(false);
     setProfileActionsOpen(false);
+    setReportTarget(null);
     setReportReason("offensive");
     setReportDetails("");
 
@@ -962,16 +1000,21 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
       </Button>
 
       <Button
-        variant="outline"
-        className="w-full justify-start gap-2"
-        onClick={() => {
-          setProfileActionsOpen(false);
-          setReportProfileOpen(true);
-        }}
-      >
-        <Flag className="w-4 h-4" />
-        {t.reportProfile}
-      </Button>
+  variant="outline"
+  className="w-full justify-start gap-2"
+  onClick={() => {
+    openReport({
+      targetType: "user",
+      targetId: String(artistId),
+      targetOwnerId: artistId,
+      title: t.reportProfileTitle,
+      description: t.reportProfileDescription,
+    });
+  }}
+>
+  <Flag className="w-4 h-4" />
+  {t.reportProfile}
+</Button>
     </div>
   </DialogContent>
 </Dialog>
@@ -979,12 +1022,12 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
 <Dialog open={reportProfileOpen} onOpenChange={setReportProfileOpen}>
   <DialogContent>
     <DialogHeader>
-      <DialogTitle>{t.reportProfileTitle}</DialogTitle>
+     <DialogTitle>{reportTarget?.title || t.reportContentTitle}</DialogTitle>
     </DialogHeader>
 
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {t.reportProfileDescription}
+        {reportTarget?.description || t.reportContentDescription}
       </p>
 
       <div className="space-y-2">
