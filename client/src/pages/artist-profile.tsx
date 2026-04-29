@@ -1400,54 +1400,29 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
           <div className="grid grid-cols-2 gap-2">
             {photos && photos.length > 0 ? (
   photos.map((photo) => (
-    <Card
-      key={photo.id}
-      className="relative overflow-hidden hover-elevate cursor-pointer"
-      onClick={() => {
-        setSelectedPhoto(photo);
-        setPhotoLikeCount(prev => ({ ...prev, [photo.id]: photo.likesCount ?? 0 }));
-      }}
-    >
-      {Number(photo.artistId) !== Number(currentUserId) && (
-        <div className="absolute inset-x-0 top-0 z-20 flex justify-end p-1 pointer-events-none">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white pointer-events-auto"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
+  <Card
+    key={photo.id}
+    className="overflow-hidden hover-elevate cursor-pointer"
+    onClick={() => {
+      setSelectedPhoto(photo);
+      setPhotoLikeCount(prev => ({ ...prev, [photo.id]: photo.likesCount ?? 0 }));
+    }}
+  >
+    <img
+      src={photo.imageUrl ?? undefined}
+      alt={photo.title || t.untitledPhoto}
+      className="w-full h-32 object-cover"
+    />
 
-              openReport({
-                targetType: "photo",
-                targetId: String(photo.id),
-                targetOwnerId: Number(photo.artistId),
-                title: t.reportPhoto,
-                description: t.reportContentDescription,
-              });
-            }}
-            aria-label={t.reportPhoto}
-          >
-            <MoreVertical className="w-5 h-5" />
-          </Button>
-        </div>
-      )}
-
-      <img
-        src={photo.imageUrl ?? undefined}
-        alt={photo.title || t.untitledPhoto}
-        className="w-full h-32 object-cover"
-      />
-
-      {photo.title && photo.title !== t.untitledPhoto && (
-        <CardContent className="p-2">
-          <p className="text-xs text-muted-foreground truncate">
-            <MentionText text={photo.title} />
-          </p>
-        </CardContent>
-      )}
-    </Card>
-  ))
+    {photo.title && photo.title !== t.untitledPhoto && (
+      <CardContent className="p-2">
+        <p className="text-xs text-muted-foreground truncate">
+          <MentionText text={photo.title} />
+        </p>
+      </CardContent>
+    )}
+  </Card>
+))
 ) : (
               <p className="text-center text-muted-foreground py-8 col-span-2">{t.noPhotos}</p>
             )}
@@ -1497,9 +1472,45 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
         </TabsContent>
 
        {selectedVideo && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
-          <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
-            <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
+  <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
+    <div className="absolute inset-x-0 top-4 z-30 flex justify-end gap-2 px-4">
+      {Number(selectedVideo.artistId) !== Number(currentUserId) && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            openReport({
+              targetType: "video",
+              targetId: String(selectedVideo.id),
+              targetOwnerId: Number(selectedVideo.artistId),
+              title: t.reportVideo,
+              description: t.reportContentDescription,
+            });
+          }}
+          aria-label={t.reportVideo}
+        >
+          <MoreVertical className="w-6 h-6" />
+        </Button>
+      )}
+
+      <button
+        className="h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setSelectedVideo(null);
+        }}
+      >
+        ✕
+      </button>
+    </div>
+
+    <div className="flex-1 flex items-center justify-center p-4 pt-16" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
               <video src={selectedVideo.videoUrl} controls className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black" />
               <div className="p-4">
                 {selectedVideo.title && selectedVideo.title !== t.untitledVideo && <p className="font-medium whitespace-pre-wrap break-words">
@@ -1563,7 +1574,6 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   <Share2 className="w-5 h-5" />
   {t.share}
 </button>
-                  <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
                <div className="mt-4 border-t pt-4 px-4 pb-4">
                  <div className="space-y-4 max-h-[26vh] overflow-y-auto pr-1">
@@ -2155,15 +2165,40 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
         className="relative flex-1 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          className="absolute top-4 right-4 z-20 text-white text-2xl"
-          onClick={() => {
-            setSelectedPhoto(null);
-            setPhotoCommentsOpen(false);
-          }}
-        >
-          ✕
-        </button>
+        <div className="absolute inset-x-0 top-4 z-30 flex justify-end gap-2 px-4">
+  {Number(selectedPhoto.artistId) !== Number(currentUserId) && (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        openReport({
+          targetType: "photo",
+          targetId: String(selectedPhoto.id),
+          targetOwnerId: Number(selectedPhoto.artistId),
+          title: t.reportPhoto,
+          description: t.reportContentDescription,
+        });
+      }}
+      aria-label={t.reportPhoto}
+    >
+      <MoreVertical className="w-6 h-6" />
+    </Button>
+  )}
+
+  <button
+    className="h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center"
+    onClick={() => {
+      setSelectedPhoto(null);
+      setPhotoCommentsOpen(false);
+    }}
+  >
+    ✕
+  </button>
+</div>
 
         <div
           className={
