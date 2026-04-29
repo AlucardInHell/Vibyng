@@ -344,10 +344,12 @@ function ArtistPostComments({
   postId,
   postAuthorId,
   commentPlaceholder,
+  onReportComment,
 }: {
   postId: number;
   postAuthorId: number;
   commentPlaceholder: string;
+  onReportComment: (comment: any) => void;
 }) {
   const [newComment, setNewComment] = useState("");
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
@@ -391,9 +393,25 @@ function ArtistPostComments({
               <AvatarFallback className="bg-primary/10 text-primary text-xs">{comment.author?.displayName?.charAt(0)}</AvatarFallback>
             </Avatar>
           </Link>
-          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-            <p className="text-sm font-semibold">{comment.author?.displayName}</p>
-            <p className="text-sm whitespace-pre-wrap break-words">
+          <div className="relative flex-1 bg-muted rounded-lg px-3 py-2 pr-10">
+  {Number(comment.authorId ?? comment.author_id ?? comment.author?.id) !== Number(currentUserId) && (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="absolute top-1 right-1 h-8 w-8 rounded-full"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onReportComment(comment);
+      }}
+      aria-label="Segnala commento"
+    >
+      <MoreVertical className="w-4 h-4" />
+    </Button>
+  )}
+
+  <p className="text-sm font-semibold pr-7">{comment.author?.displayName}</p>
+  <p className="text-sm whitespace-pre-wrap break-words">
   <MentionText text={comment.content} />
 </p>
             <div className="flex items-center justify-between mt-1">
@@ -1379,10 +1397,21 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
                   </CardContent>
                   {openComments.has(post.id) && (
                     <CardContent className="pt-0">
-                      <ArtistPostComments
+                     <ArtistPostComments
   postId={post.id}
   postAuthorId={post.author.id}
   commentPlaceholder={t.commentPlaceholder}
+  onReportComment={(comment) => {
+    const commentOwnerId = Number(comment.authorId ?? comment.author_id ?? comment.author?.id);
+
+    openReport({
+      targetType: "comment",
+      targetId: String(comment.id),
+      targetOwnerId: Number.isFinite(commentOwnerId) ? commentOwnerId : null,
+      title: t.reportComment,
+      description: t.reportContentDescription,
+    });
+  }}
 />
                     </CardContent>
                   )}
