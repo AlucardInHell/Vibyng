@@ -2154,7 +2154,7 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
    {selectedPhoto && (
   <>
     <div
-      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
+      className="fixed inset-0 z-40 bg-black/95 flex flex-col"
       onClick={() => {
         setSelectedPhoto(null);
         setPhotoCommentsOpen(false);
@@ -2180,21 +2180,13 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const photoId = String(selectedPhoto.id);
-                const photoOwnerId = Number(selectedPhoto.artistId);
-
-                setSelectedPhoto(null);
-                setPhotoCommentsOpen(false);
-
-                setTimeout(() => {
-                  openReport({
-                    targetType: "photo",
-                    targetId: photoId,
-                    targetOwnerId: photoOwnerId,
-                    title: t.reportPhoto,
-                    description: t.reportContentDescription,
-                  });
-                }, 0);
+               openReport({
+  targetType: "photo",
+  targetId: String(selectedPhoto.id),
+  targetOwnerId: Number(selectedPhoto.artistId),
+  title: t.reportPhoto,
+  description: t.reportContentDescription,
+});
               }}
               aria-label={t.reportPhoto}
             >
