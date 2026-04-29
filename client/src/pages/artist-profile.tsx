@@ -1399,30 +1399,56 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
         <TabsContent value="photos" className="mt-4">
           <div className="grid grid-cols-2 gap-2">
             {photos && photos.length > 0 ? (
-              photos.map((photo) => (
-                <Card
-  key={photo.id}
-  className="overflow-hidden hover-elevate cursor-pointer"
-  onClick={() => {
-    setSelectedPhoto(photo);
-    setPhotoLikeCount(prev => ({ ...prev, [photo.id]: photo.likesCount ?? 0 }));
-  }}
->
-  <img
-    src={photo.imageUrl ?? undefined}
-    alt={photo.title || t.untitledPhoto}
-    className="w-full h-32 object-cover"
-  />
-                  {photo.title && photo.title !== t.untitledPhoto && (
-                    <CardContent className="p-2">
-                      <p className="text-xs text-muted-foreground truncate">
-  <MentionText text={photo.title} />
-</p>
-                    </CardContent>
-                  )}
-                </Card>
-              ))
-            ) : (
+  photos.map((photo) => (
+    <Card
+      key={photo.id}
+      className="relative overflow-hidden hover-elevate cursor-pointer"
+      onClick={() => {
+        setSelectedPhoto(photo);
+        setPhotoLikeCount(prev => ({ ...prev, [photo.id]: photo.likesCount ?? 0 }));
+      }}
+    >
+      {Number(photo.artistId) !== Number(currentUserId) && (
+        <div className="absolute inset-x-0 top-0 z-20 flex justify-end p-1 pointer-events-none">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white pointer-events-auto"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              openReport({
+                targetType: "photo",
+                targetId: String(photo.id),
+                targetOwnerId: Number(photo.artistId),
+                title: t.reportPhoto,
+                description: t.reportContentDescription,
+              });
+            }}
+            aria-label={t.reportPhoto}
+          >
+            <MoreVertical className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
+
+      <img
+        src={photo.imageUrl ?? undefined}
+        alt={photo.title || t.untitledPhoto}
+        className="w-full h-32 object-cover"
+      />
+
+      {photo.title && photo.title !== t.untitledPhoto && (
+        <CardContent className="p-2">
+          <p className="text-xs text-muted-foreground truncate">
+            <MentionText text={photo.title} />
+          </p>
+        </CardContent>
+      )}
+    </Card>
+  ))
+) : (
               <p className="text-center text-muted-foreground py-8 col-span-2">{t.noPhotos}</p>
             )}
           </div>
