@@ -1020,7 +1020,7 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
 </Dialog>
 
 <Dialog open={reportProfileOpen} onOpenChange={setReportProfileOpen}>
-  <DialogContent>
+<DialogContent className="z-[130]">
     <DialogHeader>
      <DialogTitle>{reportTarget?.title || t.reportContentTitle}</DialogTitle>
     </DialogHeader>
@@ -2151,10 +2151,11 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
     </div>
   </DialogContent>
 </Dialog>
+      
    {selectedPhoto && (
   <>
     <div
-      className="fixed inset-0 z-40 bg-black/95 flex flex-col"
+      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
       onClick={() => {
         setSelectedPhoto(null);
         setPhotoCommentsOpen(false);
