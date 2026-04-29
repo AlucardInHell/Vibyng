@@ -71,6 +71,8 @@ const homeTranslations = {
     reportContentTitle: "Segnala contenuto",
 reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
 reportPost: "Segnala post",
+reportPhoto: "Segnala foto",
+reportVideo: "Segnala video",    
 reportReason: "Motivo della segnalazione",
 reportDetails: "Dettagli opzionali",
 reportDetailsPlaceholder: "Aggiungi dettagli utili alla verifica...",
@@ -141,6 +143,8 @@ roleRecordLabel: "Etichetta",
 reportContentTitle: "Report content",
 reportContentDescription: "Help us understand what is wrong with this content.",
 reportPost: "Report post",
+reportPhoto: "Report photo",
+reportVideo: "Report video",    
 reportReason: "Report reason",
 reportDetails: "Optional details",
 reportDetailsPlaceholder: "Add useful details for review...",
@@ -1595,6 +1599,46 @@ if (result === "copied") {
   setReportOpen(true);
 };
 
+const openFeedItemReport = (post: PostWithAuthor) => {
+  const rawId = String(post.id);
+
+  if (rawId.startsWith("photo_")) {
+    const photoId = rawId.replace("photo_", "");
+
+    openReport({
+      targetType: "photo",
+      targetId: photoId,
+      targetOwnerId: Number(post.authorId),
+      title: t.reportPhoto,
+      description: t.reportContentDescription,
+    });
+
+    return;
+  }
+
+  if (rawId.startsWith("video_")) {
+    const videoId = rawId.replace("video_", "");
+
+    openReport({
+      targetType: "video",
+      targetId: videoId,
+      targetOwnerId: Number(post.authorId),
+      title: t.reportVideo,
+      description: t.reportContentDescription,
+    });
+
+    return;
+  }
+
+  openReport({
+    targetType: "post",
+    targetId: rawId,
+    targetOwnerId: Number(post.authorId),
+    title: t.reportPost,
+    description: t.reportContentDescription,
+  });
+};
+  
  const reportMutation = useMutation({
   mutationFn: async () => {
     if (!reportTarget) {
@@ -1824,25 +1868,46 @@ if (result === "copied") {
 })()}
                   </span>
             </div>
-            {post.authorId === CURRENT_USER_ID && (
-              <button className="text-xs text-red-400 hover:text-red-600 ml-auto self-start pt-1"
-                onClick={async () => {
-                  try {
-                   if (String(post.id).startsWith("photo_")) {
-                      const photoId = String(post.id).replace("photo_", "");
-                      await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${photoId}`);
-                    } else {
-                      await apiRequest("DELETE", `/api/posts/${post.id}`);
-                    }
-                    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
-                    queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-                    toast({ title: t.postDeletedTitle });
-                  } catch {
-                    toast({ title: t.error, variant: "destructive" });
-                  }
-                }}
-              >🗑️</button>
-            )}
+            <div className="ml-auto self-start flex items-center gap-1">
+  {post.authorId === CURRENT_USER_ID ? (
+    <button
+      className="text-xs text-red-400 hover:text-red-600 pt-1"
+      onClick={async () => {
+        try {
+          if (String(post.id).startsWith("photo_")) {
+            const photoId = String(post.id).replace("photo_", "");
+            await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${photoId}`);
+          } else if (String(post.id).startsWith("video_")) {
+            const videoId = String(post.id).replace("video_", "");
+            await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/videos/${videoId}`);
+          } else {
+            await apiRequest("DELETE", `/api/posts/${post.id}`);
+          }
+
+          queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
+
+          toast({ title: t.postDeletedTitle });
+        } catch {
+          toast({ title: t.error, variant: "destructive" });
+        }
+      }}
+    >
+      🗑️
+    </button>
+  ) : (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-10 w-10 rounded-full"
+      onClick={() => openFeedItemReport(post)}
+      aria-label={t.reportContentTitle}
+    >
+      <MoreVertical className="w-6 h-6" />
+    </Button>
+  )}
+</div>
           </CardHeader>
             <CardContent className="pt-0">
               <p className="text-sm mb-3 whitespace-pre-wrap break-words" data-testid={`text-content-${post.id}`}>
