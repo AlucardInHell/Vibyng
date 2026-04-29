@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus, X, ChevronLeft, ChevronRight, Search, ImageIcon, Loader2, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Sparkles, Music, Send, Megaphone, ExternalLink, Plus, X, ChevronLeft, ChevronRight, Search, ImageIcon, Loader2, Trash2, MoreVertical, Flag } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -68,6 +68,24 @@ const homeTranslations = {
     loadingFeed: "Caricamento feed...",
     mediaAlt: "Contenuto multimediale",
     exclusive: "Esclusivo",
+    reportContentTitle: "Segnala contenuto",
+reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
+reportPost: "Segnala post",
+reportReason: "Motivo della segnalazione",
+reportDetails: "Dettagli opzionali",
+reportDetailsPlaceholder: "Aggiungi dettagli utili alla verifica...",
+reportSubmit: "Invia segnalazione",
+reportSuccessTitle: "Segnalazione inviata",
+reportSuccessDescription: "Grazie, analizzeremo la segnalazione.",
+reportErrorDescription: "Non è stato possibile inviare la segnalazione.",
+reportReasonOffensive: "Contenuto offensivo",
+reportReasonViolent: "Contenuto violento",
+reportReasonPornographic: "Contenuto pornografico",
+reportReasonHarassment: "Molestie",
+reportReasonHate: "Odio o discriminazione",
+reportReasonSpam: "Spam",
+reportReasonFakeProfile: "Profilo falso",
+reportReasonOther: "Altro",
 
     error: "Errore",
     selectImageTitle: "Seleziona un'immagine",
@@ -120,6 +138,24 @@ roleRecordLabel: "Etichetta",
     loadingFeed: "Loading feed...",
     mediaAlt: "Media content",
     exclusive: "Exclusive",
+reportContentTitle: "Report content",
+reportContentDescription: "Help us understand what is wrong with this content.",
+reportPost: "Report post",
+reportReason: "Report reason",
+reportDetails: "Optional details",
+reportDetailsPlaceholder: "Add useful details for review...",
+reportSubmit: "Submit report",
+reportSuccessTitle: "Report submitted",
+reportSuccessDescription: "Thank you, we will review this report.",
+reportErrorDescription: "Unable to submit the report.",
+reportReasonOffensive: "Offensive content",
+reportReasonViolent: "Violent content",
+reportReasonPornographic: "Pornographic content",
+reportReasonHarassment: "Harassment",
+reportReasonHate: "Hate or discrimination",
+reportReasonSpam: "Spam",
+reportReasonFakeProfile: "Fake profile",
+reportReasonOther: "Other",    
 
     error: "Error",
     selectImageTitle: "Select an image",
@@ -221,6 +257,16 @@ function Stories() {
   const { toast } = useToast();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = homeTranslations[language];
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{
+  targetType: "post" | "photo" | "video" | "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+} | null>(null);
+  const [reportReason, setReportReason] = useState("offensive");
+  const [reportDetails, setReportDetails] = useState("");
   const [viewedStories, setViewedStories] = useState<Set<number>>(new Set());
   const [activeStory, setActiveStory] = useState<StoryUserGroup | null>(null);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
@@ -1334,6 +1380,16 @@ const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<typeof searchableUsers>([]);
 const searchInputRef = useRef<HTMLInputElement>(null);
 const filteredUsers = searchResults;
+const [reportOpen, setReportOpen] = useState(false);
+const [reportTarget, setReportTarget] = useState<{
+  targetType: "post" | "photo" | "video" | "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+} | null>(null);
+const [reportReason, setReportReason] = useState("offensive");
+const [reportDetails, setReportDetails] = useState("");  
 
 useEffect(() => {
   const handleLanguageChange = (event: Event) => {
@@ -1525,6 +1581,54 @@ if (result === "copied") {
     });
   }
 };
+
+  const openReport = (target: {
+  targetType: "post" | "photo" | "video" | "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+}) => {
+  setReportTarget(target);
+  setReportReason("offensive");
+  setReportDetails("");
+  setReportOpen(true);
+};
+
+ const reportMutation = useMutation({
+  mutationFn: async () => {
+    if (!reportTarget) {
+      throw new Error("Target segnalazione mancante");
+    }
+
+    return apiRequest("POST", "/api/reports", {
+      reporterId: CURRENT_USER_ID,
+      targetType: reportTarget.targetType,
+      targetId: reportTarget.targetId,
+      targetOwnerId: reportTarget.targetOwnerId,
+      reason: reportReason,
+      details: reportDetails.trim() || null,
+    });
+  },
+  onSuccess: () => {
+    setReportOpen(false);
+    setReportTarget(null);
+    setReportReason("offensive");
+    setReportDetails("");
+
+    toast({
+      title: t.reportSuccessTitle,
+      description: t.reportSuccessDescription,
+    });
+  },
+  onError: () => {
+    toast({
+      title: t.error,
+      description: t.reportErrorDescription,
+      variant: "destructive",
+    });
+  },
+}); 
   
   if (isLoading) {
     return (
@@ -1538,6 +1642,63 @@ if (result === "copied") {
   }
 
   return (
+  <>
+    <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{reportTarget?.title || t.reportContentTitle}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {reportTarget?.description || t.reportContentDescription}
+          </p>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              {t.reportReason}
+            </label>
+
+            <select
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+            >
+              <option value="offensive">{t.reportReasonOffensive}</option>
+              <option value="violent">{t.reportReasonViolent}</option>
+              <option value="pornographic">{t.reportReasonPornographic}</option>
+              <option value="harassment">{t.reportReasonHarassment}</option>
+              <option value="hate">{t.reportReasonHate}</option>
+              <option value="spam">{t.reportReasonSpam}</option>
+              <option value="fake_profile">{t.reportReasonFakeProfile}</option>
+              <option value="other">{t.reportReasonOther}</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              {t.reportDetails}
+            </label>
+
+            <Textarea
+              value={reportDetails}
+              onChange={(e) => setReportDetails(e.target.value)}
+              placeholder={t.reportDetailsPlaceholder}
+              rows={4}
+            />
+          </div>
+
+          <Button
+            className="w-full"
+            onClick={() => reportMutation.mutate()}
+            disabled={reportMutation.isPending}
+          >
+            {t.reportSubmit}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -1761,5 +1922,6 @@ if (result === "copied") {
         </div>
       ))}
     </div>
-  );
+  </>
+);
 }
