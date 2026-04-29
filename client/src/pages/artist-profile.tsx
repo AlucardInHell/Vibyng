@@ -393,24 +393,28 @@ function ArtistPostComments({
               <AvatarFallback className="bg-primary/10 text-primary text-xs">{comment.author?.displayName?.charAt(0)}</AvatarFallback>
             </Avatar>
           </Link>
-          <div className="relative flex-1 bg-muted rounded-lg px-3 py-2 pr-10">
-  {Number(comment.authorId ?? comment.author_id ?? comment.author?.id) !== Number(currentUserId) && (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="absolute top-1 right-1 h-8 w-8 rounded-full"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onReportComment(comment);
-      }}
-      aria-label="Segnala commento"
-    >
-      <MoreVertical className="w-4 h-4" />
-    </Button>
-  )}
+          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+  <div className="flex items-start justify-between gap-2">
+    <p className="text-sm font-semibold min-w-0 truncate">
+      {comment.author?.displayName}
+    </p>
 
-  <p className="text-sm font-semibold pr-7">{comment.author?.displayName}</p>
+    {Number(comment.authorId ?? comment.author_id ?? comment.author?.id) !== Number(currentUserId) && (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onReportComment(comment);
+        }}
+        aria-label="Segnala commento"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </Button>
+    )}
+  </div>
   <p className="text-sm whitespace-pre-wrap break-words">
   <MentionText text={comment.content} />
 </p>
