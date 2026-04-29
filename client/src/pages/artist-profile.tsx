@@ -1263,8 +1263,28 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
             <div className="flex flex-col gap-3">
               {artistPosts.map((post, index) => (
   <>
-    <Card key={post.id} className="hover-elevate">
-                  <CardContent className="p-4">
+    <Card key={post.id} className="relative hover-elevate">
+      {Number(post.authorId) !== Number(currentUserId) && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-2 right-2 z-20 h-9 w-9 rounded-full"
+          onClick={() => {
+            openReport({
+              targetType: "post",
+              targetId: String(post.id),
+              targetOwnerId: Number(post.authorId),
+              title: t.reportPost,
+              description: t.reportContentDescription,
+            });
+          }}
+          aria-label={t.reportPost}
+        >
+          <MoreVertical className="w-5 h-5" />
+        </Button>
+      )}
+
+      <CardContent className="p-4 pr-12">
                     <div className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarImage src={post.author.avatarUrl || undefined} alt={post.author.displayName} />
