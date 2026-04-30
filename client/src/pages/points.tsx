@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus } from "lucide-react";
+import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus, MoreVertical } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
@@ -128,6 +128,25 @@ copied: "Link copiato!",
 untitledPhoto: "Foto",
 untitledVideo: "Video",
 delete: "Elimina",
+reportContentTitle: "Segnala contenuto",
+reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
+reportComment: "Segnala commento",
+reportReason: "Motivo della segnalazione",
+reportDetails: "Dettagli opzionali",
+reportDetailsPlaceholder: "Aggiungi dettagli utili alla verifica...",
+reportSubmit: "Invia segnalazione",
+reportSuccessTitle: "Segnalazione inviata",
+reportSuccessDescription: "Grazie, analizzeremo la segnalazione.",
+reportErrorDescription: "Non è stato possibile inviare la segnalazione.",
+reportReasonOffensive: "Contenuto offensivo",
+reportReasonViolent: "Contenuto violento",
+reportReasonPornographic: "Contenuto pornografico",
+reportReasonHarassment: "Molestie",
+reportReasonHate: "Odio o discriminazione",
+reportReasonSpam: "Spam",
+reportReasonFakeProfile: "Profilo falso",
+reportReasonOther: "Altro",
+    
 
 photoDescriptionPlaceholder: "Scrivi una descrizione per la foto...",
 videoDescriptionPlaceholder: "Scrivi una descrizione per il video...",
@@ -237,7 +256,25 @@ copied: "Link copied!",
 untitledPhoto: "Photo",
 untitledVideo: "Video",
 delete: "Delete",
-
+reportContentTitle: "Report content",
+reportContentDescription: "Help us understand what is wrong with this content.",
+reportComment: "Report comment",
+reportReason: "Report reason",
+reportDetails: "Optional details",
+reportDetailsPlaceholder: "Add useful details for review...",
+reportSubmit: "Submit report",
+reportSuccessTitle: "Report submitted",
+reportSuccessDescription: "Thank you, we will review this report.",
+reportErrorDescription: "Unable to submit the report.",
+reportReasonOffensive: "Offensive content",
+reportReasonViolent: "Violent content",
+reportReasonPornographic: "Pornographic content",
+reportReasonHarassment: "Harassment",
+reportReasonHate: "Hate or discrimination",
+reportReasonSpam: "Spam",
+reportReasonFakeProfile: "Fake profile",
+reportReasonOther: "Other",
+    
 photoDescriptionPlaceholder: "Write a description for the photo...",
 videoDescriptionPlaceholder: "Write a description for the video...",
 publishPhoto: "Publish photo",
@@ -308,10 +345,12 @@ function MePostComments({
   postId,
   postAuthorId,
   commentPlaceholder,
+  onReportComment,
 }: {
   postId: number;
   postAuthorId: number;
   commentPlaceholder: string;
+  onReportComment: (comment: any) => void;
 }) {
   const [newComment, setNewComment] = useState("");
 
@@ -368,10 +407,37 @@ function MePostComments({
           </Avatar>
 
           <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-            <p className="text-sm font-semibold">{comment.author?.displayName}</p>
-            <p className="text-sm whitespace-pre-wrap break-words">
-              <MentionText text={comment.content} />
-            </p>
+  <div className="flex items-start justify-between gap-2">
+    <p className="text-sm font-semibold min-w-0 truncate">
+      {comment.author?.displayName}
+    </p>
+
+    {Number(
+      comment.authorId ??
+      comment.author_id ??
+      comment.author?.id ??
+      comment.userId ??
+      comment.user_id
+    ) !== Number(CURRENT_USER_ID) && (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onReportComment(comment);
+        }}
+        aria-label="Segnala commento"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </Button>
+    )}
+  </div>
+
+  <p className="text-sm whitespace-pre-wrap break-words">
+    <MentionText text={comment.content} />
+  </p>
 
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-muted-foreground">
@@ -425,7 +491,17 @@ export default function Points() {
   const [myPlaylist, setMyPlaylist] = useState<Song[]>([]);
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [openCommentsPosts, setOpenCommentsPosts] = useState<Set<number>>(new Set());
-  const [postText, setPostText] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{
+  targetType: "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+} | null>(null);
+const [reportReason, setReportReason] = useState("offensive");
+const [reportDetails, setReportDetails] = useState("");
+const [postText, setPostText] = useState("");
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const { mentionQuery: commentMentionQuery, showMentions: showCommentMentions, handleTextChange: handleCommentTextChange, insertMention: insertCommentMention, closeMentions: closeCommentMentions } = useMention();
   const { mentionQuery: photoMentionQuery, showMentions: showPhotoMentions, handleTextChange: handlePhotoTextChange, insertMention: insertPhotoMention, closeMentions: closePhotoMentions } = useMention();
@@ -911,6 +987,54 @@ const uploadVideoDirectToCloudinary = async (file: File): Promise<string> => {
 });
   };
 
+const openReport = (target: {
+  targetType: "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+}) => {
+  setReportTarget(target);
+  setReportReason("offensive");
+  setReportDetails("");
+  setReportOpen(true);
+};
+
+const reportMutation = useMutation({
+  mutationFn: async () => {
+    if (!reportTarget) {
+      throw new Error("Target segnalazione mancante");
+    }
+
+    return apiRequest("POST", "/api/reports", {
+      reporterId: CURRENT_USER_ID,
+      targetType: reportTarget.targetType,
+      targetId: reportTarget.targetId,
+      targetOwnerId: reportTarget.targetOwnerId,
+      reason: reportReason,
+      details: reportDetails.trim() || null,
+    });
+  },
+  onSuccess: () => {
+    setReportOpen(false);
+    setReportTarget(null);
+    setReportReason("offensive");
+    setReportDetails("");
+
+    toast({
+      title: t.reportSuccessTitle,
+      description: t.reportSuccessDescription,
+    });
+  },
+  onError: () => {
+    toast({
+      title: t.error,
+      description: t.reportErrorDescription,
+      variant: "destructive",
+    });
+  },
+});
+  
   const handleUnfollowArtist = async (artistId: number, artistName: string) => {
     try {
       await unfollowMutation.mutateAsync(artistId);
@@ -924,7 +1048,58 @@ const uploadVideoDirectToCloudinary = async (file: File): Promise<string> => {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+  <div className="flex flex-col gap-4">
+    <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+      <DialogContent className="z-[130]">
+        <DialogHeader>
+          <DialogTitle>{reportTarget?.title || t.reportContentTitle}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {reportTarget?.description || t.reportContentDescription}
+          </p>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t.reportReason}</label>
+
+            <select
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+            >
+              <option value="offensive">{t.reportReasonOffensive}</option>
+              <option value="violent">{t.reportReasonViolent}</option>
+              <option value="pornographic">{t.reportReasonPornographic}</option>
+              <option value="harassment">{t.reportReasonHarassment}</option>
+              <option value="hate">{t.reportReasonHate}</option>
+              <option value="spam">{t.reportReasonSpam}</option>
+              <option value="fake_profile">{t.reportReasonFakeProfile}</option>
+              <option value="other">{t.reportReasonOther}</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t.reportDetails}</label>
+
+            <Textarea
+              value={reportDetails}
+              onChange={(e) => setReportDetails(e.target.value)}
+              placeholder={t.reportDetailsPlaceholder}
+              rows={4}
+            />
+          </div>
+
+          <Button
+            className="w-full"
+            onClick={() => reportMutation.mutate()}
+            disabled={reportMutation.isPending}
+          >
+            {t.reportSubmit}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
       <Card data-testid="card-my-profile">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center">
@@ -1590,6 +1765,23 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
   postId={post.id}
   postAuthorId={post.author.id}
   commentPlaceholder={t.commentPlaceholder}
+  onReportComment={(comment) => {
+    const commentOwnerId = Number(
+      comment.authorId ??
+      comment.author_id ??
+      comment.author?.id ??
+      comment.userId ??
+      comment.user_id
+    );
+
+    openReport({
+      targetType: "comment",
+      targetId: String(comment.id),
+      targetOwnerId: Number.isFinite(commentOwnerId) ? commentOwnerId : null,
+      title: t.reportComment,
+      description: t.reportContentDescription,
+    });
+  }}
 />
                     </CardContent>
                   )}
