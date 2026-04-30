@@ -62,11 +62,30 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
+await db.execute(sql`
+  ALTER TABLE comments
+  ADD COLUMN IF NOT EXISTS likes_count integer DEFAULT 0
+`);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS comment_likes (
+    id serial PRIMARY KEY,
+    comment_id integer NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS comment_likes_comment_user_idx
+  ON comment_likes (comment_id, user_id)
+`);
+  
   await db.execute(sql`
     ALTER TABLE photo_comments
     ADD COLUMN IF NOT EXISTS likes_count integer DEFAULT 0
   `);
-
+  
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS photo_comment_likes (
       id serial PRIMARY KEY,
@@ -1389,16 +1408,62 @@ app.get("/api/posts", async (req, res) => {
   });
 
   // === COMMENTS ===
- app.get("/api/posts/:postId/comments", async (req, res) => {
+app.get("/api/posts/:postId/comments", async (req, res) => {
+  try {
     const userId = Number(req.query.userId);
     const postComments = await storage.getCommentsByPost(Number(req.params.postId));
-    if (!userId) return res.json(postComments);
-    const commentsWithLikes = await Promise.all(postComments.map(async (c) => {
-      const result = await db.execute(sql`SELECT id FROM comment_likes WHERE comment_id = ${c.id} AND user_id = ${userId}`);
-      return { ...c, likedByMe: result.rows.length > 0 };
-    }));
+
+    const commentsWithLikes = await Promise.all(
+      postComments.map(async (c) => {
+        const likesResult = await db.execute(sql`
+          SELECT COUNT(*)::int AS count
+          FROM comment_likes
+          WHERE comment_id = ${c.id}
+        `);
+
+        const realLikesCount = Number(likesResult.rows[0]?.count ?? 0);
+
+        if (Number(c.likesCount ?? 0) !== realLikesCount) {
+          await db.execute(sql`
+            UPDATE comments
+            SET likes_count = ${realLikesCount}
+            WHERE id = ${c.id}
+          `);
+        }
+
+        if (!userId) {
+          return {
+            ...c,
+            likesCount: realLikesCount,
+            likedByMe: false,
+          };
+        }
+
+        const likedResult = await db.execute(sql`
+          SELECT id
+          FROM comment_likes
+          WHERE comment_id = ${c.id}
+            AND user_id = ${userId}
+          LIMIT 1
+        `);
+
+        return {
+          ...c,
+          likesCount: realLikesCount,
+          likedByMe: likedResult.rows.length > 0,
+        };
+      })
+    );
+
     res.json(commentsWithLikes);
-  });
+  } catch (err: any) {
+    console.error("[post-comments-get]", err?.message || err);
+    res.status(400).json({
+      message: "Errore nel recupero dei commenti",
+      detail: err?.message,
+    });
+  }
+});
 
 app.post("/api/posts/:postId/comments", async (req, res) => {
   try {
@@ -1436,30 +1501,84 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
   });
 
   app.post("/api/comments/:commentId/like", async (req, res) => {
-    try {
-      const commentId = Number(req.params.commentId);
-      const { userId } = req.body;
-      await storage.likeComment(commentId, userId);
-      const result = await db.execute(sql`SELECT likes_count FROM comments WHERE id = ${commentId}`);
-      res.json({ success: true, likesCount: result.rows[0]?.likes_count ?? 0 });
-    } catch (err: any) {
-      console.error("[comment-like]", err?.message);
-      res.status(400).json({ message: "Errore nel like", detail: err?.message });
+  try {
+    const commentId = Number(req.params.commentId);
+    const userId = Number(req.body.userId);
+
+    if (!commentId || !userId) {
+      return res.status(400).json({ message: "Dati like commento non validi" });
     }
-  });
+
+    await db.execute(sql`
+      INSERT INTO comment_likes (comment_id, user_id)
+      VALUES (${commentId}, ${userId})
+      ON CONFLICT (comment_id, user_id) DO NOTHING
+    `);
+
+    const countResult = await db.execute(sql`
+      SELECT COUNT(*)::int AS count
+      FROM comment_likes
+      WHERE comment_id = ${commentId}
+    `);
+
+    const likesCount = Number(countResult.rows[0]?.count ?? 0);
+
+    await db.execute(sql`
+      UPDATE comments
+      SET likes_count = ${likesCount}
+      WHERE id = ${commentId}
+    `);
+
+    res.json({
+      success: true,
+      liked: true,
+      likesCount,
+    });
+  } catch (err: any) {
+    console.error("[comment-like]", err?.message || err);
+    res.status(400).json({ message: "Errore nel like", detail: err?.message });
+  }
+});
 
  app.post("/api/comments/:commentId/unlike", async (req, res) => {
-    try {
-      const commentId = Number(req.params.commentId);
-      const { userId } = req.body;
-      await storage.unlikeComment(commentId, userId);
-      const result = await db.execute(sql`SELECT likes_count FROM comments WHERE id = ${commentId}`);
-      res.json({ success: true, likesCount: result.rows[0]?.likes_count ?? 0 });
-    } catch (err: any) {
-      console.error("[comment-unlike]", err?.message);
-      res.status(400).json({ message: "Errore nel like", detail: err?.message });
+  try {
+    const commentId = Number(req.params.commentId);
+    const userId = Number(req.body.userId);
+
+    if (!commentId || !userId) {
+      return res.status(400).json({ message: "Dati unlike commento non validi" });
     }
-  });
+
+    await db.execute(sql`
+      DELETE FROM comment_likes
+      WHERE comment_id = ${commentId}
+        AND user_id = ${userId}
+    `);
+
+    const countResult = await db.execute(sql`
+      SELECT COUNT(*)::int AS count
+      FROM comment_likes
+      WHERE comment_id = ${commentId}
+    `);
+
+    const likesCount = Number(countResult.rows[0]?.count ?? 0);
+
+    await db.execute(sql`
+      UPDATE comments
+      SET likes_count = ${likesCount}
+      WHERE id = ${commentId}
+    `);
+
+    res.json({
+      success: true,
+      liked: false,
+      likesCount,
+    });
+  } catch (err: any) {
+    console.error("[comment-unlike]", err?.message || err);
+    res.status(400).json({ message: "Errore nel unlike", detail: err?.message });
+  }
+});
 
   app.get("/api/comments/:commentId/liked/:userId", async (req, res) => {
     try {
