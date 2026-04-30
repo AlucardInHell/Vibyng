@@ -1819,7 +1819,31 @@ app.post(api.supports.create.path, async (req, res) => {
 app.post("/api/photos/:photoId/like", async (req, res) => {
   try {
     const photoId = Number(req.params.photoId);
-    const { userId } = req.body;
+    const userId = Number(req.body.userId);
+
+    if (!photoId || !userId) {
+      return res.status(400).json({ message: "Dati like foto non validi" });
+    }
+
+    const photoResult = await db.execute(sql`
+      SELECT likes_count, artist_id
+      FROM artist_photos
+      WHERE id = ${photoId}
+      LIMIT 1
+    `);
+
+    const photo = photoResult.rows[0] as any;
+
+    if (!photo) {
+      return res.status(404).json({ message: "Foto non trovata" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(photo.artist_id),
+      "Non puoi interagire con questa foto perché tra voi esiste un blocco."
+    )) return;
 
     const inserted = await db.execute(sql`
       INSERT INTO photo_likes (photo_id, user_id)
@@ -1836,27 +1860,35 @@ app.post("/api/photos/:photoId/like", async (req, res) => {
       `);
     }
 
-    const result = await db.execute(sql`
+    const updatedResult = await db.execute(sql`
       SELECT likes_count, artist_id
       FROM artist_photos
       WHERE id = ${photoId}
     `);
 
-    const photo = result.rows[0];
+    const updatedPhoto = updatedResult.rows[0] as any;
 
-    if ((inserted.rows?.length ?? 0) > 0 && photo && userId && Number(photo.artist_id) !== Number(userId)) {
+    if (
+      (inserted.rows?.length ?? 0) > 0 &&
+      updatedPhoto &&
+      Number(updatedPhoto.artist_id) !== Number(userId)
+    ) {
       const liker = await storage.getUser(userId);
+
       await storage.createNotification({
-        userId: Number(photo.artist_id),
+        userId: Number(updatedPhoto.artist_id),
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua foto`,
         relatedUserId: userId,
       });
     }
 
-    res.json({ success: true, likesCount: photo?.likes_count ?? 0 });
+    res.json({
+      success: true,
+      likesCount: Number(updatedPhoto?.likes_count ?? 0),
+    });
   } catch (err: any) {
-    console.error("[photo-like]", err?.message);
+    console.error("[photo-like]", err?.message || err);
     res.status(400).json({ message: "Errore nel like", detail: err?.message });
   }
 });
@@ -1946,7 +1978,31 @@ app.post("/api/photos/:photoId/like", async (req, res) => {
 app.post("/api/videos/:videoId/like", async (req, res) => {
   try {
     const videoId = Number(req.params.videoId);
-    const { userId } = req.body;
+    const userId = Number(req.body.userId);
+
+    if (!videoId || !userId) {
+      return res.status(400).json({ message: "Dati like video non validi" });
+    }
+
+    const videoResult = await db.execute(sql`
+      SELECT likes_count, artist_id
+      FROM artist_videos
+      WHERE id = ${videoId}
+      LIMIT 1
+    `);
+
+    const video = videoResult.rows[0] as any;
+
+    if (!video) {
+      return res.status(404).json({ message: "Video non trovato" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(video.artist_id),
+      "Non puoi interagire con questo video perché tra voi esiste un blocco."
+    )) return;
 
     const inserted = await db.execute(sql`
       INSERT INTO video_likes (video_id, user_id)
@@ -1963,27 +2019,35 @@ app.post("/api/videos/:videoId/like", async (req, res) => {
       `);
     }
 
-    const result = await db.execute(sql`
+    const updatedResult = await db.execute(sql`
       SELECT likes_count, artist_id
       FROM artist_videos
       WHERE id = ${videoId}
     `);
 
-    const video = result.rows[0];
+    const updatedVideo = updatedResult.rows[0] as any;
 
-    if ((inserted.rows?.length ?? 0) > 0 && video && userId && Number(video.artist_id) !== Number(userId)) {
+    if (
+      (inserted.rows?.length ?? 0) > 0 &&
+      updatedVideo &&
+      Number(updatedVideo.artist_id) !== Number(userId)
+    ) {
       const liker = await storage.getUser(userId);
+
       await storage.createNotification({
-        userId: Number(video.artist_id),
+        userId: Number(updatedVideo.artist_id),
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
         relatedUserId: userId,
       });
     }
 
-    res.json({ success: true, likesCount: Number(video?.likes_count ?? 0) });
+    res.json({
+      success: true,
+      likesCount: Number(updatedVideo?.likes_count ?? 0),
+    });
   } catch (err: any) {
-    console.error("[video-like]", err?.message);
+    console.error("[video-like]", err?.message || err);
     res.status(400).json({ message: "Errore nel like", detail: err?.message });
   }
 });
