@@ -1430,7 +1430,6 @@ return (
 
         {/* Tab Post */}
         <TabsContent value="posts" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-2">{t.posts}</p>
           {artistPosts.length > 0 ? (
             <div className="flex flex-col gap-3">
               {artistPosts.map((post, index) => (
