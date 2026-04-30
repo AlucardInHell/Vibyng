@@ -1632,10 +1632,38 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
       </Link>
 
       <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
-        <p className="text-sm font-semibold">{c.display_name}</p>
-        <p className="text-sm whitespace-pre-wrap break-words">
-          <MentionText text={c.content} />
-        </p>
+  <div className="flex items-start justify-between gap-2">
+    <p className="text-sm font-semibold min-w-0 truncate">
+      {c.display_name}
+    </p>
+
+    {Number(c.author_id) !== Number(currentUserId) && (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          openReport({
+            targetType: "comment",
+            targetId: String(c.id),
+            targetOwnerId: Number(c.author_id),
+            title: t.reportComment,
+            description: t.reportContentDescription,
+          });
+        }}
+        aria-label={t.reportComment}
+      >
+        <MoreVertical className="w-4 h-4" />
+      </Button>
+    )}
+  </div>
+
+  <p className="text-sm whitespace-pre-wrap break-words">
+    <MentionText text={c.content} />
+  </p>
 
         <div className="flex items-center justify-between mt-2">
           <span className="text-xs text-muted-foreground">
