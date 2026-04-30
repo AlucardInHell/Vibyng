@@ -1392,27 +1392,50 @@ app.get("/api/posts", async (req, res) => {
   });
 
 // === LIKE POST ===
-  app.post("/api/posts/:postId/like", async (req, res) => {
-    try {
-      const postId = Number(req.params.postId);
-      const { userId } = req.body;
-      await storage.likePost(postId, userId);
-      const post = await storage.getPost(postId);
-      if (post && userId && post.authorId !== userId) {
-        const liker = await storage.getUser(userId);
-        await storage.createNotification({
-          userId: post.authorId,
-          type: "like",
-          message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo post`,
-          relatedUserId: userId,
-          relatedPostId: postId,
-        });
-      }
-      res.json({ success: true, likesCount: post?.likesCount ?? 0 });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel mettere like" });
+ app.post("/api/posts/:postId/like", async (req, res) => {
+  try {
+    const postId = Number(req.params.postId);
+    const userId = Number(req.body.userId);
+
+    if (!postId || !userId) {
+      return res.status(400).json({ message: "Dati like post non validi" });
     }
-  });
+
+    const post = await storage.getPost(postId);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post non trovato" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(post.authorId),
+      "Non puoi interagire con questo post perché tra voi esiste un blocco."
+    )) return;
+
+    await storage.likePost(postId, userId);
+
+    const updatedPost = await storage.getPost(postId);
+
+    if (post.authorId !== userId) {
+      const liker = await storage.getUser(userId);
+
+      await storage.createNotification({
+        userId: post.authorId,
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo post`,
+        relatedUserId: userId,
+        relatedPostId: postId,
+      });
+    }
+
+    res.json({ success: true, likesCount: updatedPost?.likesCount ?? 0 });
+  } catch (err: any) {
+    console.error("[post-like]", err?.message || err);
+    res.status(400).json({ message: "Errore nel mettere like" });
+  }
+});
 
   app.post("/api/posts/:postId/unlike", async (req, res) => {
     try {
@@ -1497,10 +1520,29 @@ app.get("/api/posts/:postId/comments", async (req, res) => {
 
 app.post("/api/posts/:postId/comments", async (req, res) => {
   try {
-    const { authorId, content } = req.body;
+    const postId = Number(req.params.postId);
+    const authorId = Number(req.body.authorId);
+    const content = req.body.content;
+
+    if (!postId || !authorId || !String(content ?? "").trim()) {
+      return res.status(400).json({ message: "Dati commento non validi" });
+    }
+
+    const post = await storage.getPost(postId);
+
+    if (!post) {
+      return res.status(404).json({ message: "Post non trovato" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      authorId,
+      Number(post.authorId),
+      "Non puoi commentare questo post perché tra voi esiste un blocco."
+    )) return;
 
     const comment = await storage.createComment({
-      postId: Number(req.params.postId),
+      postId,
       authorId,
       content,
     });
@@ -1520,7 +1562,8 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
     await sendMentionNotifications(String(content ?? ""), Number(authorId));
 
     res.status(201).json(comment);
-  } catch (err) {
+  } catch (err: any) {
+    console.error("[post-comment-create]", err?.message || err);
     res.status(400).json({ message: "Errore nel creare il commento" });
   }
 });
@@ -1538,6 +1581,38 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
     if (!commentId || !userId) {
       return res.status(400).json({ message: "Dati like commento non validi" });
     }
+
+    const commentResult = await db.execute(sql`
+      SELECT
+        c.id,
+        c.author_id,
+        c.post_id,
+        p.author_id AS post_author_id
+      FROM comments c
+      JOIN posts p ON p.id = c.post_id
+      WHERE c.id = ${commentId}
+      LIMIT 1
+    `);
+
+    const commentRow = commentResult.rows[0] as any;
+
+    if (!commentRow) {
+      return res.status(404).json({ message: "Commento non trovato" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(commentRow.author_id),
+      "Non puoi mettere like a questo commento perché tra voi esiste un blocco."
+    )) return;
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(commentRow.post_author_id),
+      "Non puoi interagire con questo post perché tra voi esiste un blocco."
+    )) return;
 
     await db.execute(sql`
       INSERT INTO comment_likes (comment_id, user_id)
@@ -1569,7 +1644,6 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
     res.status(400).json({ message: "Errore nel like", detail: err?.message });
   }
 });
-
  app.post("/api/comments/:commentId/unlike", async (req, res) => {
   try {
     const commentId = Number(req.params.commentId);
@@ -2057,35 +2131,49 @@ app.get("/api/users/:userId/followers", async (req, res) => {
   });
   
  app.post("/api/users/:userId/follow/:artistId", async (req, res) => {
-    try {
-      const userId = Number(req.params.userId);
-      const artistId = Number(req.params.artistId);
+  try {
+    const userId = Number(req.params.userId);
+    const artistId = Number(req.params.artistId);
 
-      await storage.followArtist(userId, artistId);
-
-      try {
-        await awardPoints({
-          userId,
-          action: "follow_artist",
-          referenceType: "artist",
-          referenceId: artistId,
-        });
-      } catch (pointsErr: any) {
-        console.error("[points-follow-artist]", pointsErr?.message);
-      }
-
-      const follower = await storage.getUser(userId);
-      await storage.createNotification({
-        userId: artistId,
-        type: "follow",
-        message: `${follower?.displayName || "Qualcuno"} ha iniziato a seguirti`,
-        relatedUserId: userId,
-      });
-      res.json({ success: true });
-    } catch (err) {
-      res.status(400).json({ message: "Errore nel seguire l'artista" });
+    if (!userId || !artistId) {
+      return res.status(400).json({ message: "ID utente non valido" });
     }
-  });
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      artistId,
+      "Non puoi seguire questo profilo perché tra voi esiste un blocco."
+    )) return;
+
+    await storage.followArtist(userId, artistId);
+
+    try {
+      await awardPoints({
+        userId,
+        action: "follow_artist",
+        referenceType: "artist",
+        referenceId: artistId,
+      });
+    } catch (pointsErr: any) {
+      console.error("[points-follow-artist]", pointsErr?.message);
+    }
+
+    const follower = await storage.getUser(userId);
+
+    await storage.createNotification({
+      userId: artistId,
+      type: "follow",
+      message: `${follower?.displayName || "Qualcuno"} ha iniziato a seguirti`,
+      relatedUserId: userId,
+    });
+
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error("[follow-user]", err?.message || err);
+    res.status(400).json({ message: "Errore nel seguire l'artista" });
+  }
+});
   app.delete("/api/users/:userId/follow/:artistId", async (req, res) => {
     try {
       await storage.unfollowArtist(Number(req.params.userId), Number(req.params.artistId));
