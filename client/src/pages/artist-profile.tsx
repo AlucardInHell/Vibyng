@@ -782,33 +782,63 @@ const openReport = (target: {
 };
   
 const blockMutation = useMutation({
-    mutationFn: async () => {
-      if (blockStatus?.blockedByViewer) {
-        return apiRequest("DELETE", `/api/users/${currentUserId}/block/${artistId}`);
-      }
+  mutationFn: async () => {
+    if (blockStatus?.blockedByViewer) {
+      return apiRequest("DELETE", `/api/users/${currentUserId}/block/${artistId}`);
+    }
 
-      return apiRequest("POST", `/api/users/${currentUserId}/block/${artistId}`);
-    },
-    onSuccess: async () => {
-  await refetchBlockStatus();
-  await queryClient.invalidateQueries({ queryKey: ["/api/messages", currentUserId, artistId] });
-  setProfileActionsOpen(false);
+    return apiRequest("POST", `/api/users/${currentUserId}/block/${artistId}`);
+  },
+  onSuccess: async () => {
+    const wasBlockedByViewer = Boolean(blockStatus?.blockedByViewer);
+    const isNowBlocking = !wasBlockedByViewer;
 
-  toast({
-        title: blockStatus?.blockedByViewer ? t.profileUnblockedTitle : t.profileBlockedTitle,
-        description: blockStatus?.blockedByViewer
-          ? t.profileUnblockedDescription
-          : t.profileBlockedDescription,
-      });
-    },
-    onError: () => {
-      toast({
-        title: t.error,
-        description: t.blockErrorDescription,
-        variant: "destructive",
-      });
-    },
-  });
+    await refetchBlockStatus();
+
+    if (isNowBlocking) {
+      queryClient.setQueryData(
+        ["/api/users", currentUserId, "following", artistId],
+        { isFollowing: false }
+      );
+    }
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/users", currentUserId, "following", artistId],
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: [`/api/artists/${id}/followers/count`],
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/users", artistId, "followers"],
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/users", currentUserId, "following"],
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/messages", currentUserId, artistId],
+    });
+
+    setProfileActionsOpen(false);
+
+    toast({
+      title: wasBlockedByViewer ? t.profileUnblockedTitle : t.profileBlockedTitle,
+      description: wasBlockedByViewer
+        ? t.profileUnblockedDescription
+        : t.profileBlockedDescription,
+    });
+  },
+  onError: () => {
+    toast({
+      title: t.error,
+      description: t.blockErrorDescription,
+      variant: "destructive",
+    });
+  },
+});
 
 const reportProfileMutation = useMutation({
   mutationFn: async () => {
