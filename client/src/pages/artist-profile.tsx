@@ -1275,28 +1275,27 @@ return (
         </CardContent>
       </Card>
 
-{shouldHideProfileContent ? (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <Ban className="h-6 w-6 text-muted-foreground" />
-            </div>
+{shouldHideProfileContent && (
+  <Card>
+    <CardContent className="py-8 text-center">
+      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+        <Ban className="h-6 w-6 text-muted-foreground" />
+      </div>
 
-            <h2 className="text-base font-semibold">
-              {t.profileUnavailableTitle}
-            </h2>
+      <h2 className="text-base font-semibold">
+        {t.profileUnavailableTitle}
+      </h2>
 
-            <p className="mt-2 text-sm text-muted-foreground">
-              {profileBlockCheckPending
-                ? t.profileUnavailableDescriptionChecking
-                : blockStatus?.blockedByViewer
-                  ? t.profileUnavailableDescriptionBlockedByViewer
-                  : t.profileUnavailableDescriptionBlockedViewer}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {profileBlockCheckPending
+          ? t.profileUnavailableDescriptionChecking
+          : blockStatus?.blockedByViewer
+            ? t.profileUnavailableDescriptionBlockedByViewer
+            : t.profileUnavailableDescriptionBlockedViewer}
+      </p>
+    </CardContent>
+  </Card>
+)}
       
       {/* Box scrivi post — solo sul proprio profilo */}
       {isOwnProfile && (
@@ -1334,28 +1333,6 @@ return (
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {shouldHideProfileContent && (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <Ban className="h-6 w-6 text-muted-foreground" />
-            </div>
-
-            <h2 className="text-base font-semibold">
-              {t.profileUnavailableTitle}
-            </h2>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              {profileBlockCheckPending
-                ? t.profileUnavailableDescriptionChecking
-                : blockStatus?.blockedByViewer
-                  ? t.profileUnavailableDescriptionBlockedByViewer
-                  : t.profileUnavailableDescriptionBlockedViewer}
-            </p>
           </CardContent>
         </Card>
       )}
@@ -2259,7 +2236,7 @@ return (
           </Card>
         </TabsContent>
       </Tabs>
-
+            )}
       <Dialog open={supportOpen} onOpenChange={setSupportOpen}>
   <DialogContent className="max-w-sm">
     <DialogHeader>
