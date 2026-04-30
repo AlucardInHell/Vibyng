@@ -801,14 +801,23 @@ const blockMutation = useMutation({
     const wasBlockedByViewer = Boolean(blockStatus?.blockedByViewer);
     const isNowBlocking = !wasBlockedByViewer;
 
-    await refetchBlockStatus();
+    queryClient.setQueryData(
+  ["/api/users", currentUserId, "blocked", artistId],
+  {
+    blockedByViewer: isNowBlocking,
+    blockedViewer: false,
+    anyBlock: isNowBlocking,
+  }
+);
 
-    if (isNowBlocking) {
-      queryClient.setQueryData(
-        ["/api/users", currentUserId, "following", artistId],
-        { isFollowing: false }
-      );
-    }
+await refetchBlockStatus();
+
+if (isNowBlocking) {
+  queryClient.setQueryData(
+    ["/api/users", currentUserId, "following", artistId],
+    { isFollowing: false }
+  );
+}
 
     await queryClient.invalidateQueries({
       queryKey: ["/api/users", currentUserId, "following", artistId],
@@ -829,6 +838,34 @@ const blockMutation = useMutation({
     await queryClient.invalidateQueries({
       queryKey: ["/api/messages", currentUserId, artistId],
     });
+
+    await queryClient.invalidateQueries({
+  queryKey: ["/api/users", currentUserId, "blocked", artistId],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/users", artistId, "posts"],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/users", artistId, "photos"],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/users", artistId, "videos"],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: [`/api/artists/${id}/songs`],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: [`/api/artists/${id}/goals`],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: [`/api/artists/${id}/events`],
+});
 
     setProfileActionsOpen(false);
 
