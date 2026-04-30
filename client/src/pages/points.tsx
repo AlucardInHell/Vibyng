@@ -1730,7 +1730,6 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
         </TabsContent>
 
         <TabsContent value="posts" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-2">I tuoi post ({myPosts.length})</p>
           {myPosts.length > 0 ? (
             <div className="flex flex-col gap-3">
               {myPosts.map((post) => (
