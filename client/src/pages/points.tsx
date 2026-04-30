@@ -1918,8 +1918,6 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                 <p className="text-center text-muted-foreground py-8">Nessun evento creato ancora</p>
               )}
             </div>
-          ) : (
-           <p className="text-sm text-muted-foreground mb-2">Eventi a cui partecipi ({attendingEvents.length})</p> 
           )}
           {attendingEvents.length > 0 ? (
             <div className="flex flex-col gap-3">
