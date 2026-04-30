@@ -1403,7 +1403,7 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
                         </Button>
                       )}
                     </div>
-                  </CardContent>>
+                  </CardContent>
                   {openComments.has(post.id) && (
                     <CardContent className="pt-0">
                      <ArtistPostComments
