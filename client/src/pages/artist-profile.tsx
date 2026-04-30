@@ -429,33 +429,45 @@ function ArtistPostComments({
                 {comment.createdAt && new Date(comment.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
               </span>
               <div className="flex items-center gap-2">
-                {(Number(comment.authorId) === Number(currentUserId) || Number(postAuthorId) === Number(currentUserId)) && (
-                  <button
-  className={`flex items-center gap-1 text-xs hover:text-red-500 ${
-    comment.likedByMe ? "text-red-500" : "text-muted-foreground"
-  }`}
-  onClick={async () => {
-    if (comment.likedByMe) {
-      await apiRequest("POST", `/api/comments/${comment.id}/unlike`, {
-        userId: currentUserId,
-      });
-    } else {
-      await apiRequest("POST", `/api/comments/${comment.id}/like`, {
-        userId: currentUserId,
-      });
-    }
+  {(Number(comment.authorId) === Number(currentUserId) ||
+    Number(postAuthorId) === Number(currentUserId)) && (
+    <button
+      className="text-xs text-red-400 hover:text-red-600"
+      onClick={async () => {
+        await apiRequest("DELETE", `/api/comments/${comment.id}`);
+        await refetch();
+      }}
+    >
+      🗑️
+    </button>
+  )}
 
-    await refetch();
-  }}
->
-  <Heart
-    className={`w-3 h-3 ${
-      comment.likedByMe ? "fill-red-500 text-red-500" : ""
+  <button
+    className={`flex items-center gap-1 text-xs hover:text-red-500 ${
+      comment.likedByMe ? "text-red-500" : "text-muted-foreground"
     }`}
-  />
-  <span>{comment.likesCount ?? 0}</span>
-</button>
-              </div>
+    onClick={async () => {
+      if (comment.likedByMe) {
+        await apiRequest("POST", `/api/comments/${comment.id}/unlike`, {
+          userId: currentUserId,
+        });
+      } else {
+        await apiRequest("POST", `/api/comments/${comment.id}/like`, {
+          userId: currentUserId,
+        });
+      }
+
+      await refetch();
+    }}
+  >
+    <Heart
+      className={`w-3 h-3 ${
+        comment.likedByMe ? "fill-red-500 text-red-500" : ""
+      }`}
+    />
+    <span>{comment.likesCount ?? 0}</span>
+  </button>
+</div>
             </div>
           </div>
         </div>
