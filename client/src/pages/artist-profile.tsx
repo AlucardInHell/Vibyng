@@ -442,6 +442,13 @@ function ArtistPostComments({
     </button>
   )}
 
+  {Number(
+  comment.authorId ??
+  comment.author_id ??
+  comment.author?.id ??
+  comment.userId ??
+  comment.user_id
+) !== Number(currentUserId) && (
   <button
     className={`flex items-center gap-1 text-xs hover:text-red-500 ${
       comment.likedByMe ? "text-red-500" : "text-muted-foreground"
@@ -467,6 +474,7 @@ function ArtistPostComments({
     />
     <span>{comment.likesCount ?? 0}</span>
   </button>
+)}
 </div>
             </div>
           </div>
