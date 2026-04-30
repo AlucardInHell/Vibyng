@@ -430,9 +430,7 @@ function ArtistPostComments({
               </span>
               <div className="flex items-center gap-2">
                 {(Number(comment.authorId) === Number(currentUserId) || Number(postAuthorId) === Number(currentUserId)) && (
-                  <button className="text-xs text-red-400 hover:text-red-600" onClick={async () => { await apiRequest("DELETE", `/api/comments/${comment.id}`); refetch(); }}>🗑️</button>
-                )}
-                <button
+                  <button
   className={`flex items-center gap-1 text-xs hover:text-red-500 ${
     comment.likedByMe ? "text-red-500" : "text-muted-foreground"
   }`}
