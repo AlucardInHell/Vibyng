@@ -2899,10 +2899,38 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
  app.post("/api/photos/:photoId/comments", async (req, res) => {
   try {
     const photoId = Number(req.params.photoId);
-    const { authorId, content } = req.body;
-    console.log(`[photo-comment] photoId=${photoId} authorId=${authorId} content=${content}`);
+    const authorId = Number(req.body.authorId);
+    const content = req.body.content;
 
-    const comment = await storage.createPhotoComment({ photoId, authorId, content });
+    if (!photoId || !authorId || !String(content ?? "").trim()) {
+      return res.status(400).json({ message: "Dati commento foto non validi" });
+    }
+
+    const photoResult = await db.execute(sql`
+      SELECT artist_id
+      FROM artist_photos
+      WHERE id = ${photoId}
+      LIMIT 1
+    `);
+
+    const photo = photoResult.rows[0] as any;
+
+    if (!photo) {
+      return res.status(404).json({ message: "Foto non trovata" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      authorId,
+      Number(photo.artist_id),
+      "Non puoi commentare questa foto perché tra voi esiste un blocco."
+    )) return;
+
+    const comment = await storage.createPhotoComment({
+      photoId,
+      authorId,
+      content,
+    });
 
     try {
       await awardPoints({
@@ -2920,30 +2948,83 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
 
     res.status(201).json(comment);
   } catch (err: any) {
-    console.error(`[photo-comment] error:`, err?.message);
+    console.error("[photo-comment-create]", err?.message || err);
     res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
   }
 });
-
   app.post("/api/photos/:photoId/comments/:commentId/like/:userId", async (req, res) => {
-    try {
-      const commentId = Number(req.params.commentId);
-      console.log("[photo-comment-like] body:", req.body, "query:", req.query);
-      const userId = Number(req.params.userId);
-      console.log("[photo-comment-like] FULL body:", JSON.stringify(req.body), "query:", JSON.stringify(req.query), "headers:", req.headers['content-type']);
-      if (!userId) throw new Error("userId mancante");
-      const result = await db.execute(sql`INSERT INTO photo_comment_likes (comment_id, user_id) VALUES (${commentId}, ${userId}) ON CONFLICT DO NOTHING RETURNING id`);
-      if (result.rows.length > 0) {
-        await db.execute(sql`UPDATE photo_comments SET likes_count = COALESCE(likes_count, 0) + 1 WHERE id = ${commentId}`);
-      }
-      const updated = await db.execute(sql`SELECT likes_count FROM photo_comments WHERE id = ${commentId}`);
-      res.json({ success: true, likesCount: updated.rows[0]?.likes_count ?? 0 });
-    } catch (err: any) {
-      console.error("[photo-comment-like]", err?.message);
-      res.status(400).json({ message: "Errore nel like" });
-    }
-  });
+  try {
+    const photoId = Number(req.params.photoId);
+    const commentId = Number(req.params.commentId);
+    const userId = Number(req.params.userId);
 
+    if (!photoId || !commentId || !userId) {
+      return res.status(400).json({ message: "Dati like commento foto non validi" });
+    }
+
+    const commentResult = await db.execute(sql`
+      SELECT
+        pc.id,
+        pc.author_id,
+        pc.photo_id,
+        ap.artist_id AS photo_owner_id
+      FROM photo_comments pc
+      JOIN artist_photos ap ON ap.id = pc.photo_id
+      WHERE pc.id = ${commentId}
+        AND pc.photo_id = ${photoId}
+      LIMIT 1
+    `);
+
+    const commentRow = commentResult.rows[0] as any;
+
+    if (!commentRow) {
+      return res.status(404).json({ message: "Commento foto non trovato" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(commentRow.author_id),
+      "Non puoi mettere like a questo commento perché tra voi esiste un blocco."
+    )) return;
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(commentRow.photo_owner_id),
+      "Non puoi interagire con questa foto perché tra voi esiste un blocco."
+    )) return;
+
+    const result = await db.execute(sql`
+      INSERT INTO photo_comment_likes (comment_id, user_id)
+      VALUES (${commentId}, ${userId})
+      ON CONFLICT DO NOTHING
+      RETURNING id
+    `);
+
+    if (result.rows.length > 0) {
+      await db.execute(sql`
+        UPDATE photo_comments
+        SET likes_count = COALESCE(likes_count, 0) + 1
+        WHERE id = ${commentId}
+      `);
+    }
+
+    const updated = await db.execute(sql`
+      SELECT likes_count
+      FROM photo_comments
+      WHERE id = ${commentId}
+    `);
+
+    res.json({
+      success: true,
+      likesCount: Number(updated.rows[0]?.likes_count ?? 0),
+    });
+  } catch (err: any) {
+    console.error("[photo-comment-like]", err?.message || err);
+    res.status(400).json({ message: "Errore nel like", detail: err?.message });
+  }
+});
   app.post("/api/photos/:photoId/comments/:commentId/unlike/:userId", async (req, res) => {
     try {
       const commentId = Number(req.params.commentId);
@@ -3034,9 +3115,38 @@ app.get("/api/videos/:videoId/comments", async (req, res) => {
 app.post("/api/videos/:videoId/comments", async (req, res) => {
   try {
     const videoId = Number(req.params.videoId);
-    const { authorId, content } = req.body;
+    const authorId = Number(req.body.authorId);
+    const content = req.body.content;
 
-    const comment = await storage.createVideoComment({ videoId, authorId, content });
+    if (!videoId || !authorId || !String(content ?? "").trim()) {
+      return res.status(400).json({ message: "Dati commento video non validi" });
+    }
+
+    const videoResult = await db.execute(sql`
+      SELECT artist_id
+      FROM artist_videos
+      WHERE id = ${videoId}
+      LIMIT 1
+    `);
+
+    const video = videoResult.rows[0] as any;
+
+    if (!video) {
+      return res.status(404).json({ message: "Video non trovato" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      authorId,
+      Number(video.artist_id),
+      "Non puoi commentare questo video perché tra voi esiste un blocco."
+    )) return;
+
+    const comment = await storage.createVideoComment({
+      videoId,
+      authorId,
+      content,
+    });
 
     try {
       await awardPoints({
@@ -3054,18 +3164,52 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
 
     res.status(201).json(comment);
   } catch (err: any) {
+    console.error("[video-comment-create]", err?.message || err);
     res.status(400).json({ message: "Errore nel creare il commento", detail: err?.message });
   }
 });
-
 app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
   try {
+    const videoId = Number(req.params.videoId);
     const commentId = Number(req.params.commentId);
-    const { userId } = req.body;
+    const userId = Number(req.body.userId);
 
-    if (!userId) {
-      return res.status(400).json({ message: "userId mancante" });
+    if (!videoId || !commentId || !userId) {
+      return res.status(400).json({ message: "Dati like commento video non validi" });
     }
+
+    const commentResult = await db.execute(sql`
+      SELECT
+        vc.id,
+        vc.author_id,
+        vc.video_id,
+        av.artist_id AS video_owner_id
+      FROM video_comments vc
+      JOIN artist_videos av ON av.id = vc.video_id
+      WHERE vc.id = ${commentId}
+        AND vc.video_id = ${videoId}
+      LIMIT 1
+    `);
+
+    const commentRow = commentResult.rows[0] as any;
+
+    if (!commentRow) {
+      return res.status(404).json({ message: "Commento video non trovato" });
+    }
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(commentRow.author_id),
+      "Non puoi mettere like a questo commento perché tra voi esiste un blocco."
+    )) return;
+
+    if (await denyIfBlocked(
+      res,
+      userId,
+      Number(commentRow.video_owner_id),
+      "Non puoi interagire con questo video perché tra voi esiste un blocco."
+    )) return;
 
     const inserted = await db.execute(sql`
       INSERT INTO video_comment_likes (comment_id, user_id)
@@ -3088,9 +3232,12 @@ app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
       WHERE id = ${commentId}
     `);
 
-    res.json({ success: true, likesCount: updated.rows[0]?.likes_count ?? 0 });
+    res.json({
+      success: true,
+      likesCount: Number(updated.rows[0]?.likes_count ?? 0),
+    });
   } catch (err: any) {
-    console.error("[video-comment-like]", err?.message);
+    console.error("[video-comment-like]", err?.message || err);
     res.status(400).json({ message: "Errore nel like", detail: err?.message });
   }
 });
