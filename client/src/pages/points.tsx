@@ -355,12 +355,12 @@ function MePostComments({
   const [newComment, setNewComment] = useState("");
 
   const { data: comments = [], refetch } = useQuery<any[]>({
-    queryKey: ["/api/posts", postId, "comments"],
-    queryFn: async () => {
-      const res = await fetch(`/api/posts/${postId}/comments`);
-      return res.json();
-    },
-  });
+  queryKey: ["/api/posts", postId, "comments", CURRENT_USER_ID],
+  queryFn: async () => {
+    const res = await fetch(`/api/posts/${postId}/comments?userId=${CURRENT_USER_ID}`);
+    return res.json();
+  },
+});
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
@@ -464,16 +464,39 @@ function MePostComments({
                   </button>
                 )}
 
-                <button
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500"
-                  onClick={async () => {
-                    await apiRequest("POST", `/api/comments/${comment.id}/like`);
-                    await refetch();
-                  }}
-                >
-                  <Heart className="w-3 h-3" />
-                  <span>{comment.likesCount ?? 0}</span>
-                </button>
+                {Number(
+  comment.authorId ??
+  comment.author_id ??
+  comment.author?.id ??
+  comment.userId ??
+  comment.user_id
+) !== Number(CURRENT_USER_ID) && (
+  <button
+    className={`flex items-center gap-1 text-xs hover:text-red-500 ${
+      comment.likedByMe ? "text-red-500" : "text-muted-foreground"
+    }`}
+    onClick={async () => {
+      if (comment.likedByMe) {
+        await apiRequest("POST", `/api/comments/${comment.id}/unlike`, {
+          userId: CURRENT_USER_ID,
+        });
+      } else {
+        await apiRequest("POST", `/api/comments/${comment.id}/like`, {
+          userId: CURRENT_USER_ID,
+        });
+      }
+
+      await refetch();
+    }}
+  >
+    <Heart
+      className={`w-3 h-3 ${
+        comment.likedByMe ? "fill-red-500 text-red-500" : ""
+      }`}
+    />
+    <span>{comment.likesCount ?? 0}</span>
+  </button>
+)}
               </div>
             </div>
           </div>
