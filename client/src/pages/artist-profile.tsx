@@ -1087,8 +1087,6 @@ const shouldHideProfileContent = profileBlockCheckPending || profileAccessBlocke
 
 return (
     <div className="flex flex-col gap-4">
-</>
-      )}
     <Dialog open={profileActionsOpen} onOpenChange={setProfileActionsOpen}>
   <DialogContent>
     <DialogHeader>
@@ -1340,8 +1338,31 @@ return (
         </Card>
       )}
 
+      {shouldHideProfileContent && (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <Ban className="h-6 w-6 text-muted-foreground" />
+            </div>
+
+            <h2 className="text-base font-semibold">
+              {t.profileUnavailableTitle}
+            </h2>
+
+            <p className="mt-2 text-sm text-muted-foreground">
+              {profileBlockCheckPending
+                ? t.profileUnavailableDescriptionChecking
+                : blockStatus?.blockedByViewer
+                  ? t.profileUnavailableDescriptionBlockedByViewer
+                  : t.profileUnavailableDescriptionBlockedViewer}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      {!shouldHideProfileContent && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className={`w-full grid ${isArtist ? "grid-cols-7" : "grid-cols-6"} p-1`}>
   <TabsTrigger value="posts" className="px-1 text-xs">
     <FileText className="w-4 h-4 sm:mr-1" />
