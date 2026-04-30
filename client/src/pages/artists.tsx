@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Zap, Heart, Bookmark, Share2, MessageCircle, Volume2, VolumeX, Sparkles } from "lucide-react";
+import { Zap, Heart, Bookmark, Share2, MessageCircle, Volume2, VolumeX, Sparkles, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { buildContentShareUrl, shareVibyngContent } from "@/lib/share-content";
 import type { ArtistVideo, User } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 function getCurrentUserId(): number {
   try {
@@ -37,6 +39,24 @@ const flowTranslations = {
     commentPlaceholder: "Scrivi un commento...",
     loadArtistsError: "Errore nel caricamento artisti",
     flowShareText: "Flow su Vibyng",
+    reportContentTitle: "Segnala contenuto",
+reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
+reportComment: "Segnala commento",
+reportReason: "Motivo della segnalazione",
+reportDetails: "Dettagli opzionali",
+reportDetailsPlaceholder: "Aggiungi dettagli utili alla verifica...",
+reportSubmit: "Invia segnalazione",
+reportSuccessTitle: "Segnalazione inviata",
+reportSuccessDescription: "Grazie, analizzeremo la segnalazione.",
+reportErrorDescription: "Non è stato possibile inviare la segnalazione.",
+reportReasonOffensive: "Contenuto offensivo",
+reportReasonViolent: "Contenuto violento",
+reportReasonPornographic: "Contenuto pornografico",
+reportReasonHarassment: "Molestie",
+reportReasonHate: "Odio o discriminazione",
+reportReasonSpam: "Spam",
+reportReasonFakeProfile: "Profilo falso",
+reportReasonOther: "Altro",
   },
   en: {
     loading: "Loading Flow...",
@@ -50,6 +70,24 @@ const flowTranslations = {
     commentPlaceholder: "Write a comment...",
     loadArtistsError: "Error loading artists",
     flowShareText: "Flow on Vibyng",
+    reportContentTitle: "Report content",
+reportContentDescription: "Help us understand what is wrong with this content.",
+reportComment: "Report comment",
+reportReason: "Report reason",
+reportDetails: "Optional details",
+reportDetailsPlaceholder: "Add useful details for review...",
+reportSubmit: "Submit report",
+reportSuccessTitle: "Report submitted",
+reportSuccessDescription: "Thank you, we will review this report.",
+reportErrorDescription: "Unable to submit the report.",
+reportReasonOffensive: "Offensive content",
+reportReasonViolent: "Violent content",
+reportReasonPornographic: "Pornographic content",
+reportReasonHarassment: "Harassment",
+reportReasonHate: "Hate or discrimination",
+reportReasonSpam: "Spam",
+reportReasonFakeProfile: "Fake profile",
+reportReasonOther: "Other",
   },
 } as const;
 
@@ -87,7 +125,17 @@ export default function Artists() {
   const [mutedVideoIds, setMutedVideoIds] = useState<Set<number>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
-
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{
+  targetType: "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+} | null>(null);
+const [reportReason, setReportReason] = useState("offensive");
+const [reportDetails, setReportDetails] = useState("");
+  
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
 useEffect(() => {
@@ -313,6 +361,7 @@ useEffect(() => {
   };
 
   const handleLike = async (video: FlowVideo) => {
+     if (Number(video.artist.id) === Number(currentUserId)) return;
     const isLiked = likedMap[video.id] ?? false;
     const currentCount = likeCounts[video.id] ?? Number((video as any).likesCount ?? 0);
 
@@ -365,6 +414,54 @@ useEffect(() => {
     }
   };
 
+const openReport = (target: {
+  targetType: "comment";
+  targetId: string;
+  targetOwnerId: number | null;
+  title: string;
+  description: string;
+}) => {
+  setReportTarget(target);
+  setReportReason("offensive");
+  setReportDetails("");
+  setReportOpen(true);
+};
+
+const reportMutation = useMutation({
+  mutationFn: async () => {
+    if (!reportTarget) {
+      throw new Error("Target segnalazione mancante");
+    }
+
+    return apiRequest("POST", "/api/reports", {
+      reporterId: currentUserId,
+      targetType: reportTarget.targetType,
+      targetId: reportTarget.targetId,
+      targetOwnerId: reportTarget.targetOwnerId,
+      reason: reportReason,
+      details: reportDetails.trim() || null,
+    });
+  },
+  onSuccess: () => {
+    setReportOpen(false);
+    setReportTarget(null);
+    setReportReason("offensive");
+    setReportDetails("");
+
+    toast({
+      title: t.reportSuccessTitle,
+      description: t.reportSuccessDescription,
+    });
+  },
+  onError: () => {
+    toast({
+      title: t.reportContentTitle,
+      description: t.reportErrorDescription,
+      variant: "destructive",
+    });
+  },
+});
+  
   const handleSubmitComment = async () => {
     if (!commentsOpenId || !commentInput.trim()) return;
 
@@ -402,6 +499,61 @@ useEffect(() => {
 
   return (
     <div className="flex flex-col gap-4">
+     <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+  <DialogContent className="z-[130]">
+    <DialogHeader>
+      <DialogTitle>{reportTarget?.title || t.reportContentTitle}</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        {reportTarget?.description || t.reportContentDescription}
+      </p>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t.reportReason}
+        </label>
+
+        <select
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={reportReason}
+          onChange={(e) => setReportReason(e.target.value)}
+        >
+          <option value="offensive">{t.reportReasonOffensive}</option>
+          <option value="violent">{t.reportReasonViolent}</option>
+          <option value="pornographic">{t.reportReasonPornographic}</option>
+          <option value="harassment">{t.reportReasonHarassment}</option>
+          <option value="hate">{t.reportReasonHate}</option>
+          <option value="spam">{t.reportReasonSpam}</option>
+          <option value="fake_profile">{t.reportReasonFakeProfile}</option>
+          <option value="other">{t.reportReasonOther}</option>
+        </select>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">
+          {t.reportDetails}
+        </label>
+
+        <Textarea
+          value={reportDetails}
+          onChange={(e) => setReportDetails(e.target.value)}
+          placeholder={t.reportDetailsPlaceholder}
+          rows={4}
+        />
+      </div>
+
+      <Button
+        className="w-full"
+        onClick={() => reportMutation.mutate()}
+        disabled={reportMutation.isPending}
+      >
+        {t.reportSubmit}
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog> 
       <div className="flex items-center gap-2 mb-1">
         <Sparkles className="w-6 h-6 text-primary" />
         <h1 className="text-2xl font-semibold">Flow</h1>
@@ -446,6 +598,7 @@ useEffect(() => {
           const isLiked = likedMap[video.id] ?? false;
           const likesCount = likeCounts[video.id] ?? Number((video as any).likesCount ?? 0);
           const commentsOpen = commentsOpenId === video.id;
+          const isOwnVideo = Number(video.artist.id) === Number(currentUserId);
 
           return (
             <section
@@ -514,12 +667,16 @@ useEffect(() => {
 
                     <div className="flex flex-col items-center gap-4 text-white">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLike(video);
-                        }}
-                        className="flex flex-col items-center gap-2"
-                      >
+  disabled={isOwnVideo}
+  onClick={(e) => {
+    e.stopPropagation();
+    if (isOwnVideo) return;
+    handleLike(video);
+  }}
+  className={`flex flex-col items-center gap-2 ${
+    isOwnVideo ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+>
                         <Heart className={`w-7 h-7 ${isLiked ? "fill-red-400 text-red-400" : ""}`} />
                        <span className="text-[11px]">{likesCount >= 1000 ? `${(likesCount / 1000).toFixed(1)}K` : likesCount}</span>
                       </button>
@@ -586,8 +743,35 @@ useEffect(() => {
               </AvatarFallback>
             </Avatar>
 
-            <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
-  <p className="text-sm font-semibold">{comment.display_name}</p>
+           <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
+  <div className="flex items-start justify-between gap-2">
+    <p className="text-sm font-semibold min-w-0 truncate">
+      {comment.display_name}
+    </p>
+
+    {Number(comment.author_id) !== Number(currentUserId) && (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          openReport({
+            targetType: "comment",
+            targetId: String(comment.id),
+            targetOwnerId: Number(comment.author_id),
+            title: t.reportComment,
+            description: t.reportContentDescription,
+          });
+        }}
+        aria-label={t.reportComment}
+      >
+        <MoreVertical className="w-4 h-4" />
+      </Button>
+    )}
+  </div>
 
   <p className="text-sm whitespace-pre-wrap break-words">
     <MentionText text={comment.content} />
