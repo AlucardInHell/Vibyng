@@ -57,6 +57,28 @@ async function hasAnyUserBlock(userAId: number, userBId: number): Promise<boolea
   return result.rows.length > 0;
 }
 
+async function denyIfBlocked(
+  res: any,
+  actorId: number,
+  targetOwnerId: number,
+  message = "Interazione non consentita perché tra questi profili esiste un blocco."
+): Promise<boolean> {
+  if (!actorId || !targetOwnerId) return false;
+  if (Number(actorId) === Number(targetOwnerId)) return false;
+
+  const blocked = await hasAnyUserBlock(Number(actorId), Number(targetOwnerId));
+
+  if (blocked) {
+    res.status(403).json({
+      message,
+      code: "USER_BLOCKED",
+    });
+    return true;
+  }
+
+  return false;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -300,13 +322,21 @@ await db.execute(sql`
         return res.status(404).json({ message: "Utente non trovato" });
       }
 
-      await db.execute(sql`
-        INSERT INTO user_blocks (blocker_id, blocked_id)
-        VALUES (${blockerId}, ${blockedId})
-        ON CONFLICT (blocker_id, blocked_id) DO NOTHING
-      `);
+     await db.execute(sql`
+  INSERT INTO user_blocks (blocker_id, blocked_id)
+  VALUES (${blockerId}, ${blockedId})
+  ON CONFLICT (blocker_id, blocked_id) DO NOTHING
+`);
 
-      res.json({ success: true, blocked: true });
+await db.execute(sql`
+  DELETE FROM followers
+  WHERE
+    (fan_id = ${blockerId} AND artist_id = ${blockedId})
+    OR
+    (fan_id = ${blockedId} AND artist_id = ${blockerId})
+`);
+
+res.json({ success: true, blocked: true });
     } catch (err: any) {
       console.error("[block-user] error:", err?.message || err);
       res.status(400).json({
