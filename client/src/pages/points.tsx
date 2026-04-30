@@ -1312,7 +1312,6 @@ const reportMutation = useMutation({
 
         <TabsContent value="songs" className="mt-4">
           <div className="flex flex-col gap-2">
-            <p className="text-sm text-muted-foreground">Le tue canzoni ({mySongs.length})</p>
             {mySongs.length > 0 ? (
               mySongs.map((song: any) => (
                 <Card key={song.id} className="hover-elevate">
@@ -1369,7 +1368,6 @@ const reportMutation = useMutation({
         </TabsContent>
 
        <TabsContent value="photos" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-2">Le tue foto salvate ({myPhotos.length})</p>
           {myPhotos.length > 0 ? (
             <div className="grid grid-cols-2 gap-2">
               {myPhotos.map((photo) => (
@@ -1684,7 +1682,6 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
 )}
         </TabsContent>
         <TabsContent value="videos" className="mt-4">
-          <p className="text-sm text-muted-foreground mb-2">I tuoi video salvati ({myVideos.length})</p>
           {myVideos.length > 0 ? (
             <div className="flex flex-col gap-3">
      {myVideos.map((video) => (
@@ -1847,7 +1844,6 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
           {currentUser?.role === "artist" ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
-               <p className="text-sm text-muted-foreground">I tuoi eventi ({myArtistEvents.length})</p>
                 <Button size="sm" variant="outline" onClick={() => setShowEventForm(!showEventForm)}>
                   <Plus className="w-4 h-4 mr-1" />
                   {t.add}
