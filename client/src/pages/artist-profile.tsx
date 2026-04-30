@@ -711,17 +711,20 @@ useEffect(() => {
   });
 
 const { data: blockStatus, refetch: refetchBlockStatus } = useQuery<{
-    blockedByViewer: boolean;
-    blockedViewer: boolean;
-    anyBlock: boolean;
-  }>({
-    queryKey: ["/api/users", currentUserId, "blocked", artistId],
-    queryFn: async () => {
-      const res = await fetch(`/api/users/${currentUserId}/blocked/${artistId}`);
-      return res.json();
-    },
-    enabled: !isOwnProfile,
-  });
+  blockedByViewer: boolean;
+  blockedViewer: boolean;
+  anyBlock: boolean;
+}>({
+  queryKey: ["/api/users", currentUserId, "blocked", artistId],
+  queryFn: async () => {
+    const res = await fetch(`/api/users/${currentUserId}/blocked/${artistId}`);
+    return res.json();
+  },
+  enabled: !isOwnProfile,
+  refetchInterval: !isOwnProfile ? 1000 : false,
+  refetchOnWindowFocus: true,
+  staleTime: 0,
+});
   
   const { data: artistPosts = [] } = useQuery<(Post & { author: User })[]>({
     queryKey: ["/api/users", artistId, "posts"],
