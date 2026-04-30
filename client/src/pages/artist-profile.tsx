@@ -399,7 +399,13 @@ function ArtistPostComments({
       {comment.author?.displayName}
     </p>
 
-    {Number(comment.authorId ?? comment.author_id ?? comment.author?.id) !== Number(currentUserId) && (
+    {Number(
+      comment.authorId ??
+      comment.author_id ??
+      comment.author?.id ??
+      comment.userId ??
+      comment.user_id
+    ) !== Number(currentUserId) && (
       <Button
         variant="ghost"
         size="icon"
@@ -1406,8 +1412,13 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   postAuthorId={post.author.id}
   commentPlaceholder={t.commentPlaceholder}
   onReportComment={(comment) => {
-    const commentOwnerId = Number(comment.authorId ?? comment.author_id ?? comment.author?.id);
-
+  const commentOwnerId = Number(
+  comment.authorId ??
+  comment.author_id ??
+  comment.author?.id ??
+  comment.userId ??
+  comment.user_id
+);
     openReport({
       targetType: "comment",
       targetId: String(comment.id),
