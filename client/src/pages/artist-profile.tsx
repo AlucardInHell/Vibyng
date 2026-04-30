@@ -1293,28 +1293,7 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   <>
     <Card key={post.id} className="hover-elevate">
   <CardContent className="p-4">
-    {Number(post.authorId) !== Number(currentUserId) && (
-      <div className="flex justify-end -mt-2 mb-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 rounded-full"
-          onClick={() => {
-            openReport({
-              targetType: "post",
-              targetId: String(post.id),
-              targetOwnerId: Number(post.authorId),
-              title: t.reportPost,
-              description: t.reportContentDescription,
-            });
-          }}
-          aria-label={t.reportPost}
-        >
-          <MoreVertical className="w-6 h-6" />
-        </Button>
-      </div>
-    )}
-                    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
                         <AvatarImage src={post.author.avatarUrl || undefined} alt={post.author.displayName} />
                         <AvatarFallback>{post.author.displayName.charAt(0)}</AvatarFallback>
@@ -1403,8 +1382,28 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
                           )}
                         </div>
                       </div>
-                      </div>
-                  </CardContent>
+
+                      {Number(post.authorId ?? post.author?.id) !== Number(currentUserId) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 rounded-full shrink-0 -mt-1 -mr-1"
+                          onClick={() => {
+                            openReport({
+                              targetType: "post",
+                              targetId: String(post.id),
+                              targetOwnerId: Number(post.authorId ?? post.author?.id),
+                              title: t.reportPost,
+                              description: t.reportContentDescription,
+                            });
+                          }}
+                          aria-label={t.reportPost}
+                        >
+                          <MoreVertical className="w-6 h-6" />
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>>
                   {openComments.has(post.id) && (
                     <CardContent className="pt-0">
                      <ArtistPostComments
