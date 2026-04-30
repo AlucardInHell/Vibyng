@@ -141,6 +141,10 @@ profileUnblockedDescription: "Questo profilo può nuovamente interagire con te."
 blockErrorDescription: "Non è stato possibile aggiornare il blocco.",
 profileActions: "Azioni profilo",
 profileActionsDescription: "Gestisci le interazioni con questo profilo.",
+profileUnavailableTitle: "Profilo non disponibile",
+profileUnavailableDescriptionChecking: "Verifica disponibilità del profilo...",
+profileUnavailableDescriptionBlockedByViewer: "Hai bloccato questo profilo. Sbloccalo dal menu in alto a destra per tornare a visualizzare i contenuti.",
+profileUnavailableDescriptionBlockedViewer: "Questo profilo non è disponibile.",    
 reportProfile: "Segnala profilo",
 reportContentTitle: "Segnala contenuto",
 reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
@@ -279,6 +283,10 @@ profileBlockedTitle: "Profile blocked",
 profileBlockedDescription: "This profile can no longer send you messages.",
 profileUnblockedTitle: "Profile unblocked",
 profileUnblockedDescription: "This profile can interact with you again.",
+profileUnavailableTitle: "Profile unavailable",
+profileUnavailableDescriptionChecking: "Checking profile availability...",
+profileUnavailableDescriptionBlockedByViewer: "You blocked this profile. Unblock it from the top-right menu to view its content again.",
+profileUnavailableDescriptionBlockedViewer: "This profile is unavailable.",    
 blockErrorDescription: "Unable to update block status.",
 profileActions: "Profile actions",
 profileActionsDescription: "Manage your interactions with this profile.",
@@ -1070,12 +1078,17 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
     return null;
   }
 
-  const isArtist = artist.role === "artist";
-  const isFan = artist.role === "fan" || !artist.role;
+const isArtist = artist.role === "artist";
+const isFan = artist.role === "fan" || !artist.role;
 
-  return (
+const profileBlockCheckPending = !isOwnProfile && blockStatus === undefined;
+const profileAccessBlocked = !isOwnProfile && Boolean(blockStatus?.anyBlock);
+const shouldHideProfileContent = profileBlockCheckPending || profileAccessBlocked;
+
+return (
     <div className="flex flex-col gap-4">
-
+</>
+      )}
     <Dialog open={profileActionsOpen} onOpenChange={setProfileActionsOpen}>
   <DialogContent>
     <DialogHeader>
@@ -1241,7 +1254,7 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
   </span>
 </div>
             </div>
-         {!isOwnProfile && (
+         {!isOwnProfile && !shouldHideProfileContent && (
   <div className="mt-3 flex flex-wrap justify-center gap-2">
     <Button
       variant={isFollowingData?.isFollowing ? "outline" : "default"}
@@ -1264,6 +1277,29 @@ const handleAddToPlaylist = async (song: ArtistSong) => {
         </CardContent>
       </Card>
 
+{shouldHideProfileContent ? (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <Ban className="h-6 w-6 text-muted-foreground" />
+            </div>
+
+            <h2 className="text-base font-semibold">
+              {t.profileUnavailableTitle}
+            </h2>
+
+            <p className="mt-2 text-sm text-muted-foreground">
+              {profileBlockCheckPending
+                ? t.profileUnavailableDescriptionChecking
+                : blockStatus?.blockedByViewer
+                  ? t.profileUnavailableDescriptionBlockedByViewer
+                  : t.profileUnavailableDescriptionBlockedViewer}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+      
       {/* Box scrivi post — solo sul proprio profilo */}
       {isOwnProfile && (
         <Card>
