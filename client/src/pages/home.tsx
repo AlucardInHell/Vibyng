@@ -1027,24 +1027,28 @@ function PhotoComments({
                   <AvatarFallback className="bg-primary/10 text-primary text-xs">{c.display_name?.charAt(0)}</AvatarFallback>
                 </Avatar>
               </Link>
-              <div className="relative flex-1 bg-muted rounded-lg px-3 py-2 pr-10">
-  {Number(c.author_id) !== Number(CURRENT_USER_ID_LOCAL) && (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="absolute top-1 right-1 h-8 w-8 rounded-full"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onReportComment(c);
-      }}
-      aria-label="Segnala commento"
-    >
-      <MoreVertical className="w-4 h-4" />
-    </Button>
-  )}
+              <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+  <div className="flex items-start justify-between gap-2">
+    <p className="text-sm font-semibold min-w-0 truncate">
+      {c.display_name}
+    </p>
 
-  <p className="text-sm font-semibold pr-7">{c.display_name}</p>
+    {Number(c.author_id) !== Number(CURRENT_USER_ID_LOCAL) && (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onReportComment(c);
+        }}
+        aria-label="Segnala commento"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </Button>
+    )}
+  </div>
   <p className="text-sm whitespace-pre-wrap break-words">
   <MentionText text={c.content} />
 </p>
@@ -1175,24 +1179,28 @@ function VideoComments({
             </Avatar>
           </Link>
 
-          <div className="relative flex-1 bg-muted rounded-lg px-3 py-2 pr-10">
-  {Number(c.author_id) !== Number(CURRENT_USER_ID_LOCAL) && (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="absolute top-1 right-1 h-8 w-8 rounded-full"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onReportComment(c);
-      }}
-      aria-label="Segnala commento"
-    >
-      <MoreVertical className="w-4 h-4" />
-    </Button>
-  )}
+          <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+  <div className="flex items-start justify-between gap-2">
+    <p className="text-sm font-semibold min-w-0 truncate">
+      {c.display_name}
+    </p>
 
-  <p className="text-sm font-semibold pr-7">{c.display_name}</p>
+    {Number(c.author_id) !== Number(CURRENT_USER_ID_LOCAL) && (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onReportComment(c);
+        }}
+        aria-label="Segnala commento"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </Button>
+    )}
+  </div>
   <p className="text-sm whitespace-pre-wrap break-words">
     <MentionText text={c.content} />
   </p>
@@ -1355,12 +1363,16 @@ function PostComments({
                 </Avatar>
               </Link>
               <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-  {Number(comment.authorId ?? comment.author_id ?? comment.author?.id) !== Number(currentUserId) && (
-    <div className="flex justify-end -mt-1 -mr-1 mb-1">
+  <div className="flex items-start justify-between gap-2">
+    <p className="text-sm font-semibold min-w-0 truncate">
+      {comment.author.displayName}
+    </p>
+
+    {Number(comment.authorId) !== Number(CURRENT_USER_ID) && (
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8 rounded-full"
+        className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1370,10 +1382,8 @@ function PostComments({
       >
         <MoreVertical className="w-4 h-4" />
       </Button>
-    </div>
-  )}
-
-  <p className="text-sm font-semibold">{comment.author?.displayName}</p>
+    )}
+  </div>
   <p className="text-sm whitespace-pre-wrap break-words">
   <MentionText text={comment.content} />
 </p>
