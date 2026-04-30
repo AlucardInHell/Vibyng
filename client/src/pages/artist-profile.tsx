@@ -356,12 +356,12 @@ function ArtistPostComments({
   const currentUserId = getCurrentUserId();
 
   const { data: comments = [], isLoading, refetch } = useQuery<any[]>({
-    queryKey: ["/api/posts", postId, "comments"],
-    queryFn: async () => {
-      const res = await fetch(`/api/posts/${postId}/comments`);
-      return res.json();
-    },
-  });
+  queryKey: ["/api/posts", postId, "comments", currentUserId],
+  queryFn: async () => {
+    const res = await fetch(`/api/posts/${postId}/comments?userId=${currentUserId}`);
+    return res.json();
+  },
+});
 
   const handleSubmit = async () => {
   if (!newComment.trim()) return;
@@ -432,9 +432,31 @@ function ArtistPostComments({
                 {(Number(comment.authorId) === Number(currentUserId) || Number(postAuthorId) === Number(currentUserId)) && (
                   <button className="text-xs text-red-400 hover:text-red-600" onClick={async () => { await apiRequest("DELETE", `/api/comments/${comment.id}`); refetch(); }}>🗑️</button>
                 )}
-                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500" onClick={async () => { await apiRequest("POST", `/api/comments/${comment.id}/like`); refetch(); }}>
-                  <Heart className="w-3 h-3" /><span>{comment.likesCount ?? 0}</span>
-                </button>
+                <button
+  className={`flex items-center gap-1 text-xs hover:text-red-500 ${
+    comment.likedByMe ? "text-red-500" : "text-muted-foreground"
+  }`}
+  onClick={async () => {
+    if (comment.likedByMe) {
+      await apiRequest("POST", `/api/comments/${comment.id}/unlike`, {
+        userId: currentUserId,
+      });
+    } else {
+      await apiRequest("POST", `/api/comments/${comment.id}/like`, {
+        userId: currentUserId,
+      });
+    }
+
+    await refetch();
+  }}
+>
+  <Heart
+    className={`w-3 h-3 ${
+      comment.likedByMe ? "fill-red-500 text-red-500" : ""
+    }`}
+  />
+  <span>{comment.likesCount ?? 0}</span>
+</button>
               </div>
             </div>
           </div>
