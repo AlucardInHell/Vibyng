@@ -1695,8 +1695,8 @@ return (
       </button>
     </div>
 
-    <div className="flex-1 flex items-center justify-center p-4 pt-16" onClick={e => e.stopPropagation()}>
-      <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden max-h-[82dvh] flex flex-col">
+    <div className="flex-1 flex items-start justify-center px-4 pt-8 pb-24 overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden max-h-[calc(100dvh-8rem)] flex flex-col">
               <video
   src={selectedVideo.videoUrl}
   controls
