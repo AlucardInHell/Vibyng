@@ -1696,7 +1696,7 @@ return (
     </div>
 
     <div className="flex-1 flex items-start justify-center px-4 pt-16 pb-16 overflow-hidden" onClick={e => e.stopPropagation()}>
-     <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden max-h-[82dvh] flex flex-col">
+     <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-11rem)] max-h-[86dvh] flex flex-col">
               <video
   src={selectedVideo.videoUrl}
   controls
@@ -1765,7 +1765,7 @@ return (
   {t.share}
 </button>
                 </div>
-               <div className="mt-0 flex flex-col h-[34dvh] max-h-[34dvh] overflow-hidden">
+               <div className="mt-0 flex flex-col flex-1 min-h-0 overflow-hidden">
                 <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1 pb-1">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
