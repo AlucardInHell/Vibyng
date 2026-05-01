@@ -1696,13 +1696,13 @@ return (
     </div>
 
     <div className="flex-1 flex items-center justify-center p-4 pt-16" onClick={e => e.stopPropagation()}>
-      <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-5rem)] max-h-[90dvh] flex flex-col">
+      <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden max-h-[82dvh] flex flex-col">
               <video
   src={selectedVideo.videoUrl}
   controls
-  className="w-full max-h-[30dvh] sm:max-h-[34dvh] object-contain bg-black shrink-0"
+  className="w-full max-h-[26dvh] sm:max-h-[30dvh] object-contain bg-black shrink-0"
 />
-              <div className="p-4 flex flex-col min-h-0 flex-1 overflow-hidden">
+              <div className="p-4 flex flex-col min-h-0 overflow-hidden">
                 {selectedVideo.title && selectedVideo.title !== t.untitledVideo && <p className="font-medium whitespace-pre-wrap break-words">
   <MentionText text={selectedVideo.title} />
 </p>}
@@ -1765,7 +1765,7 @@ return (
   {t.share}
 </button>
                 </div>
-               <div className="mt-4 border-t pt-4 flex flex-col min-h-0 flex-1 overflow-hidden">
+               <div className="mt-4 border-t pt-4 flex flex-col h-[30dvh] max-h-[30dvh] overflow-hidden">
                 <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
@@ -1865,7 +1865,7 @@ return (
   ))}
 </div>
 
-<div className="pt-3 mt-2 border-t shrink-0 bg-background">
+<div className="pt-3 mt-2 border-t shrink-0 bg-background pb-1">
   <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
     <div className="relative flex-1">
       <input
