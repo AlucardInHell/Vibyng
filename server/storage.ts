@@ -164,26 +164,67 @@ async getUserByResetToken(token: string): Promise<User | undefined> {
   }
 
 async searchUsers(query: string, role?: string): Promise<User[]> {
-    if (!query.trim()) {
-      if (role) {
-        return await db.select().from(users).where(eq(users.role, role));
-      }
-      return await db.select().from(users);
+  const cleanQuery = query.trim();
+  const cleanRole = role?.trim();
+
+  if (!cleanQuery) {
+    if (cleanRole) {
+      const result = await db.execute(sql`
+        SELECT *
+        FROM users
+        WHERE role = ${cleanRole}
+          AND COALESCE(is_deleted, false) = false
+        ORDER BY display_name ASC
+      `);
+
+      return result.rows as User[];
     }
-    const pattern = `%${query}%`;
-    const searchCondition = or(
-      ilike(users.displayName, pattern),
-      ilike(users.username, pattern),
-      ilike(users.genre, pattern),
-      ilike(users.city, pattern)
-    );
-    if (role) {
-      return await db.select().from(users).where(
-        and(searchCondition, eq(users.role, role))
-      );
-    }
-    return await db.select().from(users).where(searchCondition);
+
+    const result = await db.execute(sql`
+      SELECT *
+      FROM users
+      WHERE COALESCE(is_deleted, false) = false
+      ORDER BY display_name ASC
+    `);
+
+    return result.rows as User[];
   }
+
+  const pattern = `%${cleanQuery}%`;
+
+  if (cleanRole) {
+    const result = await db.execute(sql`
+      SELECT *
+      FROM users
+      WHERE role = ${cleanRole}
+        AND COALESCE(is_deleted, false) = false
+        AND (
+          display_name ILIKE ${pattern}
+          OR username ILIKE ${pattern}
+          OR genre ILIKE ${pattern}
+          OR city ILIKE ${pattern}
+        )
+      ORDER BY display_name ASC
+    `);
+
+    return result.rows as User[];
+  }
+
+  const result = await db.execute(sql`
+    SELECT *
+    FROM users
+    WHERE COALESCE(is_deleted, false) = false
+      AND (
+        display_name ILIKE ${pattern}
+        OR username ILIKE ${pattern}
+        OR genre ILIKE ${pattern}
+        OR city ILIKE ${pattern}
+      )
+    ORDER BY display_name ASC
+  `);
+
+  return result.rows as User[];
+}
   async updateUserPoints(id: number, points: number): Promise<void> {
     const user = await this.getUser(id);
     if (user) {
