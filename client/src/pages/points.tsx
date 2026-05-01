@@ -30,7 +30,6 @@ function getCurrentUserId(): number {
   } catch {}
   return 1;
 }
-const CURRENT_USER_ID = getCurrentUserId();
 type AppLanguage = "it" | "en";
 
 const MB = 1024 * 1024;
@@ -353,11 +352,12 @@ function MePostComments({
   onReportComment: (comment: any) => void;
 }) {
   const [newComment, setNewComment] = useState("");
+  const currentUserId = getCurrentUserId();
 
   const { data: comments = [], refetch } = useQuery<any[]>({
-  queryKey: ["/api/posts", postId, "comments", CURRENT_USER_ID],
+  queryKey: ["/api/posts", postId, "comments", currentUserId],
   queryFn: async () => {
-    const res = await fetch(`/api/posts/${postId}/comments?userId=${CURRENT_USER_ID}`);
+    const res = await fetch(`/api/posts/${postId}/comments?userId=${currentUserId}`);
     return res.json();
   },
 });
@@ -365,13 +365,13 @@ function MePostComments({
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
     await apiRequest("POST", `/api/posts/${postId}/comments`, {
-      authorId: CURRENT_USER_ID,
+      authorId: currentUserId,
       content: newComment.trim(),
     });
     setNewComment("");
     await refetch();
-    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
   };
 
   return (
@@ -418,7 +418,7 @@ function MePostComments({
       comment.author?.id ??
       comment.userId ??
       comment.user_id
-    ) !== Number(CURRENT_USER_ID) && (
+    ) !== Number(currentUserId) && (
       <Button
         variant="ghost"
         size="icon"
@@ -451,8 +451,8 @@ function MePostComments({
               </span>
 
               <div className="flex items-center gap-2">
-                {(Number(comment.authorId) === Number(CURRENT_USER_ID) ||
-                  Number(postAuthorId) === Number(CURRENT_USER_ID)) && (
+                {(Number(comment.authorId) === Number(currentUserId) ||
+                  Number(postAuthorId) === Number(currentUserId)) && (
                   <button
                     className="text-xs text-red-400 hover:text-red-600"
                     onClick={async () => {
@@ -470,7 +470,7 @@ function MePostComments({
   comment.author?.id ??
   comment.userId ??
   comment.user_id
-) !== Number(CURRENT_USER_ID) && (
+) !== Number(currentUserId) && (
   <button
     className={`flex items-center gap-1 text-xs hover:text-red-500 ${
       comment.likedByMe ? "text-red-500" : "text-muted-foreground"
@@ -478,11 +478,11 @@ function MePostComments({
     onClick={async () => {
       if (comment.likedByMe) {
         await apiRequest("POST", `/api/comments/${comment.id}/unlike`, {
-          userId: CURRENT_USER_ID,
+          userId: currentUserId,
         });
       } else {
         await apiRequest("POST", `/api/comments/${comment.id}/like`, {
-          userId: CURRENT_USER_ID,
+          userId: currentUserId,
         });
       }
 
@@ -506,6 +506,7 @@ function MePostComments({
   );
 }
 export default function Points() {
+  const currentUserId = getCurrentUserId();
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = pointsTranslations[language];
@@ -574,7 +575,7 @@ useEffect(() => {
     queryKey: ["/api/photos", selectedPhoto?.id, "livedata"],
     queryFn: async () => {
       if (!selectedPhoto?.id) return null;
-      const res = await fetch(`/api/users/${CURRENT_USER_ID}/photos?t=${Date.now()}`);
+      const res = await fetch(`/api/users/${currentUserId}/photos?t=${Date.now()}`);
       const photos = await res.json();
       return photos.find((p: any) => p.id === selectedPhoto.id) || null;
     },
@@ -586,7 +587,7 @@ useEffect(() => {
     queryKey: ["/api/photos", selectedPhoto?.id, "comments"],
     queryFn: async () => {
       if (!selectedPhoto?.id) return [];
-  const res = await fetch(`/api/photos/${selectedPhoto.id}/comments?userId=${CURRENT_USER_ID}`);
+  const res = await fetch(`/api/photos/${selectedPhoto.id}/comments?userId=${currentUserId}`);
       return res.json();
     },
     enabled: !!selectedPhoto?.id,
@@ -611,20 +612,20 @@ useEffect(() => {
   const [videoCommentInput, setVideoCommentInput] = useState("");
   const [videoLikeCount, setVideoLikeCount] = useState<Record<number, number>>({});
   const { data: videoCommentsList = [], refetch: refetchVideoComments } = useQuery<any[]>({
-  queryKey: ["/api/videos", selectedVideo?.id, "comments", CURRENT_USER_ID],
+  queryKey: ["/api/videos", selectedVideo?.id, "comments", currentUserId],
   queryFn: async () => {
     if (!selectedVideo?.id) return [];
-    const res = await fetch(`/api/videos/${selectedVideo.id}/comments?userId=${CURRENT_USER_ID}`);
+    const res = await fetch(`/api/videos/${selectedVideo.id}/comments?userId=${currentUserId}`);
     return res.json();
   },
     enabled: !!selectedVideo?.id,
     staleTime: 0,
   });
   const { data: videoLikeData, refetch: refetchVideoLike } = useQuery<{ liked: boolean }>({
-  queryKey: ["/api/videos", selectedVideo?.id, "liked", CURRENT_USER_ID],
+  queryKey: ["/api/videos", selectedVideo?.id, "liked", currentUserId],
   queryFn: async () => {
     if (!selectedVideo?.id) return { liked: false };
-    const res = await fetch(`/api/videos/${selectedVideo.id}/liked/${CURRENT_USER_ID}`);
+    const res = await fetch(`/api/videos/${selectedVideo.id}/liked/${currentUserId}`);
     return res.json();
   },
   enabled: !!selectedVideo?.id,
@@ -645,13 +646,13 @@ useEffect(() => {
  });
   
   const { data: currentUser } = useQuery<User>({
-    queryKey: ["/api/users", CURRENT_USER_ID],
+    queryKey: ["/api/users", currentUserId],
   });
 
   const { data: vPointsStatus } = useQuery<VPointsStatus>({
-    queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"],
+    queryKey: ["/api/vpoints", currentUserId, "status"],
     queryFn: async () => {
-      const res = await fetch(`/api/vpoints/${CURRENT_USER_ID}/status`);
+      const res = await fetch(`/api/vpoints/${currentUserId}/status`);
       if (!res.ok) {
         throw new Error(t.vpointsFetchError);
       }
@@ -660,50 +661,50 @@ useEffect(() => {
   });
 
   const { data: followedArtists = [] } = useQuery<User[]>({
-    queryKey: ["/api/users", CURRENT_USER_ID, "following"],
+    queryKey: ["/api/users", currentUserId, "following"],
   });
   const { data: followersData } = useQuery<{ count: number }>({
-    queryKey: [`/api/artists/${CURRENT_USER_ID}/followers/count`],
+    queryKey: [`/api/artists/${currentUserId}/followers/count`],
   });
   const { data: myPhotos = [] } = useQuery<ArtistPhoto[]>({
-    queryKey: ["/api/users", CURRENT_USER_ID, "photos"],
+    queryKey: ["/api/users", currentUserId, "photos"],
   });
 
   const { data: followersList = [] } = useQuery<User[]>({
-    queryKey: ["/api/users", CURRENT_USER_ID, "followers"],
+    queryKey: ["/api/users", currentUserId, "followers"],
     queryFn: async () => {
-      const res = await fetch(`/api/users/${CURRENT_USER_ID}/followers`);
+      const res = await fetch(`/api/users/${currentUserId}/followers`);
       return res.json();
     },
   });
 
   const { data: myArtistEvents = [] } = useQuery<any[]>({
-    queryKey: [`/api/artists/${CURRENT_USER_ID}/events`],
+    queryKey: [`/api/artists/${currentUserId}/events`],
     enabled: true,
   });
   const { data: attendingEvents = [] } = useQuery<{ event: any }[]>({
-    queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"],
+    queryKey: ["/api/users", currentUserId, "events/attending"],
     queryFn: async () => {
-      const res = await fetch(`/api/users/${CURRENT_USER_ID}/events/attending`);
+      const res = await fetch(`/api/users/${currentUserId}/events/attending`);
       return res.json();
     },
   });
   
   const { data: myVideos = [] } = useQuery<ArtistVideo[]>({
-    queryKey: ["/api/users", CURRENT_USER_ID, "videos"],
+    queryKey: ["/api/users", currentUserId, "videos"],
   });
 
   const { data: myPosts = [] } = useQuery<(Post & { author: User })[]>({
-    queryKey: ["/api/users", CURRENT_USER_ID, "posts"],
+    queryKey: ["/api/users", currentUserId, "posts"],
   });
 
 const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
-    queryKey: ["/api/likes", CURRENT_USER_ID, "posts"],
+    queryKey: ["/api/likes", currentUserId, "posts"],
     queryFn: async () => {
       if (!myPosts || myPosts.length === 0) return [];
       const results = await Promise.all(
         myPosts.map(async (post) => {
-          const res = await fetch(`/api/posts/${post.id}/liked/${CURRENT_USER_ID}`);
+          const res = await fetch(`/api/posts/${post.id}/liked/${currentUserId}`);
           const data = await res.json();
           return data.liked ? Number(post.id) : null;
         })
@@ -715,21 +716,21 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   });
   
   const { data: mySongs = [] } = useQuery<any[]>({
-    queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`],
+    queryKey: [`/api/artists/${currentUserId}/songs`],
     enabled: true,
   });
 
   const { data: myArtistGoals = [] } = useQuery<ArtistGoal[]>({
-  queryKey: [`/api/artists/${CURRENT_USER_ID}/goals`],
+  queryKey: [`/api/artists/${currentUserId}/goals`],
   enabled: currentUser?.role === "artist",
   });
   
   const unfollowMutation = useMutation({
     mutationFn: async (artistId: number) => {
-      return apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/follow/${artistId}`);
+      return apiRequest("DELETE", `/api/users/${currentUserId}/follow/${artistId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "following"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "following"] });
     },
   });
 
@@ -755,13 +756,13 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
   if (!postText.trim()) return;
   try {
     await apiRequest("POST", "/api/posts", {
-      authorId: CURRENT_USER_ID,
+      authorId: currentUserId,
       content: postText,
     });
-    await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "posts"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/posts", currentUserId] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
     toast({
   title: t.postPublishedTitle,
   description: t.postPublishedDescription,
@@ -793,7 +794,7 @@ const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
         await fetch("/api/uploads/avatar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageData, userId: CURRENT_USER_ID }),
+          body: JSON.stringify({ imageData, userId: currentUserId }),
         });
         await updateProfile({ avatarUrl: imageData });
         toast({ title: t.avatarUpdatedTitle, description: t.avatarUpdatedDescription });
@@ -856,7 +857,7 @@ const uploadVideoDirectToCloudinary = async (file: File): Promise<string> => {
   const signRes = await fetch("/api/cloudinary/sign-video-upload", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: CURRENT_USER_ID }),
+    body: JSON.stringify({ userId: currentUserId }),
   });
 
   if (!signRes.ok) {
@@ -866,7 +867,7 @@ const uploadVideoDirectToCloudinary = async (file: File): Promise<string> => {
   const signData = await signRes.json();
 
   const chunkSize = 20 * MB;
-  const uploadId = `${CURRENT_USER_ID}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const uploadId = `${currentUserId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   let finalResult: any = null;
 
   for (let start = 0; start < file.size; start += chunkSize) {
@@ -969,16 +970,16 @@ const uploadVideoDirectToCloudinary = async (file: File): Promise<string> => {
           const uploadRes = await fetch("/api/uploads/audio", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ audioData, title: file.name.replace(/\.[^/.]+$/, ""), artistId: CURRENT_USER_ID }),
+            body: JSON.stringify({ audioData, title: file.name.replace(/\.[^/.]+$/, ""), artistId: currentUserId }),
           });
          const { url } = await uploadRes.json();
-          await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/songs`, {
+          await apiRequest("POST", `/api/artists/${currentUserId}/songs`, {
             title: file.name.replace(/\.[^/.]+$/, ""),
             audioUrl: url,
-            artistId: CURRENT_USER_ID,
+            artistId: currentUserId,
             duration: audioDuration,
           });
-          queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
+          queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/songs`] });
           toast({ title: t.songUploadedTitle, description: t.songUploadedDescription });
         } catch {
           toast({ title: t.error, description: t.songUploadError, variant: "destructive" });
@@ -1030,7 +1031,7 @@ const reportMutation = useMutation({
     }
 
     return apiRequest("POST", "/api/reports", {
-      reporterId: CURRENT_USER_ID,
+      reporterId: currentUserId,
       targetType: reportTarget.targetType,
       targetId: reportTarget.targetId,
       targetOwnerId: reportTarget.targetOwnerId,
@@ -1334,11 +1335,11 @@ const reportMutation = useMutation({
                         try {
                           if (currentUser?.role === "artist") {
                             await apiRequest("DELETE", `/api/songs/${song.id}`);
-                            queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
+                            queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/songs`] });
                             toast({ title: "Canzone eliminata" });
                           } else {
-                            await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/playlist/${song.id}`);
-                            queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/songs`] });
+                            await apiRequest("DELETE", `/api/users/${currentUserId}/playlist/${song.id}`);
+                            queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/songs`] });
                             toast({ title: "Rimossa dalla playlist" });
                           }
                         } catch {
@@ -1509,9 +1510,9 @@ const reportMutation = useMutation({
               className="flex items-center gap-1 text-sm text-red-400 ml-auto"
               onClick={async () => {
                 try {
-                  await apiRequest("DELETE", `/api/users/${CURRENT_USER_ID}/photos/${selectedPhoto.id}`);
-                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-                  queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+                  await apiRequest("DELETE", `/api/users/${currentUserId}/photos/${selectedPhoto.id}`);
+                  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "photos"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/posts", currentUserId] });
                   setSelectedPhoto(null);
                   setPhotoCommentsOpen(false);
                   toast({ title: "Foto eliminata" });
@@ -1554,7 +1555,7 @@ const reportMutation = useMutation({
       {c.display_name}
     </p>
 
-    {Number(c.author_id) !== Number(CURRENT_USER_ID) && (
+    {Number(c.author_id) !== Number(currentUserId) && (
       <Button
         variant="ghost"
         size="icon"
@@ -1594,8 +1595,8 @@ const reportMutation = useMutation({
                     </span>
 
                     <div className="flex items-center gap-2">
-                      {(Number(c.author_id) === Number(CURRENT_USER_ID) ||
-                        Number(selectedPhoto.artistId) === Number(CURRENT_USER_ID)) && (
+                      {(Number(c.author_id) === Number(currentUserId) ||
+                        Number(selectedPhoto.artistId) === Number(currentUserId)) && (
                         <button
                           className="text-xs text-red-400 hover:text-red-600"
                           onClick={async () => {
@@ -1609,23 +1610,23 @@ const reportMutation = useMutation({
 
                       <button
                         className={`flex items-center gap-1 text-xs ${
-                          Number(c.author_id) === CURRENT_USER_ID
+                          Number(c.author_id) === currentUserId
                             ? "opacity-50 cursor-not-allowed text-muted-foreground"
                             : c.likedByMe
                               ? "text-red-500"
                               : "text-muted-foreground hover:text-red-500"
                         }`}
-                        disabled={Number(c.author_id) === CURRENT_USER_ID}
+                        disabled={Number(c.author_id) === currentUserId}
                         onClick={async () => {
                           if (c.likedByMe) {
                             await apiRequest(
                               "POST",
-                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${CURRENT_USER_ID}`
+                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${currentUserId}`
                             );
                           } else {
                             await apiRequest(
                               "POST",
-                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${CURRENT_USER_ID}`
+                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${currentUserId}`
                             );
                           }
                           await refetchPhotoComments();
@@ -1654,14 +1655,14 @@ const reportMutation = useMutation({
                 onKeyDown={async (e) => {
                   if (e.key === "Enter" && commentInput.trim()) {
                     await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-  authorId: CURRENT_USER_ID,
+  authorId: currentUserId,
   content: commentInput.trim(),
 });
 setCommentInput("");
 closePhotoCommentMentions();
 await refetchPhotoComments();
-await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
-await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
                   }
                 }}
               />
@@ -1795,9 +1796,9 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                         onClick={async () => {
                           try {
                             await apiRequest("DELETE", `/api/posts/${post.id}`);
-                            queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "posts"] });
-                            queryClient.invalidateQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
-                            queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "posts"] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/posts", currentUserId] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "photos"] });
                             toast({ title: "Post eliminato" });
                           } catch {
                            toast({ title: t.error, variant: "destructive" });
@@ -1866,9 +1867,9 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                           return;
                         }
                         try {
-                         await apiRequest("POST", `/api/artists/${CURRENT_USER_ID}/events`, { ...eventForm, eventDate: new Date(eventForm.eventDate).toISOString() });
-                          queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/events`] });
-                          queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"] });
+                         await apiRequest("POST", `/api/artists/${currentUserId}/events`, { ...eventForm, eventDate: new Date(eventForm.eventDate).toISOString() });
+                          queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/events`] });
+                          queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
                           setShowEventForm(false);
                           setEventForm({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
                           toast({ title: t.eventAddedTitle });
@@ -1902,7 +1903,7 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                             onClick={async () => {
                               try {
                                 await apiRequest("DELETE", `/api/events/${event.id}`);
-                                queryClient.invalidateQueries({ queryKey: [`/api/artists/${CURRENT_USER_ID}/events`] });
+                                queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/events`] });
                                 toast({ title: t.eventDeletedTitle });
                               } catch {
                                 toast({ title: t.error, variant: "destructive" });
@@ -1940,8 +1941,8 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                         className="text-xs text-red-400 hover:text-red-600"
                         onClick={async () => {
                           try {
-                            await apiRequest("DELETE", `/api/events/${event.id}/attend`, { userId: CURRENT_USER_ID });
-                            queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "events/attending"] });
+                            await apiRequest("DELETE", `/api/events/${event.id}/attend`, { userId: currentUserId });
+                            queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "events/attending"] });
                             toast({ title: "Evento rimosso" });
                           } catch {
                             toast({ title: t.error, variant: "destructive" });
@@ -2017,14 +2018,14 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
 
                   try {
                     await apiRequest("POST", "/api/goals", {
-                      artistId: CURRENT_USER_ID,
+                      artistId: currentUserId,
                       title: goalForm.title.trim(),
                       description: goalForm.description.trim(),
                       targetAmount: goalForm.targetAmount,
                     });
 
                     await queryClient.invalidateQueries({
-                      queryKey: [`/api/artists/${CURRENT_USER_ID}/goals`],
+                      queryKey: [`/api/artists/${currentUserId}/goals`],
                     });
 
                     setShowGoalForm(false);
@@ -2069,11 +2070,11 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
     onClick={async () => {
       try {
         await apiRequest("DELETE", `/api/goals/${goal.id}`, {
-          artistId: CURRENT_USER_ID,
+          artistId: currentUserId,
         });
 
         await queryClient.invalidateQueries({
-          queryKey: [`/api/artists/${CURRENT_USER_ID}/goals`],
+          queryKey: [`/api/artists/${currentUserId}/goals`],
         });
 
         toast({ title: t.goalDeletedTitle });
@@ -2300,12 +2301,12 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] 
                 try {
                   const url = await uploadVideoDirectToCloudinary(pendingVideo.videoFile);
 
-await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
+await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
   title: pendingVideoText || t.untitledVideo,
   videoUrl: url,
   thumbnailUrl: url,
 });
-                 queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
+                 queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "videos"] });
                  queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
                  toast({ title: t.videoUploadedTitle });
                 } catch {
@@ -2372,7 +2373,7 @@ await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
                     onClick={async () => {
                       try {
                         await apiRequest("DELETE", `/api/videos/${selectedVideo.id}`);
-                        queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "videos"] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "videos"] });
                         setSelectedVideo(null);
                         toast({ title: "Video eliminato" });
                       } catch {
@@ -2401,7 +2402,7 @@ await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
       {c.display_name}
     </p>
 
-    {Number(c.author_id) !== Number(CURRENT_USER_ID) && (
+    {Number(c.author_id) !== Number(currentUserId) && (
       <Button
         variant="ghost"
         size="icon"
@@ -2441,8 +2442,8 @@ await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
             </span>
 
             <div className="flex items-center gap-2">
-              {(Number(c.author_id) === Number(CURRENT_USER_ID) ||
-                Number(selectedVideo.artistId) === Number(CURRENT_USER_ID)) && (
+              {(Number(c.author_id) === Number(currentUserId) ||
+                Number(selectedVideo.artistId) === Number(currentUserId)) && (
                 <button
                   className="text-xs text-red-400 hover:text-red-600"
                   onClick={async () => {
@@ -2456,21 +2457,21 @@ await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
 
               <button
                 className={`flex items-center gap-1 text-xs ${
-                  Number(c.author_id) === Number(CURRENT_USER_ID)
+                  Number(c.author_id) === Number(currentUserId)
                     ? "opacity-50 cursor-not-allowed text-muted-foreground"
                     : c.likedByMe
                       ? "text-red-500"
                       : "text-muted-foreground hover:text-red-500"
                 }`}
-                disabled={Number(c.author_id) === Number(CURRENT_USER_ID)}
+                disabled={Number(c.author_id) === Number(currentUserId)}
                 onClick={async () => {
                   if (c.likedByMe) {
                     await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/unlike`, {
-                      userId: CURRENT_USER_ID,
+                      userId: currentUserId,
                     });
                   } else {
                     await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments/${c.id}/like`, {
-                      userId: CURRENT_USER_ID,
+                      userId: currentUserId,
                     });
                   }
                   await refetchVideoComments();
@@ -2500,14 +2501,14 @@ await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
           onKeyDown={async e => {
             if (e.key === "Enter" && videoCommentInput.trim()) {
               await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
-                authorId: CURRENT_USER_ID,
+                authorId: currentUserId,
                 content: videoCommentInput.trim(),
               });
               setVideoCommentInput("");
               closeVideoCommentMentions();
               await refetchVideoComments();
-              await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
-              await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+              await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+              await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
             }
           }}
         />
@@ -2527,14 +2528,14 @@ await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
         onClick={async () => {
           if (!videoCommentInput.trim()) return;
           await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
-            authorId: CURRENT_USER_ID,
+            authorId: currentUserId,
             content: videoCommentInput.trim(),
           });
           setVideoCommentInput("");
           closeVideoCommentMentions();
           await refetchVideoComments();
-          await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID, "status"] });
-          await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID] });
+          await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+          await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
         }}
         disabled={!videoCommentInput.trim()}
       >
@@ -2570,13 +2571,13 @@ await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/videos`, {
               <Button className="flex-1" disabled={uploadingType === "publishing"} onClick={async () => {
                 setUploadingType("publishing");
                 try {
-                 await apiRequest("POST", `/api/users/${CURRENT_USER_ID}/photos`, {
+                 await apiRequest("POST", `/api/users/${currentUserId}/photos`, {
                     title: pendingPostText || t.untitledPhoto,
                     imageUrl: pendingPhoto.imageData,
                     description: pendingPostText,
                   });
-                  queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID, "photos"] });
-                  await queryClient.refetchQueries({ queryKey: ["/api/posts", CURRENT_USER_ID] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "photos"] });
+                  await queryClient.refetchQueries({ queryKey: ["/api/posts", currentUserId] });
                   toast({ title: t.postPublishedTitle });
                 } catch {
                   toast({ title: t.error, variant: "destructive" });
