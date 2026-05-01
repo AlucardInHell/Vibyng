@@ -958,14 +958,43 @@ function SettingsMenu() {
                     {isSaving ? t.saving : t.saveChanges}
                </Button>
               </>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => setAccountOpen(false)}>{t.close}</Button>
-                <Button onClick={handleOpenEdit} data-testid="button-edit-profile">
-                  {t.editProfile}
-                </Button>
-              </>
-            )}
+           ) : (
+  <div className="w-full space-y-2">
+    <Button
+      className="w-full"
+      onClick={handleOpenEdit}
+      data-testid="button-edit-profile"
+    >
+      {t.editProfile}
+    </Button>
+
+    <Button
+      variant="outline"
+      className="w-full"
+      onClick={() => setAccountOpen(false)}
+    >
+      {t.close}
+    </Button>
+
+    <div className="border-t border-border pt-4 mt-4">
+      <p className="text-sm font-medium text-destructive text-center">
+        Elimina definitivamente il tuo profilo
+      </p>
+
+      <p className="text-xs text-muted-foreground mt-1 text-center">
+        Questa azione è definitiva e non può essere annullata.
+      </p>
+
+      <Button
+        variant="destructive"
+        className="w-full mt-3"
+        onClick={() => setDeleteAccountOpen(true)}
+      >
+        Elimina profilo
+      </Button>
+    </div>
+  </div>
+)}
           </DialogFooter>
         </DialogContent>
       </Dialog>
