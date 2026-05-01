@@ -1765,8 +1765,8 @@ return (
   {t.share}
 </button>
                 </div>
-               <div className="mt-3 border-t pt-3 flex flex-col h-[25dvh] max-h-[25dvh] overflow-hidden">
-                <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
+               <div className="mt-1 border-t pt-1 flex flex-col h-[25dvh] max-h-[25dvh] overflow-hidden">
+                <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1 pb-1">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
       <Link href={`/artist/${c.author_id}`}>
@@ -1865,7 +1865,7 @@ return (
   ))}
 </div>
 
-<div className="pt-3 mt-2 border-t shrink-0 bg-background pb-1">
+<div className="pt-2 mt-1 border-t shrink-0 bg-background pb-1">
   <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
     <div className="relative flex-1">
       <input
