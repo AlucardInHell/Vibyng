@@ -954,9 +954,9 @@ function SettingsMenu() {
                 <Button variant="outline" onClick={() => setEditMode(false)} data-testid="button-cancel-edit">
                   {t.cancel}
                 </Button>
-                <Button onClick={handleSaveProfile} disabled={isSaving} data-testid="button-save-profile">
-                  {isSaving ? "{t.saving}..." : "{t.saveChanges}"}
-                </Button>
+                <Button onClick={handleSaveProfile} disabled={isSaving}>
+                    {isSaving ? t.saving : t.saveChanges}
+               </Button>
               </>
             ) : (
               <>
