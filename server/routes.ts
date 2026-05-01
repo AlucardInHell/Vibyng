@@ -15,7 +15,44 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
+function getAppUrl(req: any): string {
+  return (
+    process.env.APP_URL ||
+    req.headers.origin ||
+    "https://vibyng-production.up.railway.app"
+  ).replace(/\/$/, "");
+}
 
+async function sendTransactionalEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}) {
+  if (!process.env.RESEND_API_KEY?.trim()) {
+    throw new Error("RESEND_API_KEY mancante");
+  }
+
+  const from =
+    process.env.RESEND_FROM?.trim() ||
+    "Vibyng <noreply@mail.vibyng.com>";
+
+  const result: any = await resend.emails.send({
+    from,
+    to,
+    subject,
+    html,
+  });
+
+  if (result?.error) {
+    throw new Error(result.error?.message || "Errore invio email Resend");
+  }
+
+  return result;
+}
 
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
@@ -84,6 +121,36 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
+await db.execute(sql`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS email_verified boolean NOT NULL DEFAULT false
+`);
+
+await db.execute(sql`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS verification_token text
+`);
+
+await db.execute(sql`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS password_reset_token text
+`);
+
+await db.execute(sql`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS password_reset_expires timestamp
+`);
+
+await db.execute(sql`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false
+`);
+
+await db.execute(sql`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS deleted_at timestamp
+`);
+  
 await db.execute(sql`
   ALTER TABLE users
   ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false
@@ -602,12 +669,24 @@ res.status(201).json({
 });
 
   app.get(api.users.get.path, async (req, res) => {
-    const user = await storage.getUser(Number(req.params.id));
-   if (!user.emailVerified) {
-      return res.status(401).json({ message: "Devi confermare la tua email prima di accedere. Controlla la tua casella di posta." });
-    }
-    res.json(user);
-  });
+  const user = await storage.getUser(Number(req.params.id));
+
+  if (!user) {
+    return res.status(404).json({ message: "Utente non trovato" });
+  }
+
+  if ((user as any).isDeleted) {
+    return res.status(404).json({ message: "Profilo non disponibile" });
+  }
+
+  if (!user.emailVerified) {
+    return res.status(401).json({
+      message: "Devi confermare la tua email prima di accedere. Controlla la tua casella di posta.",
+    });
+  }
+
+  res.json(user);
+});
 
   app.post(api.users.create.path, async (req, res) => {
     try {
@@ -1099,145 +1178,313 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
   // === AUTH ===
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { email, password, username, displayName, role } = req.body;
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+    const username = String(req.body.username || "").trim().toLowerCase();
+    const displayName = String(req.body.displayName || "").trim();
+    const role = String(req.body.role || "fan").trim();
+
     if (!email || !password || !username || !displayName) {
-      return res.status(400).json({ message: "Tutti i campi sono obbligatori" });
+      return res.status(400).json({ message: "Compila tutti i campi obbligatori" });
     }
-    const existing = await storage.getUserByUsername(username);
-    if (existing) {
-      return res.status(400).json({ message: "Username già in uso" });
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "La password deve essere di almeno 6 caratteri" });
     }
-    const allUsers = await storage.getAllUsers();
-    const emailExists = allUsers.find(u => u.email === email);
-    if (emailExists) {
-      return res.status(400).json({ message: "Email già registrata" });
+
+    const existing = await db.execute(sql`
+      SELECT id
+      FROM users
+      WHERE LOWER(email) = LOWER(${email})
+         OR LOWER(username) = LOWER(${username})
+      LIMIT 1
+    `);
+
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ message: "Email o username già in uso" });
     }
+
     const verificationToken = crypto.randomBytes(32).toString("hex");
-    const user = await storage.createUser({
-      email,
-      password: hashPassword(password),
-      username,
-      displayName,
-      role: role || "fan",
-      emailVerified: false,
-      verificationToken,
-    });
-    const verifyUrl = `${process.env.APP_URL || "https://vibyng-production.up.railway.app"}/api/auth/verify?token=${verificationToken}`;
-    await resend.emails.send({
-     from: "Vibyng <noreply@mail.vibyng.com>",
-      to: email,
-      subject: "Conferma il tuo account Vibyng",
-      html: `
-        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; background: #0f0a1e; color: white; padding: 40px; border-radius: 16px;">
-          <div style="text-align: center; margin-bottom: 32px;">
-            <h1 style="color: #7c3aed; font-size: 28px; margin: 0;">vibyng</h1>
-            <p style="color: #9c88cc; margin-top: 8px;">La community della musica indipendente</p>
-          </div>
-          <h2 style="color: white;">Benvenuto, ${displayName}! 🎵</h2>
-          <p style="color: #9c88cc;">Grazie per esserti registrato. Clicca il pulsante qui sotto per confermare il tuo account:</p>
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${verifyUrl}" style="background: linear-gradient(135deg, #7c3aed, #db2777); color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; max-width: 80%; word-break: break-word; box-sizing: border-box;">
-              Conferma Account
-            </a>
-              Conferma Account
-            </a>
-          </div>
-          <p style="color: #5a4a7a; font-size: 12px; text-align: center;">Se non hai creato un account su Vibyng, ignora questa email.</p>
-        </div>
-      `,
-    });
-    res.status(201).json({ message: "Registrazione completata! Controlla la tua email per confermare l'account." });
-  } catch (err) {
-    console.error("Registration error:", err);
-    res.status(500).json({ message: "Errore durante la registrazione" });
-  }
-});
-app.post("/api/auth/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email e password sono obbligatori" });
-    }
-    const allUsers = await storage.getAllUsers();
-    const user = allUsers.find(u => u.email === email);
-   if (!user || user.password !== hashPassword(password)) {
-      return res.status(401).json({ message: "Email o password non corretti" });
-    }
-    if (!user.emailVerified) {
-      return res.status(401).json({ message: "Devi confermare la tua email prima di accedere. Controlla la tua casella di posta." });
-    }
-    const { password: _, ...safeUser } = user;
-    res.json(safeUser);
-  } catch (err) {
-    res.status(500).json({ message: "Errore durante il login" });
-  }
-});
-  app.get("/api/auth/verify", async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) {
-      return res.status(400).send("Token mancante");
-    }
-    const allUsers = await storage.getAllUsers();
-    const user = allUsers.find(u => u.verificationToken === token);
-    if (!user) {
-      return res.status(400).send("Token non valido o già utilizzato");
-    }
-    await storage.updateUser(user.id, { emailVerified: true, verificationToken: null } as any);
-    res.redirect("https://vibyng-production.up.railway.app?verified=true");
-  } catch (err) {
-    res.status(500).send("Errore durante la verifica");
-  }
-});
-  app.post("/api/auth/forgot-password", async (req, res) => {
+    const hashedPassword = hashPassword(password);
+
+    const created = await db.execute(sql`
+      INSERT INTO users (
+        email,
+        password,
+        username,
+        display_name,
+        role,
+        email_verified,
+        verification_token
+      )
+      VALUES (
+        ${email},
+        ${hashedPassword},
+        ${username},
+        ${displayName},
+        ${role},
+        false,
+        ${verificationToken}
+      )
+      RETURNING id, email, username, display_name, role
+    `);
+
+    const user = created.rows[0] as any;
+    const appUrl = getAppUrl(req);
+    const verifyUrl = `${appUrl}/api/auth/verify-email?token=${encodeURIComponent(verificationToken)}`;
+
     try {
-      const { email } = req.body;
-      const user = await storage.getUserByEmail(email);
-      if (!user) {
-        return res.json({ success: true, message: "Se l'email esiste, riceverai un link di recupero" });
-      }
-      const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      await storage.setPasswordResetToken(user.id, token);
-      const resetLink = `${process.env.APP_URL || "https://vibyng-production.up.railway.app"}/reset-password?token=${token}`;
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: "Vibyng <noreply@mail.vibyng.com>",
+      await sendTransactionalEmail({
         to: email,
-        subject: "Recupero password Vibyng",
+        subject: "Conferma il tuo account Vibyng",
         html: `
-          <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-            <h2 style="color: #7c3aed;">Recupero password</h2>
-            <p>Hai richiesto di reimpostare la tua password su Vibyng.</p>
-            <p>Clicca sul link qui sotto per creare una nuova password:</p>
-            <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #7c3aed, #db2777); color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">
-              Reimposta password
-            </a>
-            <p style="color: #999; font-size: 12px; margin-top: 20px;">Il link scade tra 1 ora. Se non hai richiesto il recupero, ignora questa email.</p>
+          <div style="font-family: sans-serif; max-width: 640px; margin: 0 auto; padding: 24px;">
+            <h2>Conferma il tuo account Vibyng</h2>
+            <p>Ciao ${displayName},</p>
+            <p>clicca sul pulsante qui sotto per confermare il tuo account.</p>
+            <p>
+              <a href="${verifyUrl}" style="display:inline-block;padding:12px 18px;background:#7c3aed;color:#fff;text-decoration:none;border-radius:8px;">
+                Conferma account
+              </a>
+            </p>
+            <p>Se il pulsante non funziona, copia questo link:</p>
+            <p>${verifyUrl}</p>
           </div>
         `,
       });
-      res.json({ success: true });
-   }  catch (err: any) {
-      console.error(`[forgot-password] error:`, err?.message || err);
-    res.status(400).json({ message: "Errore nell'invio dell'email", detail: err?.message });
+    } catch (emailErr: any) {
+      await db.execute(sql`
+        DELETE FROM users
+        WHERE id = ${Number(user.id)}
+      `);
+
+      console.error("[register-email]", emailErr?.message || emailErr);
+
+      return res.status(500).json({
+        message: "Account non creato: non è stato possibile inviare l'email di conferma",
+        detail: emailErr?.message,
+      });
     }
-  });
-  app.post("/api/auth/reset-password", async (req, res) => {
-    try {
-      const { token, password } = req.body;
-      const user = await storage.getUserByResetToken(token);
-      if (!user) {
-        return res.status(400).json({ message: "Token non valido o scaduto" });
-      }
-      const crypto = await import("crypto");
-      const hashedPassword = crypto.createHash("sha256").update(password).digest("hex");
-      await storage.resetPassword(user.id, hashedPassword);
-      res.json({ success: true });
-    } catch (err: any) {
-      res.status(400).json({ message: "Errore nel reset della password" });
+
+    res.status(201).json({
+      success: true,
+      requiresEmailVerification: true,
+      message: "Registrazione avviata. Controlla la tua email per confermare l'account.",
+    });
+  } catch (err: any) {
+    console.error("[auth-register]", err?.message || err);
+    res.status(400).json({ message: "Errore durante la registrazione", detail: err?.message });
+  }
+});
+
+app.get("/api/auth/verify-email", async (req, res) => {
+  try {
+    const token = String(req.query.token || "").trim();
+
+    if (!token) {
+      return res.status(400).send("Token non valido");
     }
-  });
+
+    const result = await db.execute(sql`
+      UPDATE users
+      SET email_verified = true,
+          verification_token = NULL
+      WHERE verification_token = ${token}
+        AND COALESCE(is_deleted, false) = false
+      RETURNING id
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(400).send("Token non valido o già utilizzato");
+    }
+
+    res.send(`
+      <div style="font-family: sans-serif; padding: 32px; text-align: center;">
+        <h2>Account confermato</h2>
+        <p>Ora puoi accedere a Vibyng.</p>
+        <a href="/">Vai al login</a>
+      </div>
+    `);
+  } catch (err: any) {
+    console.error("[verify-email]", err?.message || err);
+    res.status(400).send("Errore nella verifica email");
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email e password sono obbligatorie" });
+    }
+
+    const hashedPassword = hashPassword(password);
+
+    const result = await db.execute(sql`
+      SELECT
+        id,
+        username,
+        display_name,
+        email,
+        password,
+        role,
+        avatar_url,
+        bio,
+        vibyng_points,
+        email_verified,
+        COALESCE(is_deleted, false) AS is_deleted
+      FROM users
+      WHERE LOWER(email) = LOWER(${email})
+      LIMIT 1
+    `);
+
+    const user = result.rows[0] as any;
+
+    if (!user || user.password !== hashedPassword) {
+      return res.status(401).json({ message: "Credenziali non valide" });
+    }
+
+    if (user.is_deleted) {
+      return res.status(403).json({ message: "Profilo eliminato" });
+    }
+
+    if (!user.email_verified) {
+      return res.status(403).json({
+        message: "Devi confermare la tua email prima di accedere. Controlla la tua casella di posta.",
+        code: "EMAIL_NOT_VERIFIED",
+      });
+    }
+
+    res.json({
+      id: user.id,
+      username: user.username,
+      displayName: user.display_name,
+      email: user.email,
+      role: user.role,
+      avatarUrl: user.avatar_url,
+      bio: user.bio,
+      vibyngPoints: user.vibyng_points,
+      emailVerified: user.email_verified,
+    });
+  } catch (err: any) {
+    console.error("[auth-login]", err?.message || err);
+    res.status(400).json({ message: "Errore durante il login", detail: err?.message });
+  }
+});
+
+app.post("/api/auth/forgot-password", async (req, res) => {
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+
+    if (!email) {
+      return res.status(400).json({ message: "Email obbligatoria" });
+    }
+
+    const result = await db.execute(sql`
+      SELECT id, email, display_name
+      FROM users
+      WHERE LOWER(email) = LOWER(${email})
+        AND COALESCE(is_deleted, false) = false
+      LIMIT 1
+    `);
+
+    const user = result.rows[0] as any;
+
+    if (!user) {
+      return res.json({
+        success: true,
+        message: "Se l'email è registrata, riceverai un link per reimpostare la password.",
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+    await db.execute(sql`
+      UPDATE users
+      SET password_reset_token = ${token},
+          password_reset_expires = ${expires}
+      WHERE id = ${Number(user.id)}
+    `);
+
+    const appUrl = getAppUrl(req);
+    const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(token)}`;
+
+    await sendTransactionalEmail({
+      to: String(user.email),
+      subject: "Reimposta la tua password Vibyng",
+      html: `
+        <div style="font-family: sans-serif; max-width: 640px; margin: 0 auto; padding: 24px;">
+          <h2>Reimposta la tua password</h2>
+          <p>Ciao ${user.display_name || ""},</p>
+          <p>clicca sul pulsante qui sotto per scegliere una nuova password.</p>
+          <p>
+            <a href="${resetUrl}" style="display:inline-block;padding:12px 18px;background:#7c3aed;color:#fff;text-decoration:none;border-radius:8px;">
+              Reimposta password
+            </a>
+          </p>
+          <p>Il link scade tra 1 ora.</p>
+          <p>Se il pulsante non funziona, copia questo link:</p>
+          <p>${resetUrl}</p>
+        </div>
+      `,
+    });
+
+    res.json({
+      success: true,
+      message: "Se l'email è registrata, riceverai un link per reimpostare la password.",
+    });
+  } catch (err: any) {
+    console.error("[forgot-password]", err?.message || err);
+    res.status(500).json({
+      message: "Non è stato possibile inviare l'email di recupero password",
+      detail: err?.message,
+    });
+  }
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  try {
+    const token = String(req.body.token || "").trim();
+    const password = String(req.body.password || "");
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token e password sono obbligatori" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "La password deve essere di almeno 6 caratteri" });
+    }
+
+    const hashedPassword = hashPassword(password);
+    const now = new Date();
+
+    const result = await db.execute(sql`
+      UPDATE users
+      SET password = ${hashedPassword},
+          password_reset_token = NULL,
+          password_reset_expires = NULL
+      WHERE password_reset_token = ${token}
+        AND password_reset_expires > ${now}
+        AND COALESCE(is_deleted, false) = false
+      RETURNING id
+    `);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "Link non valido o scaduto" });
+    }
+
+    res.json({
+      success: true,
+      message: "Password reimpostata con successo",
+    });
+  } catch (err: any) {
+    console.error("[reset-password]", err?.message || err);
+    res.status(400).json({ message: "Errore nella reimpostazione password", detail: err?.message });
+  }
+});
   // === AUDIO UPLOAD (Cloudinary) ===
   app.post("/api/uploads/audio", async (req, res) => {
     try {
