@@ -23,6 +23,10 @@ export const users = pgTable("users", {
   city: text("city"), // Città
   emailVerified: boolean("email_verified").notNull().default(false),
   verificationToken: text("verification_token"),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  deletedAt: timestamp("deleted_at"),
+  passwordResetToken: text("password_reset_token"),
+  passwordResetExpires: timestamp("password_reset_expires"),
   stripeConnectedAccountId: text("stripe_connected_account_id"),
   stripeOnboardingComplete: boolean("stripe_onboarding_complete").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
