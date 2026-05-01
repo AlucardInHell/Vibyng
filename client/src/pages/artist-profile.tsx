@@ -1697,10 +1697,10 @@ return (
 
     <div className="flex-1 flex items-center justify-center p-4 pt-16" onClick={e => e.stopPropagation()}>
     <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
-              <video
+             <video
   src={selectedVideo.videoUrl}
   controls
-  className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black"
+  className="w-full max-h-[38vh] sm:max-h-[46vh] object-contain bg-black"
 />
               <div className="p-4">
                 {selectedVideo.title && selectedVideo.title !== t.untitledVideo && <p className="font-medium whitespace-pre-wrap break-words">
