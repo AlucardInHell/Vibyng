@@ -1700,7 +1700,7 @@ return (
               <video
   src={selectedVideo.videoUrl}
   controls
-  className="w-full max-h-[26dvh] sm:max-h-[30dvh] object-contain bg-black shrink-0"
+  className="w-full max-h-[23dvh] sm:max-h-[27dvh] object-contain bg-black shrink-0"
 />
               <div className="p-4 flex flex-col min-h-0 overflow-hidden">
                 {selectedVideo.title && selectedVideo.title !== t.untitledVideo && <p className="font-medium whitespace-pre-wrap break-words">
@@ -1765,7 +1765,7 @@ return (
   {t.share}
 </button>
                 </div>
-               <div className="mt-4 border-t pt-4 flex flex-col h-[30dvh] max-h-[30dvh] overflow-hidden">
+               <div className="mt-3 border-t pt-3 flex flex-col h-[25dvh] max-h-[25dvh] overflow-hidden">
                 <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
