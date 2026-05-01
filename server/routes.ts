@@ -85,6 +85,16 @@ export async function registerRoutes(
 ): Promise<Server> {
 
 await db.execute(sql`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS is_deleted boolean NOT NULL DEFAULT false
+`);
+
+await db.execute(sql`
+  ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS deleted_at timestamp
+`);  
+
+await db.execute(sql`
   ALTER TABLE comments
   ADD COLUMN IF NOT EXISTS likes_count integer DEFAULT 0
 `);
@@ -629,6 +639,78 @@ res.status(201).json({
       res.status(400).json({ message: "Errore nell'aggiornamento del profilo" });
     }
   });
+
+  app.delete("/api/users/:id", async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    const confirmText = String(req.body.confirmText || "").trim();
+
+    if (!userId) {
+      return res.status(400).json({ message: "ID utente non valido" });
+    }
+
+    if (confirmText !== "ELIMINA") {
+      return res.status(400).json({
+        message: "Conferma cancellazione non valida",
+      });
+    }
+
+    const user = await storage.getUser(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Utente non trovato" });
+    }
+
+    const deletedUsername = `deleted_user_${userId}`;
+    const deletedEmail = user.email ? `deleted_user_${userId}@deleted.vibyng.local` : null;
+
+    await db.execute(sql`
+      UPDATE users
+      SET
+        is_deleted = true,
+        deleted_at = now(),
+        display_name = 'Profilo eliminato',
+        username = ${deletedUsername},
+        email = ${deletedEmail},
+        bio = NULL,
+        avatar_url = NULL,
+        password = NULL,
+        verification_token = NULL,
+        password_reset_token = NULL,
+        password_reset_expires = NULL
+      WHERE id = ${userId}
+    `);
+
+    await db.execute(sql`
+      DELETE FROM followers
+      WHERE fan_id = ${userId}
+         OR artist_id = ${userId}
+    `);
+
+    await db.execute(sql`
+      DELETE FROM user_blocks
+      WHERE blocker_id = ${userId}
+         OR blocked_id = ${userId}
+    `);
+
+    await db.execute(sql`
+      DELETE FROM notifications
+      WHERE user_id = ${userId}
+         OR related_user_id = ${userId}
+    `);
+
+    res.json({
+      success: true,
+      deleted: true,
+    });
+  } catch (err: any) {
+    console.error("[delete-user-profile]", err?.message || err);
+    res.status(400).json({
+      message: "Errore nella cancellazione del profilo",
+      detail: err?.message,
+    });
+  }
+});
 
 app.get("/api/vpoints/:userId/status", async (req, res) => {
     try {
