@@ -1696,9 +1696,13 @@ return (
     </div>
 
     <div className="flex-1 flex items-center justify-center p-4 pt-16" onClick={e => e.stopPropagation()}>
-      <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
-              <video src={selectedVideo.videoUrl} controls className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black" />
-              <div className="p-4">
+      <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden max-h-[90vh] flex flex-col">
+              <video
+  src={selectedVideo.videoUrl}
+  controls
+  className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black shrink-0"
+/>
+              <div className="p-4 flex flex-col min-h-0 flex-1">
                 {selectedVideo.title && selectedVideo.title !== t.untitledVideo && <p className="font-medium whitespace-pre-wrap break-words">
   <MentionText text={selectedVideo.title} />
 </p>}
@@ -1761,8 +1765,8 @@ return (
   {t.share}
 </button>
                 </div>
-               <div className="mt-4 border-t pt-4 px-4 pb-4">
-                 <div className="space-y-4 max-h-[26vh] overflow-y-auto pr-1">
+               <div className="mt-4 border-t pt-4 flex flex-col min-h-0 flex-1">
+                 <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
       <Link href={`/artist/${c.author_id}`}>
@@ -1861,7 +1865,7 @@ return (
   ))}
 </div>
 
-<div className="pt-3 mt-2 border-t">
+<div className="pt-3 mt-2 border-t shrink-0 bg-background">
   <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
     <div className="relative flex-1">
       <input
