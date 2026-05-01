@@ -1695,21 +1695,21 @@ return (
       </button>
     </div>
 
-    <div className="flex-1 flex items-start justify-center px-4 pt-16 pb-16 overflow-hidden" onClick={e => e.stopPropagation()}>
-     <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-11rem)] max-h-[86dvh] flex flex-col">
+    <div className="flex-1 flex items-center justify-center p-4 pt-16" onClick={e => e.stopPropagation()}>
+    <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
               <video
   src={selectedVideo.videoUrl}
   controls
-  className="w-full max-h-[23dvh] sm:max-h-[27dvh] object-contain bg-black shrink-0"
+  className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black"
 />
-              <div className="p-4 flex flex-col min-h-0 overflow-hidden">
+              <div className="p-4">
                 {selectedVideo.title && selectedVideo.title !== t.untitledVideo && <p className="font-medium whitespace-pre-wrap break-words">
   <MentionText text={selectedVideo.title} />
 </p>}
                 <p className="text-xs text-muted-foreground mb-3">
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
-                <div className="flex items-center gap-4 mb-2 border-b pb-2">
+                <div className="flex items-center gap-4 mb-4 border-b pb-3">
                  <button
   className={`flex items-center gap-1 text-sm ${isVideoLiked ? "text-red-500" : "text-muted-foreground"} ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
   disabled={artistId === currentUserId}
@@ -1765,8 +1765,8 @@ return (
   {t.share}
 </button>
                 </div>
-               <div className="mt-0 flex flex-col flex-1 min-h-0 overflow-hidden">
-                <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1 pb-1">
+               <div className="mt-4 border-t pt-4 px-4 pb-4">
+                <div className="space-y-4 max-h-[26vh] overflow-y-auto pr-1">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
       <Link href={`/artist/${c.author_id}`}>
@@ -1865,7 +1865,7 @@ return (
   ))}
 </div>
 
-<div className="pt-2 mt-1 border-t shrink-0 bg-background pb-1">
+<div className="pt-3 mt-2 border-t">
   <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
     <div className="relative flex-1">
       <input
