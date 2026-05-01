@@ -1049,17 +1049,35 @@ function SettingsMenu() {
 
       <div className="flex flex-col gap-2">
         <Button
-          variant="destructive"
-          disabled={deleteAccountConfirmText !== "ELIMINA"}
-          onClick={() => {
-            toast({
-              title: "Step successivo",
-              description: "Ora colleghiamo questo bottone al backend.",
-            });
-          }}
-        >
-          {t.deleteAccountButton}
-        </Button>
+  variant="destructive"
+  disabled={deleteAccountConfirmText !== "ELIMINA"}
+  onClick={async () => {
+    try {
+      await apiRequest("DELETE", `/api/users/${userId}`, {
+        confirmText: deleteAccountConfirmText,
+      });
+
+      toast({
+        title: t.deleteAccountSuccess,
+      });
+
+      localStorage.removeItem("vibyng-user");
+      localStorage.removeItem("flow-saved-videos");
+
+      queryClient.clear();
+
+      window.location.href = "/";
+    } catch {
+      toast({
+        title: t.error,
+        description: t.deleteAccountError,
+        variant: "destructive",
+      });
+    }
+  }}
+>
+  {t.deleteAccountButton}
+</Button>
 
         <Button
           variant="outline"
