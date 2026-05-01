@@ -1709,7 +1709,7 @@ return (
                 <p className="text-xs text-muted-foreground mb-3">
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
-                <div className="flex items-center gap-4 mb-4 border-b pb-3">
+                <div className="flex items-center gap-4 mb-2 border-b pb-2">
                  <button
   className={`flex items-center gap-1 text-sm ${isVideoLiked ? "text-red-500" : "text-muted-foreground"} ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
   disabled={artistId === currentUserId}
@@ -1765,7 +1765,7 @@ return (
   {t.share}
 </button>
                 </div>
-               <div className="mt-1 border-t pt-1 flex flex-col h-[25dvh] max-h-[25dvh] overflow-hidden">
+               <div className="mt-0 flex flex-col h-[34dvh] max-h-[34dvh] overflow-hidden">
                 <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1 pb-1">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
