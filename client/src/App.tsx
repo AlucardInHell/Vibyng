@@ -699,6 +699,7 @@ function SettingsMenu() {
   const { theme, setTheme } = useTheme();
   const { profileData, updateProfile } = useProfile();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
