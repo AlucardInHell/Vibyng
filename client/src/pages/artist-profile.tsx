@@ -1766,7 +1766,7 @@ return (
 </button>
                 </div>
                <div className="mt-4 border-t pt-4 px-4 pb-4">
-               <div className="space-y-4 max-h-[38vh] overflow-y-auto pr-1">
+               <div className="space-y-4 max-h-[42vh] overflow-y-auto pr-1">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
       <Link href={`/artist/${c.author_id}`}>
