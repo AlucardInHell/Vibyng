@@ -167,35 +167,57 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
   const cleanQuery = query.trim();
   const cleanRole = role?.trim();
 
+  const selectUserFields = sql`
+    SELECT
+      id,
+      username,
+      display_name AS "displayName",
+      email,
+      bio,
+      avatar_url AS "avatarUrl",
+      role,
+      genre,
+      vibyng_points AS "vibyngPoints",
+      address,
+      phone,
+      website,
+      city,
+      email_verified AS "emailVerified",
+      verification_token AS "verificationToken",
+      stripe_connected_account_id AS "stripeConnectedAccountId",
+      stripe_onboarding_complete AS "stripeOnboardingComplete",
+      created_at AS "createdAt",
+      is_deleted AS "isDeleted",
+      deleted_at AS "deletedAt"
+    FROM users
+  `;
+
   if (!cleanQuery) {
     if (cleanRole) {
       const result = await db.execute(sql`
-        SELECT *
-        FROM users
+        ${selectUserFields}
         WHERE role = ${cleanRole}
           AND COALESCE(is_deleted, false) = false
         ORDER BY display_name ASC
       `);
 
-      return result.rows as User[];
+      return result.rows as unknown as User[];
     }
 
     const result = await db.execute(sql`
-      SELECT *
-      FROM users
+      ${selectUserFields}
       WHERE COALESCE(is_deleted, false) = false
       ORDER BY display_name ASC
     `);
 
-    return result.rows as User[];
+    return result.rows as unknown as User[];
   }
 
   const pattern = `%${cleanQuery}%`;
 
   if (cleanRole) {
     const result = await db.execute(sql`
-      SELECT *
-      FROM users
+      ${selectUserFields}
       WHERE role = ${cleanRole}
         AND COALESCE(is_deleted, false) = false
         AND (
@@ -207,12 +229,11 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
       ORDER BY display_name ASC
     `);
 
-    return result.rows as User[];
+    return result.rows as unknown as User[];
   }
 
   const result = await db.execute(sql`
-    SELECT *
-    FROM users
+    ${selectUserFields}
     WHERE COALESCE(is_deleted, false) = false
       AND (
         display_name ILIKE ${pattern}
@@ -223,7 +244,7 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     ORDER BY display_name ASC
   `);
 
-  return result.rows as User[];
+  return result.rows as unknown as User[];
 }
   async updateUserPoints(id: number, points: number): Promise<void> {
     const user = await this.getUser(id);
