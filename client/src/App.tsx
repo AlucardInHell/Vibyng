@@ -95,6 +95,14 @@ const appTranslations = {
     cancel: "Annulla",
     saveChanges: "Salva Modifiche",
     saving: "Salvataggio...",
+    deleteAccountTitle: "Elimina definitivamente il profilo",
+deleteAccountDescription: "Questa azione è definitiva. Il tuo profilo, i contenuti e le interazioni collegate potranno essere rimossi in modo permanente.",
+deleteAccountConfirmText: "Per confermare, scrivi ELIMINA",
+deleteAccountInputPlaceholder: "Scrivi ELIMINA",
+deleteAccountButton: "Elimina definitivamente",
+deleteAccountCancel: "Annulla",
+deleteAccountError: "Non è stato possibile eliminare il profilo",
+deleteAccountSuccess: "Profilo eliminato",
 
     privacyTitle: "Privacy",
     privacyDescription: "Controlla chi può vedere le tue informazioni",
@@ -196,6 +204,14 @@ error: "Errore",
     cancel: "Cancel",
     saveChanges: "Save Changes",
     saving: "Saving...",
+    deleteAccountTitle: "Permanently delete profile",
+deleteAccountDescription: "This action is permanent. Your profile, content, and related interactions may be permanently removed.",
+deleteAccountConfirmText: "To confirm, type DELETE",
+deleteAccountInputPlaceholder: "Type DELETE",
+deleteAccountButton: "Delete permanently",
+deleteAccountCancel: "Cancel",
+deleteAccountError: "Unable to delete profile",
+deleteAccountSuccess: "Profile deleted",
 
     privacyTitle: "Privacy",
     privacyDescription: "Control who can see your information",
@@ -700,6 +716,7 @@ function SettingsMenu() {
   const { profileData, updateProfile } = useProfile();
   const [accountOpen, setAccountOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [deleteAccountConfirmText, setDeleteAccountConfirmText] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -1000,6 +1017,64 @@ function SettingsMenu() {
         </DialogContent>
       </Dialog>
 
+<Dialog
+  open={deleteAccountOpen}
+  onOpenChange={(open) => {
+    setDeleteAccountOpen(open);
+    if (!open) {
+      setDeleteAccountConfirmText("");
+    }
+  }}
+>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle className="text-destructive">
+        {t.deleteAccountTitle}
+      </DialogTitle>
+      <DialogDescription>
+        {t.deleteAccountDescription}
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <p className="text-sm font-medium">
+        {t.deleteAccountConfirmText}
+      </p>
+
+      <Input
+        value={deleteAccountConfirmText}
+        onChange={(e) => setDeleteAccountConfirmText(e.target.value)}
+        placeholder={t.deleteAccountInputPlaceholder}
+      />
+
+      <div className="flex flex-col gap-2">
+        <Button
+          variant="destructive"
+          disabled={deleteAccountConfirmText !== "ELIMINA"}
+          onClick={() => {
+            toast({
+              title: "Step successivo",
+              description: "Ora colleghiamo questo bottone al backend.",
+            });
+          }}
+        >
+          {t.deleteAccountButton}
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={() => {
+            setDeleteAccountOpen(false);
+            setDeleteAccountConfirmText("");
+          }}
+        >
+          {t.deleteAccountCancel}
+        </Button>
+      </div>
+    </div>
+  </DialogContent>
+</Dialog>
+      
       <Dialog open={privacyOpen} onOpenChange={setPrivacyOpen}>
         <DialogContent data-testid="dialog-privacy">
           <DialogHeader>
