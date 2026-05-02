@@ -348,6 +348,66 @@ function CommentAuthorName({
   comment: any;
   className?: string;
 }) {
+
+function CommentAuthorAvatar({
+  comment,
+  className = "w-8 h-8",
+}: {
+  comment: any;
+  className?: string;
+}) {
+  const currentUserId = getCurrentUserId();
+
+  const authorId = Number(
+    comment.authorId ??
+      comment.author_id ??
+      comment.author?.id ??
+      comment.userId ??
+      comment.user_id ??
+      0
+  );
+
+  const displayName =
+    comment.author?.displayName ??
+    comment.display_name ??
+    comment.displayName ??
+    comment.username ??
+    "Profilo";
+
+  const avatarUrl =
+    comment.author?.avatarUrl ??
+    comment.author?.avatar_url ??
+    comment.avatarUrl ??
+    comment.avatar_url ??
+    null;
+
+  const avatar = (
+    <Avatar className={`${className} cursor-pointer hover:ring-2 hover:ring-primary/40 transition`}>
+      {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+      <AvatarFallback className="bg-primary/10 text-primary text-xs">
+        {displayName?.charAt(0)}
+      </AvatarFallback>
+    </Avatar>
+  );
+
+  if (!authorId || Number.isNaN(authorId)) {
+    return avatar;
+  }
+
+  const href = authorId === currentUserId ? "/me" : `/artist/${authorId}`;
+
+  return (
+    <Link href={href}>
+      <span
+        className="inline-flex shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {avatar}
+      </span>
+    </Link>
+  );
+}
+  
   const currentUserId = getCurrentUserId();
 
   const authorId = Number(
@@ -441,14 +501,7 @@ function MePostComments({
 
       {comments.map((comment: any) => (
         <div key={comment.id} className="flex gap-2">
-          <Avatar className="w-8 h-8">
-            {comment.author?.avatarUrl && (
-              <AvatarImage src={comment.author.avatarUrl} alt={comment.author.displayName} />
-            )}
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-              {comment.author?.displayName?.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
+          <CommentAuthorAvatar comment={comment} className="w-8 h-8" />
 
           <div className="flex-1 bg-muted rounded-lg px-3 py-2">
   <div className="flex items-start justify-between gap-2">
@@ -1587,7 +1640,7 @@ const reportMutation = useMutation({
 
         <div className="mt-4 flex flex-col h-[calc(75vh-5rem)]">
           <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
-            {photoCommentsList.map((c: any) => (
+            {<CommentAuthorAvatar comment={c} className="w-8 h-8" />
               <div key={c.id} className="flex gap-2">
                 <Avatar className="w-8 h-8 flex-shrink-0">
                   {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
@@ -2439,7 +2492,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
                 </div>
                 <div className="mt-0 pt-2 px-4 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden">
   <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
-    {videoCommentsList.map((c: any) => (
+    {<CommentAuthorAvatar comment={c} className="w-9 h-9 flex-shrink-0" />
       <div key={c.id} className="flex items-start gap-3">
         <Avatar className="w-9 h-9 flex-shrink-0">
           {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
