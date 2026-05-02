@@ -23,7 +23,7 @@ function getCurrentUserId(): number {
   return 1;
 }
 
-type FlowTab = "for-you" | "emerging" | "trend";
+type FlowTab = "for-you" | "emerging" | "trend" | "live";
 type AppLanguage = "it" | "en";
 
 const flowTranslations = {
@@ -33,6 +33,9 @@ const flowTranslations = {
     forYou: "Per Te",
     emerging: "Emergenti",
     trend: "Trend",
+    live: "Live",
+    liveEmpty: "Nessuna live in corso",
+    liveEmptyDescription: "Le dirette degli artisti appariranno qui appena saranno disponibili.",
     untitled: "Senza titolo",
     copied: "Link copiato!",
     noComments: "Ancora nessun commento.",
@@ -64,6 +67,9 @@ reportReasonOther: "Altro",
     forYou: "For You",
     emerging: "Emerging",
     trend: "Trend",
+    live: "Live",
+    liveEmpty: "No live streams right now",
+    liveEmptyDescription: "Artist live streams will appear here as soon as they are available.",
     untitled: "Untitled",
     copied: "Link copied!",
     noComments: "No comments yet.",
@@ -246,11 +252,11 @@ useEffect(() => {
   }, [flowVideos]);
 
   const activeList = useMemo(() => {
-    if (activeTab === "emerging") return emergingVideos;
-    if (activeTab === "trend") return trendVideos;
-    return forYouVideos;
-  }, [activeTab, emergingVideos, trendVideos, forYouVideos]);
-
+  if (activeTab === "live") return [];
+  if (activeTab === "emerging") return emergingVideos;
+  if (activeTab === "trend") return trendVideos;
+  return forYouVideos;
+}, [activeTab, emergingVideos, trendVideos, forYouVideos]);
   const activeVideo = activeList[activeIndex] ?? null;
 
 useEffect(() => {
@@ -563,7 +569,7 @@ const reportMutation = useMutation({
     );
   }
 
-  if (!activeList.length) {
+  if (!activeList.length && activeTab !== "live") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-2">
         <Sparkles className="w-8 h-8 text-muted-foreground" />
@@ -652,20 +658,45 @@ const reportMutation = useMutation({
           {t.emerging}
         </button>
         <button
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-            activeTab === "trend" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-          }`}
-          onClick={() => setActiveTab("trend")}
-        >
-          {t.trend}
-        </button>
-      </div>
+  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+    activeTab === "trend" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+  }`}
+  onClick={() => setActiveTab("trend")}
+>
+  {t.trend}
+</button>
 
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] overflow-y-auto snap-y snap-mandatory"
-      >
+<button
+  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+    activeTab === "live" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+  }`}
+  onClick={() => setActiveTab("live")}
+>
+  {t.live}
+</button>
+</div>
+
+{activeTab === "live" && (
+  <div className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] rounded-[28px] border border-border/60 bg-card flex flex-col items-center justify-center text-center px-6">
+    <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
+      <span className="text-2xl">🔴</span>
+    </div>
+
+    <h2 className="text-xl font-semibold mb-2">
+      {t.liveEmpty}
+    </h2>
+
+    <p className="text-sm text-muted-foreground max-w-xs">
+      {t.liveEmptyDescription}
+    </p>
+  </div>
+)}
+
+<div
+  ref={scrollRef}
+  onScroll={handleScroll}
+  className={`${activeTab === "live" ? "hidden" : ""} h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] overflow-y-auto snap-y snap-mandatory`}
+>
         {activeList.map((video, index) => {
           const isActive = index === activeIndex;
           const isMuted = flowMuted;
