@@ -36,6 +36,9 @@ const flowTranslations = {
     live: "Live",
     liveEmpty: "Nessuna live in corso",
     liveEmptyDescription: "Le dirette degli artisti appariranno qui appena saranno disponibili.",
+    liveOnAir: "In diretta",
+    liveViewers: "spettatori",
+    liveMockNotice: "Live attiva. Il player streaming sarà collegato nel prossimo step.",
     untitled: "Senza titolo",
     copied: "Link copiato!",
     noComments: "Ancora nessun commento.",
@@ -70,6 +73,9 @@ reportReasonOther: "Altro",
     live: "Live",
     liveEmpty: "No live streams right now",
     liveEmptyDescription: "Artist live streams will appear here as soon as they are available.",
+    liveOnAir: "Live now",
+    liveViewers: "viewers",
+    liveMockNotice: "Live is active. The streaming player will be connected in the next step.",
     untitled: "Untitled",
     copied: "Link copied!",
     noComments: "No comments yet.",
@@ -106,6 +112,27 @@ function getStoredLanguage(): AppLanguage {
 }
 type FlowVideo = ArtistVideo & {
   artist: User;
+};
+type ActiveLiveStream = {
+  id: number;
+  artistId: number;
+  title: string;
+  status: "live" | "ended";
+  provider: string;
+  roomName: string;
+  providerRoomId?: string | null;
+  playbackUrl?: string | null;
+  ingestUrl?: string | null;
+  viewerCount: number;
+  startedAt?: string | null;
+  createdAt?: string | null;
+  artist: {
+    id: number;
+    username: string;
+    displayName: string;
+    avatarUrl?: string | null;
+    role: string;
+  };
 };
 
 export default function Artists() {
@@ -224,6 +251,21 @@ useEffect(() => {
     },
   });
 
+const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<ActiveLiveStream[]>({
+  queryKey: ["/api/lives/active"],
+  enabled: activeTab === "live",
+  refetchInterval: activeTab === "live" ? 10000 : false,
+  queryFn: async () => {
+    const res = await fetch("/api/lives/active");
+
+    if (!res.ok) {
+      throw new Error("Errore nel caricamento delle live attive");
+    }
+
+    return res.json();
+  },
+});
+  
   useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
   }, [savedVideoIds]);
@@ -670,25 +712,103 @@ const reportMutation = useMutation({
   className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition whitespace-nowrap shrink-0 ${
     activeTab === "live" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
   }`}
-  onClick={() => setActiveTab("live")}
+  onClick={() => {
+    setActiveTab("live");
+    queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
+  }}
 >
   {t.live}
 </button>
 </div>
 
 {activeTab === "live" && (
-  <div className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] rounded-[28px] border border-border/60 bg-card flex flex-col items-center justify-center text-center px-6">
-    <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
-      <span className="text-2xl">🔴</span>
-    </div>
+  <div className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] rounded-[28px] border border-border/60 bg-card overflow-hidden">
+    {livesLoading ? (
+      <div className="h-full flex flex-col items-center justify-center text-center px-6">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4 animate-pulse">
+          <span className="text-2xl">🔴</span>
+        </div>
 
-    <h2 className="text-xl font-semibold mb-2">
-      {t.liveEmpty}
-    </h2>
+        <p className="text-sm text-muted-foreground">
+          Caricamento live...
+        </p>
+      </div>
+    ) : activeLiveStreams.length === 0 ? (
+      <div className="h-full flex flex-col items-center justify-center text-center px-6">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
+          <span className="text-2xl">🔴</span>
+        </div>
 
-    <p className="text-sm text-muted-foreground max-w-xs">
-      {t.liveEmptyDescription}
-    </p>
+        <h2 className="text-xl font-semibold mb-2">
+          {t.liveEmpty}
+        </h2>
+
+        <p className="text-sm text-muted-foreground max-w-xs">
+          {t.liveEmptyDescription}
+        </p>
+      </div>
+    ) : (
+      <div className="h-full overflow-y-auto p-3 space-y-3">
+        {activeLiveStreams.map((live) => (
+          <div
+            key={live.id}
+            className="rounded-3xl border border-border/60 bg-background/80 overflow-hidden"
+          >
+            <div className="relative h-56 bg-black flex items-center justify-center">
+              <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold">
+                ● LIVE
+              </div>
+
+              <div className="text-center px-6">
+                <div className="text-5xl mb-3">🎥</div>
+                <p className="text-white font-semibold">
+                  {live.title || t.live}
+                </p>
+                <p className="text-white/60 text-sm mt-1">
+                  {t.liveMockNotice}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 flex items-center justify-between gap-3">
+              <Link href={`/artist/${live.artist.id}`}>
+                <div className="flex items-center gap-3 min-w-0 cursor-pointer">
+                  <Avatar className="w-11 h-11 border-2 border-red-500/80">
+                    {live.artist.avatarUrl && (
+                      <AvatarImage
+                        src={live.artist.avatarUrl}
+                        alt={live.artist.displayName}
+                      />
+                    )}
+                    <AvatarFallback className="bg-primary/20">
+                      {live.artist.displayName?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">
+                      {live.artist.displayName}
+                    </p>
+                    <p className="text-sm text-muted-foreground truncate">
+                      @{live.artist.username}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+
+              <div className="text-right shrink-0">
+                <p className="text-xs font-semibold text-red-500">
+                  {t.liveOnAir}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {live.viewerCount ?? 0} {t.liveViewers}
+                </p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
   </div>
 )}
 
