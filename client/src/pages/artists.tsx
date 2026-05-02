@@ -677,7 +677,7 @@ const reportMutation = useMutation({
 </div>
 
 {activeTab === "live" && (
-  <div className="h-[calc(100dvh-18rem)] sm:h-[calc(100dvh-16rem)] rounded-[28px] border border-border/60 bg-card flex flex-col items-center justify-center text-center px-6">
+  <div className="h-[calc(100dvh-17rem)] sm:h-[calc(100dvh-15rem)] rounded-[28px] border border-border/60 bg-card flex flex-col items-center justify-center text-center px-6">
     <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
       <span className="text-2xl">🔴</span>
     </div>
@@ -695,7 +695,7 @@ const reportMutation = useMutation({
 <div
   ref={scrollRef}
   onScroll={handleScroll}
-  className={`${activeTab === "live" ? "hidden" : ""} h-[calc(100dvh-18rem)] sm:h-[calc(100dvh-16rem)] overflow-y-auto snap-y snap-mandatory`}
+  className={`${activeTab === "live" ? "hidden" : ""} h-[calc(100dvh-17rem)] sm:h-[calc(100dvh-15rem)] overflow-y-auto snap-y snap-mandatory`}
 >
         {activeList.map((video, index) => {
           const isActive = index === activeIndex;
@@ -709,7 +709,7 @@ const reportMutation = useMutation({
           return (
             <section
               key={video.id}
-              className="h-[calc(100dvh-18rem)] sm:h-[calc(100dvh-16rem)] snap-start py-0"
+              className="h-[calc(100dvh-17rem)] sm:h-[calc(100dvh-15rem)] snap-start py-0"
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
               <div
