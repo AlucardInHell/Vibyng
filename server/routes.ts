@@ -378,6 +378,179 @@ await db.execute(sql`
   ON content_reports (status)
 `);
 
+  await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS live_streams (
+    id serial PRIMARY KEY,
+    artist_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title text NOT NULL DEFAULT 'Live',
+    status text NOT NULL DEFAULT 'live',
+    provider text NOT NULL DEFAULT 'mock',
+    room_name text NOT NULL,
+    provider_room_id text,
+    playback_url text,
+    ingest_url text,
+    viewer_count integer NOT NULL DEFAULT 0,
+    started_at timestamp DEFAULT now(),
+    ended_at timestamp,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS live_streams_status_idx
+  ON live_streams (status)
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS live_streams_artist_status_idx
+  ON live_streams (artist_id, status)
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS live_streams_one_active_per_artist_idx
+  ON live_streams (artist_id)
+  WHERE status = 'live'
+`);
+
+// === LIVE STREAMS ===
+
+app.get("/api/lives/active", async (_req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT
+        ls.id,
+        ls.artist_id AS "artistId",
+        ls.title,
+        ls.status,
+        ls.provider,
+        ls.room_name AS "roomName",
+        ls.provider_room_id AS "providerRoomId",
+        ls.playback_url AS "playbackUrl",
+        ls.ingest_url AS "ingestUrl",
+        ls.viewer_count AS "viewerCount",
+        ls.started_at AS "startedAt",
+        ls.ended_at AS "endedAt",
+        ls.created_at AS "createdAt",
+        json_build_object(
+          'id', u.id,
+          'username', u.username,
+          'displayName', u.display_name,
+          'avatarUrl', u.avatar_url,
+          'role', u.role
+        ) AS artist
+      FROM live_streams ls
+      JOIN users u ON u.id = ls.artist_id
+      WHERE ls.status = 'live'
+        AND COALESCE(u.is_deleted, false) = false
+      ORDER BY ls.started_at DESC
+    `);
+
+    res.json(result.rows);
+  } catch (err: any) {
+    console.error("[lives-active] error:", err?.message || err);
+    res.status(400).json({
+      message: "Errore nel recupero delle live attive",
+      detail: err?.message,
+    });
+  }
+});
+
+app.post("/api/lives/start", async (req, res) => {
+  try {
+    const artistId = Number(req.body.artistId);
+    const title = String(req.body.title || "Live").trim() || "Live";
+
+    if (!artistId) {
+      return res.status(400).json({ message: "artistId non valido" });
+    }
+
+    const artist = await storage.getUser(artistId);
+
+    if (!artist || (artist as any).isDeleted) {
+      return res.status(404).json({ message: "Profilo non trovato" });
+    }
+
+    await db.execute(sql`
+      UPDATE live_streams
+      SET status = 'ended',
+          ended_at = now()
+      WHERE artist_id = ${artistId}
+        AND status = 'live'
+    `);
+
+    const roomName = `vibyng-live-${artistId}-${Date.now()}`;
+
+    const result = await db.execute(sql`
+      INSERT INTO live_streams (
+        artist_id,
+        title,
+        status,
+        provider,
+        room_name,
+        viewer_count
+      )
+      VALUES (
+        ${artistId},
+        ${title},
+        'live',
+        'mock',
+        ${roomName},
+        0
+      )
+      RETURNING *
+    `);
+
+    res.status(201).json({
+      success: true,
+      live: result.rows[0],
+    });
+  } catch (err: any) {
+    console.error("[live-start] error:", err?.message || err);
+    res.status(400).json({
+      message: "Errore nell'avvio della live",
+      detail: err?.message,
+    });
+  }
+});
+
+app.post("/api/lives/:id/end", async (req, res) => {
+  try {
+    const liveId = Number(req.params.id);
+    const artistId = Number(req.body.artistId);
+
+    if (!liveId || !artistId) {
+      return res.status(400).json({ message: "Dati live non validi" });
+    }
+
+    const result = await db.execute(sql`
+      UPDATE live_streams
+      SET status = 'ended',
+          ended_at = now()
+      WHERE id = ${liveId}
+        AND artist_id = ${artistId}
+        AND status = 'live'
+      RETURNING *
+    `);
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        message: "Live non trovata o già terminata",
+      });
+    }
+
+    res.json({
+      success: true,
+      live: result.rows[0],
+    });
+  } catch (err: any) {
+    console.error("[live-end] error:", err?.message || err);
+    res.status(400).json({
+      message: "Errore nella chiusura della live",
+      detail: err?.message,
+    });
+  }
+});
+  
 // === BLOCKS & REPORTS ===
   app.post("/api/users/:blockerId/block/:blockedId", async (req, res) => {
     try {
