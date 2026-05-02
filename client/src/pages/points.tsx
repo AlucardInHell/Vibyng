@@ -1462,25 +1462,29 @@ const reportMutation = useMutation({
     <ImagePlus className="w-4 h-4 text-muted-foreground" />
   </Button>
 
- <Button
+<Button
   variant="ghost"
   size="sm"
   onClick={myActiveLive ? handleEndLive : handleStartLive}
   disabled={startingLive || endingLive}
-  className={`h-8 px-2 text-xs ${
+  title={myActiveLive ? t.endLive : t.startLive}
+  aria-label={myActiveLive ? t.endLive : t.startLive}
+  className={`h-8 px-2 text-xs shrink-0 whitespace-nowrap ${
     myActiveLive
       ? "text-red-600 bg-red-500/10 hover:text-red-700 hover:bg-red-500/20"
       : "text-red-500 hover:text-red-600 hover:bg-red-500/10"
   }`}
 >
-  <Radio className="w-4 h-4 mr-1" />
-  {myActiveLive
-    ? endingLive
-      ? t.endingLive
-      : t.endLive
-    : startingLive
-      ? t.startingLive
-      : t.startLive}
+  <Radio className="w-4 h-4 mr-1 shrink-0" />
+  <span>
+    {myActiveLive
+      ? endingLive
+        ? "..."
+        : "Stop"
+      : startingLive
+        ? "..."
+        : t.startLive}
+  </span>
 </Button>
 </div>
                 <Button 
