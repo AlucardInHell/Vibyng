@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus, MoreVertical } from "lucide-react";
+import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus, MoreVertical, Radio } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
@@ -152,6 +152,11 @@ photoDescriptionPlaceholder: "Scrivi una descrizione per la foto...",
 videoDescriptionPlaceholder: "Scrivi una descrizione per il video...",
 publishPhoto: "Pubblica foto",
 publishVideo: "Pubblica video",
+startLive: "Live",
+startingLive: "Avvio...",
+liveStartedTitle: "Live avviata!",
+liveStartedDescription: "La tua live è ora visibile nella sezione Flow.",
+liveStartError: "Non è stato possibile avviare la live",
 cancel: "Annulla",
 
 add: "Aggiungi",
@@ -279,6 +284,11 @@ photoDescriptionPlaceholder: "Write a description for the photo...",
 videoDescriptionPlaceholder: "Write a description for the video...",
 publishPhoto: "Publish photo",
 publishVideo: "Publish video",
+startLive: "Live",
+startingLive: "Starting...",
+liveStartedTitle: "Live started!",
+liveStartedDescription: "Your live is now visible in Flow.",
+liveStartError: "Unable to start the live",
 cancel: "Cancel",
 
 add: "Add",
@@ -620,9 +630,10 @@ export default function Points() {
   title: string;
   description: string;
 } | null>(null);
-const [reportReason, setReportReason] = useState("offensive");
-const [reportDetails, setReportDetails] = useState("");
-const [postText, setPostText] = useState("");
+  const [reportReason, setReportReason] = useState("offensive");
+  const [reportDetails, setReportDetails] = useState("");
+  const [postText, setPostText] = useState("");
+  const [startingLive, setStartingLive] = useState(false);
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const { mentionQuery: commentMentionQuery, showMentions: showCommentMentions, handleTextChange: handleCommentTextChange, insertMention: insertCommentMention, closeMentions: closeCommentMentions } = useMention();
   const { mentionQuery: photoMentionQuery, showMentions: showPhotoMentions, handleTextChange: handlePhotoTextChange, insertMention: insertPhotoMention, closeMentions: closePhotoMentions } = useMention();
@@ -748,6 +759,38 @@ useEffect(() => {
     queryKey: ["/api/users", currentUserId],
   });
 
+  const handleStartLive = async () => {
+  if (startingLive) return;
+
+  setStartingLive(true);
+
+  try {
+    const liveTitle = `Live di ${
+      currentUser?.displayName || (profileData as any)?.displayName || "Vibyng"
+    }`;
+
+    await apiRequest("POST", "/api/lives/start", {
+      artistId: currentUserId,
+      title: liveTitle,
+    });
+
+    await queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
+
+    toast({
+      title: t.liveStartedTitle,
+      description: t.liveStartedDescription,
+    });
+  } catch (err: any) {
+    toast({
+      title: t.error,
+      description: err?.message || t.liveStartError,
+      variant: "destructive",
+    });
+  } finally {
+    setStartingLive(false);
+  }
+};
+  
   const { data: vPointsStatus } = useQuery<VPointsStatus>({
     queryKey: ["/api/vpoints", currentUserId, "status"],
     queryFn: async () => {
@@ -1332,34 +1375,46 @@ const reportMutation = useMutation({
                 />
               </div>
               <div className="flex items-center justify-between">
-                <div className="flex gap-1">
-                  <input
-                    ref={photoInputRef}
-                    type="file"
-                    accept={currentUser?.role === "artist" ? "image/*,video/*,audio/*" : "image/*,video/*"}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      if (file.type.startsWith("image/")) {
-                        handlePhotoUpload(e as any);
-                      } else if (file.type.startsWith("video/")) {
-                        handleVideoUpload(e as any);
-                      } else if (file.type.startsWith("audio/")) {
-                        handleMusicUpload(e as any);
-                      }
-                    }}
-                    className="hidden"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8"
-                    onClick={() => photoInputRef.current?.click()}
-                    disabled={uploadingType === "photo" || uploadingType === "video"}
-                  >
-                    <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                </div>
+                <div className="flex gap-1 items-center">
+  <input
+    ref={photoInputRef}
+    type="file"
+    accept={currentUser?.role === "artist" ? "image/*,video/*,audio/*" : "image/*,video/*"}
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.type.startsWith("image/")) {
+        handlePhotoUpload(e as any);
+      } else if (file.type.startsWith("video/")) {
+        handleVideoUpload(e as any);
+      } else if (file.type.startsWith("audio/")) {
+        handleMusicUpload(e as any);
+      }
+    }}
+    className="hidden"
+  />
+
+  <Button
+    size="icon"
+    variant="ghost"
+    className="h-8 w-8"
+    onClick={() => photoInputRef.current?.click()}
+    disabled={uploadingType === "photo" || uploadingType === "video"}
+  >
+    <ImagePlus className="w-4 h-4 text-muted-foreground" />
+  </Button>
+
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={handleStartLive}
+    disabled={startingLive}
+    className="h-8 px-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10"
+  >
+    <Radio className="w-4 h-4 mr-1" />
+    {startingLive ? t.startingLive : t.startLive}
+  </Button>
+</div>
                 <Button 
                   size="sm" 
                   onClick={handlePublishPost}
