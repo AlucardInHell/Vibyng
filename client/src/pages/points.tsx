@@ -18,6 +18,7 @@ import { useUpload } from "@/hooks/use-upload";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useMention } from "@/hooks/use-mention";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
 import { shareVibyngContent, buildContentShareUrl } from "@/lib/share-content";
@@ -633,6 +634,8 @@ useEffect(() => {
 });
 
   const isVideoLiked = videoLikeData?.liked ?? false;
+
+  useBodyScrollLock(Boolean(selectedVideo || selectedPhoto || photoCommentsOpen));
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
   const [connectionsOpen, setConnectionsOpen] = useState(false);
