@@ -798,7 +798,7 @@ useEffect(() => {
     queryKey: ["/api/users", currentUserId],
   });
 
-  const { data: activeLiveStreams = [], refetch: refetchActiveLiveStreams } = useQuery<any[]>({
+  const { data: activeLiveStreamsResponse = [], refetch: refetchActiveLiveStreams } = useQuery<any>({
   queryKey: ["/api/lives/active"],
   queryFn: async () => {
     const res = await fetch("/api/lives/active");
@@ -811,6 +811,14 @@ useEffect(() => {
   },
   refetchInterval: 10000,
 });
+
+const activeLiveStreams = Array.isArray(activeLiveStreamsResponse)
+  ? activeLiveStreamsResponse
+  : Array.isArray(activeLiveStreamsResponse?.lives)
+    ? activeLiveStreamsResponse.lives
+    : Array.isArray(activeLiveStreamsResponse?.data)
+      ? activeLiveStreamsResponse.data
+      : [];
 
 const myActiveLive = activeLiveStreams.find((live: any) => {
   const artistId = live.artistId ?? live.artist_id ?? live.artist?.id;
