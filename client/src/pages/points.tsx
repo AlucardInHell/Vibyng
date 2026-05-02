@@ -679,24 +679,24 @@ export default function Points() {
     }
   };
 
-  useEffect(() => {
-  if (livePreviewRef.current && livePreviewStream) {
-    livePreviewRef.current.srcObject = livePreviewStream;
-  }
-}, [livePreviewStream, showLiveSetup]);
-
-  useEffect(() => {
-  return () => {
-    livePreviewStream?.getTracks().forEach((track) => track.stop());
-  };
-}, [livePreviewStream]);
-    
   window.addEventListener("vibyng-language-change", handleLanguageChange);
 
   return () => {
     window.removeEventListener("vibyng-language-change", handleLanguageChange);
   };
 }, []);
+
+useEffect(() => {
+  if (livePreviewRef.current && livePreviewStream) {
+    livePreviewRef.current.srcObject = livePreviewStream;
+  }
+}, [livePreviewStream, showLiveSetup]);
+
+useEffect(() => {
+  return () => {
+    livePreviewStream?.getTracks().forEach((track) => track.stop());
+  };
+}, [livePreviewStream]);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
   const [selectedPhotoIsTall, setSelectedPhotoIsTall] = useState(false);
