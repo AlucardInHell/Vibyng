@@ -593,6 +593,7 @@ function BottomNav() {
   queryClient.invalidateQueries({ queryKey: ["/api/flow/client"], exact: false });
 
   setTimeout(() => {
+    window.dispatchEvent(new Event("vibyng-flow-refresh"));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, 0);
 };
