@@ -192,6 +192,22 @@ useEffect(() => {
   });
 
   useEffect(() => {
+  if (!flowVideos.length) return;
+
+  setMutedVideoIds((prev) => {
+    const next = new Set(prev);
+
+    flowVideos.forEach((video) => {
+      if (!next.has(video.id)) {
+        next.add(video.id);
+      }
+    });
+
+    return next;
+  });
+}, [flowVideos]);
+  
+  useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
   }, [savedVideoIds]);
 
@@ -669,6 +685,7 @@ const reportMutation = useMutation({
     loop
     autoPlay
     muted={isMuted}
+    defaultMuted
     preload="auto"
     className="w-full h-full object-cover"
     onLoadedData={() => {
