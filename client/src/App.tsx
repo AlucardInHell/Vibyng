@@ -13,7 +13,7 @@ import Points from "@/pages/points";
 import Messages from "@/pages/messages";
 import Chat from "@/pages/chat";
 import SearchPage from "@/pages/search";
-import { AudioPlayerProvider, MiniPlayer, CompactMiniPlayer } from "@/components/audio-player";
+import { AudioPlayerProvider, MiniPlayer, CompactMiniPlayer, useAudioPlayer } from "@/components/audio-player";
 import AuthPage from "@/pages/auth";
 import Onboarding from "@/pages/onboarding";
 import Notifications from "@/pages/notifications";
@@ -461,7 +461,16 @@ function Router() {
 
 function AppAudioPlayer() {
   const [location] = useLocation();
+  const { isPlaying, togglePlay } = useAudioPlayer();
+
   const isChatRoute = location.startsWith("/chat/");
+  const isFlowRoute = location === "/artists";
+
+  useEffect(() => {
+    if (isFlowRoute && isPlaying) {
+      togglePlay();
+    }
+  }, [isFlowRoute, isPlaying, togglePlay]);
 
   return isChatRoute ? <CompactMiniPlayer /> : <MiniPlayer />;
 }
