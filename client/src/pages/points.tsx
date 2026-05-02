@@ -1779,7 +1779,6 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] })
               />
             </div>
           </div>
-        </div>
       </SheetContent>
     </Sheet>
   </>
