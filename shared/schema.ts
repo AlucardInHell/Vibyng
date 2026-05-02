@@ -361,6 +361,24 @@ export const notifications = pgTable("notifications", {
 export const insertNotificationSchema = createInsertSchema(notifications);
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// === LIVE STREAMS ===
+export const liveStreams = pgTable("live_streams", {
+  id: serial("id").primaryKey(),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull().default("Live"),
+  status: text("status").notNull().default("live"), // live | ended
+  provider: text("provider").notNull().default("mock"), // mock | livekit | mux | agora | cloudflare
+  roomName: text("room_name").notNull(),
+  providerRoomId: text("provider_room_id"),
+  playbackUrl: text("playback_url"),
+  ingestUrl: text("ingest_url"),
+  viewerCount: integer("viewer_count").notNull().default(0),
+  startedAt: timestamp("started_at").defaultNow(),
+  endedAt: timestamp("ended_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // === EVENTS ===
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
@@ -374,9 +392,20 @@ export const events = pgTable("events", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const insertLiveStreamSchema = createInsertSchema(liveStreams).omit({
+  id: true,
+  createdAt: true,
+  startedAt: true,
+  endedAt: true,
+  viewerCount: true,
+});
+
+export type LiveStream = typeof liveStreams.$inferSelect;
+export type InsertLiveStream = z.infer<typeof insertLiveStreamSchema>;
 export const insertEventSchema = createInsertSchema(events);
 export type Event = typeof events.$inferSelect;
 export type InsertEvent = z.infer<typeof insertEventSchema>;
+
 // === EVENT ATTENDEES ===
 export const eventAttendees = pgTable("event_attendees", {
   id: serial("id").primaryKey(),
