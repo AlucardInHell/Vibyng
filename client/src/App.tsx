@@ -464,7 +464,7 @@ function AppAudioPlayer() {
   const { isPlaying, togglePlay } = useAudioPlayer();
 
   const isChatRoute = location.startsWith("/chat/");
-  const isFlowRoute = location === "/artists";
+  const isFlowRoute = location.startsWith("/artists");
 
   useEffect(() => {
     if (isFlowRoute && isPlaying) {
@@ -472,7 +472,7 @@ function AppAudioPlayer() {
     }
   }, [isFlowRoute, isPlaying, togglePlay]);
 
-  return isChatRoute ? <CompactMiniPlayer /> : <MiniPlayer />;
+  return isChatRoute || isFlowRoute ? <CompactMiniPlayer /> : <MiniPlayer />;
 }
 
 function MessagesButton() {
