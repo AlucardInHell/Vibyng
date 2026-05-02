@@ -584,6 +584,18 @@ function BottomNav() {
   queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
+  const handleFlowRefresh = () => {
+  if (location !== "/artists") {
+    setLocation("/artists");
+  }
+
+  queryClient.invalidateQueries({ queryKey: ["/api/artists"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/flow/client"], exact: false });
+
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, 0);
+};
   const { toast } = useToast();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -644,7 +656,7 @@ if (item.path === "/artists") {
   return (
     <button
       key={item.path}
-      onClick={() => goToTop("/artists")}
+      onClick={handleFlowRefresh}
       className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors ${
         isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
       }`}
