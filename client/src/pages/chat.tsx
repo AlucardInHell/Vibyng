@@ -237,9 +237,9 @@ useEffect(() => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-center gap-3 pb-3 border-b">
+    <div className="flex flex-col h-[calc(100dvh-8rem)] overflow-hidden min-h-0">
+      <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <CardHeader className="flex flex-row items-center gap-3 pb-3 border-b shrink-0">
           <Link href="/messages">
             <Button variant="ghost" size="icon" data-testid="button-back">
               <ArrowLeft className="w-5 h-5" />
@@ -259,7 +259,7 @@ useEffect(() => {
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide [&::-webkit-scrollbar]:hidden">
+        <CardContent className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 scrollbar-hide [&::-webkit-scrollbar]:hidden">
           {isConversationBlocked ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
               <MessageCircle className="w-12 h-12 text-muted-foreground/50 mb-3" />
@@ -415,7 +415,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
           <div ref={messagesEndRef} />
         </CardContent>
 
-        <div className="p-4 border-t">
+        <div className="p-4 border-t shrink-0 bg-background">
           <div className="flex items-center gap-2">
   <div className="relative flex-1">
     <Input
