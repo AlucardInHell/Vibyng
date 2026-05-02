@@ -874,8 +874,8 @@ const handleCloseLiveSetup = () => {
 
   try {
     const finalLiveTitle =
-  liveTitle.trim() ||
-  `Live di ${currentUser?.displayName || (profileData as any)?.displayName || "Vibyng"}`;
+      liveTitle.trim() ||
+      `Live di ${currentUser?.displayName || (profileData as any)?.displayName || "Vibyng"}`;
 
     await apiRequest("POST", "/api/lives/start", {
       artistId: currentUserId,
@@ -898,10 +898,8 @@ const handleCloseLiveSetup = () => {
     setStartingLive(false);
   }
 };
-  stopLivePreview();
-  setShowLiveSetup(false);
 
-  const handleEndLive = async () => {
+const handleEndLive = async () => {
   if (endingLive || !myActiveLive?.id) return;
 
   setEndingLive(true);
