@@ -722,57 +722,69 @@ const reportMutation = useMutation({
 </div>
 
 {activeTab === "live" && (
-  <div className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] rounded-[28px] border border-border/60 bg-card overflow-hidden">
+  <div className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] overflow-y-auto snap-y snap-mandatory">
     {livesLoading ? (
-      <div className="h-full flex flex-col items-center justify-center text-center px-6">
-        <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4 animate-pulse">
-          <span className="text-2xl">🔴</span>
-        </div>
+      <section className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0">
+        <div className="h-full rounded-[28px] border border-border/60 bg-card flex flex-col items-center justify-center text-center px-6">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4 animate-pulse">
+            <span className="text-2xl">🔴</span>
+          </div>
 
-        <p className="text-sm text-muted-foreground">
-          Caricamento live...
-        </p>
-      </div>
+          <p className="text-sm text-muted-foreground">
+            Caricamento live...
+          </p>
+        </div>
+      </section>
     ) : activeLiveStreams.length === 0 ? (
-      <div className="h-full flex flex-col items-center justify-center text-center px-6">
-        <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
-          <span className="text-2xl">🔴</span>
+      <section className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0">
+        <div className="h-full rounded-[28px] border border-border/60 bg-card flex flex-col items-center justify-center text-center px-6">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
+            <span className="text-2xl">🔴</span>
+          </div>
+
+          <h2 className="text-xl font-semibold mb-2">
+            {t.liveEmpty}
+          </h2>
+
+          <p className="text-sm text-muted-foreground max-w-xs">
+            {t.liveEmptyDescription}
+          </p>
         </div>
-
-        <h2 className="text-xl font-semibold mb-2">
-          {t.liveEmpty}
-        </h2>
-
-        <p className="text-sm text-muted-foreground max-w-xs">
-          {t.liveEmptyDescription}
-        </p>
-      </div>
+      </section>
     ) : (
-      <div className="h-full overflow-y-auto p-3 space-y-3">
-        {activeLiveStreams.map((live) => (
-          <div
-            key={live.id}
-            className="rounded-3xl border border-border/60 bg-background/80 overflow-hidden"
-          >
-            <div className="relative h-56 bg-black flex items-center justify-center">
-              <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold">
-                ● LIVE
-              </div>
-
+      activeLiveStreams.map((live) => (
+        <section
+          key={live.id}
+          className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
+        >
+          <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
+            <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center px-6">
-                <div className="text-5xl mb-3">🎥</div>
-                <p className="text-white font-semibold">
+                <div className="text-6xl mb-4">🎥</div>
+
+                <p className="text-white text-xl font-semibold">
                   {live.title || t.live}
                 </p>
-                <p className="text-white/60 text-sm mt-1">
+
+                <p className="text-white/60 text-sm mt-2 max-w-xs">
                   {t.liveMockNotice}
                 </p>
               </div>
             </div>
 
-            <div className="p-4 flex items-center justify-between gap-3">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/20 pointer-events-none" />
+
+            <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold shadow-lg">
+              ● LIVE
+            </div>
+
+            <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/50 text-white text-xs border border-white/10">
+              {live.viewerCount ?? 0} {t.liveViewers}
+            </div>
+
+            <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
               <Link href={`/artist/${live.artist.id}`}>
-                <div className="flex items-center gap-3 min-w-0 cursor-pointer">
+                <div className="flex items-end gap-2 min-w-0 max-w-[75%] cursor-pointer">
                   <Avatar className="w-11 h-11 border-2 border-red-500/80">
                     {live.artist.avatarUrl && (
                       <AvatarImage
@@ -780,34 +792,47 @@ const reportMutation = useMutation({
                         alt={live.artist.displayName}
                       />
                     )}
-                    <AvatarFallback className="bg-primary/20">
+
+                    <AvatarFallback className="bg-primary/20 text-white">
                       {live.artist.displayName?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="min-w-0">
-                    <p className="font-semibold truncate">
+                    <p className="text-white text-lg font-semibold leading-tight truncate">
                       {live.artist.displayName}
                     </p>
-                    <p className="text-sm text-muted-foreground truncate">
+
+                    <p className="text-white text-lg font-semibold leading-tight truncate">
+                      {live.title || t.live}
+                    </p>
+
+                    <p className="text-white/70 text-sm truncate">
                       @{live.artist.username}
                     </p>
                   </div>
                 </div>
               </Link>
 
-              <div className="text-right shrink-0">
-                <p className="text-xs font-semibold text-red-500">
-                  {t.liveOnAir}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {live.viewerCount ?? 0} {t.liveViewers}
-                </p>
+              <div className="flex flex-col items-center gap-3 text-white">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-lg">👥</span>
+                  <span className="text-[11px]">
+                    {live.viewerCount ?? 0}
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-lg">🔴</span>
+                  <span className="text-[11px]">
+                    {t.liveOnAir}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        </section>
+      ))
     )}
   </div>
 )}
