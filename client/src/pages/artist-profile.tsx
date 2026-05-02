@@ -1695,8 +1695,8 @@ return (
       </button>
     </div>
 
-    <div className="flex-1 flex items-start justify-center p-4 pt-10 pb-24" onClick={e => e.stopPropagation()}>
-    <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-9rem)] max-h-[86dvh] flex flex-col">
+    <div className="flex-1 flex items-start justify-center px-4 pt-10 pb-12 overflow-hidden" onClick={e => e.stopPropagation()}>
+    <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-8rem)] max-h-[88dvh] flex flex-col">
              <video
   src={selectedVideo.videoUrl}
   controls
@@ -1709,7 +1709,7 @@ return (
                 <p className="text-xs text-muted-foreground mb-3">
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
-                <div className="flex items-center gap-4 mb-4 border-b pb-3">
+                <div className="flex items-center gap-4 mb-2 border-b pb-2">
                  <button
   className={`flex items-center gap-1 text-sm ${isVideoLiked ? "text-red-500" : "text-muted-foreground"} ${artistId === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
   disabled={artistId === currentUserId}
@@ -1765,7 +1765,7 @@ return (
   {t.share}
 </button>
                 </div>
-               <div className="mt-4 border-t pt-4 px-4 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden">
+               <div className="mt-1 pt-1 px-4 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden">
                <div className="space-y-4 flex-1 min-h-0 overflow-y-auto pr-1 pb-3">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
@@ -1865,7 +1865,7 @@ return (
   ))}
 </div>
 
-<div className="pt-3 mt-2 border-t shrink-0 bg-background">
+<div className="pt-2 mt-2 border-t shrink-0 bg-background pb-1">
   <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
     <div className="relative flex-1">
       <input
