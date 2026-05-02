@@ -640,9 +640,9 @@ const reportMutation = useMutation({
         <h1 className="text-2xl font-semibold">Flow</h1>
       </div>
 
-      <div className="flex items-center gap-3 sticky top-0 z-20 bg-background/95 backdrop-blur py-2">
+      <div className="flex items-center gap-2 sticky top-0 z-20 bg-background/95 backdrop-blur py-2 overflow-x-auto scrollbar-hide">
         <button
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition whitespace-nowrap shrink-0 ${
             activeTab === "for-you" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
           }`}
           onClick={() => setActiveTab("for-you")}
@@ -650,7 +650,7 @@ const reportMutation = useMutation({
           {t.forYou}
         </button>
         <button
-          className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+          className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition whitespace-nowrap shrink-0 ${
             activeTab === "emerging" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
           }`}
           onClick={() => setActiveTab("emerging")}
@@ -658,7 +658,7 @@ const reportMutation = useMutation({
           {t.emerging}
         </button>
         <button
-  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+ className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition whitespace-nowrap shrink-0 ${
     activeTab === "trend" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
   }`}
   onClick={() => setActiveTab("trend")}
@@ -667,7 +667,7 @@ const reportMutation = useMutation({
 </button>
 
 <button
-  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+  className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition whitespace-nowrap shrink-0 ${
     activeTab === "live" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
   }`}
   onClick={() => setActiveTab("live")}
