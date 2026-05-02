@@ -157,6 +157,11 @@ startingLive: "Avvio...",
 liveStartedTitle: "Live avviata!",
 liveStartedDescription: "La tua live è ora visibile nella sezione Flow.",
 liveStartError: "Non è stato possibile avviare la live",
+endLive: "Termina live",
+endingLive: "Chiusura...",
+liveEndedTitle: "Live terminata",
+liveEndedDescription: "La tua live non è più visibile nella sezione Flow.",
+liveEndError: "Non è stato possibile terminare la live",    
 cancel: "Annulla",
 
 add: "Aggiungi",
@@ -289,6 +294,11 @@ startingLive: "Starting...",
 liveStartedTitle: "Live started!",
 liveStartedDescription: "Your live is now visible in Flow.",
 liveStartError: "Unable to start the live",
+endLive: "End live",
+endingLive: "Ending...",
+liveEndedTitle: "Live ended",
+liveEndedDescription: "Your live is no longer visible in Flow.",
+liveEndError: "Unable to end the live",    
 cancel: "Cancel",
 
 add: "Add",
@@ -634,6 +644,7 @@ export default function Points() {
   const [reportDetails, setReportDetails] = useState("");
   const [postText, setPostText] = useState("");
   const [startingLive, setStartingLive] = useState(false);
+  const [endingLive, setEndingLive] = useState(false);
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const { mentionQuery: commentMentionQuery, showMentions: showCommentMentions, handleTextChange: handleCommentTextChange, insertMention: insertCommentMention, closeMentions: closeCommentMentions } = useMention();
   const { mentionQuery: photoMentionQuery, showMentions: showPhotoMentions, handleTextChange: handlePhotoTextChange, insertMention: insertPhotoMention, closeMentions: closePhotoMentions } = useMention();
@@ -759,6 +770,25 @@ useEffect(() => {
     queryKey: ["/api/users", currentUserId],
   });
 
+  const { data: activeLiveStreams = [], refetch: refetchActiveLiveStreams } = useQuery<any[]>({
+  queryKey: ["/api/lives/active"],
+  queryFn: async () => {
+    const res = await fetch("/api/lives/active");
+
+    if (!res.ok) {
+      return [];
+    }
+
+    return res.json();
+  },
+  refetchInterval: 10000,
+});
+
+const myActiveLive = activeLiveStreams.find((live: any) => {
+  const artistId = live.artistId ?? live.artist_id ?? live.artist?.id;
+  return Number(artistId) === Number(currentUserId);
+});
+  
   const handleStartLive = async () => {
   if (startingLive) return;
 
@@ -788,6 +818,34 @@ useEffect(() => {
     });
   } finally {
     setStartingLive(false);
+  }
+};
+
+  const handleEndLive = async () => {
+  if (endingLive || !myActiveLive?.id) return;
+
+  setEndingLive(true);
+
+  try {
+    await apiRequest("POST", `/api/lives/${myActiveLive.id}/end`, {
+      artistId: currentUserId,
+    });
+
+    await queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
+    await refetchActiveLiveStreams();
+
+    toast({
+      title: t.liveEndedTitle,
+      description: t.liveEndedDescription,
+    });
+  } catch (err: any) {
+    toast({
+      title: t.error,
+      description: err?.message || t.liveEndError,
+      variant: "destructive",
+    });
+  } finally {
+    setEndingLive(false);
   }
 };
   
@@ -1404,16 +1462,26 @@ const reportMutation = useMutation({
     <ImagePlus className="w-4 h-4 text-muted-foreground" />
   </Button>
 
-  <Button
-    variant="ghost"
-    size="sm"
-    onClick={handleStartLive}
-    disabled={startingLive}
-    className="h-8 px-2 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10"
-  >
-    <Radio className="w-4 h-4 mr-1" />
-    {startingLive ? t.startingLive : t.startLive}
-  </Button>
+ <Button
+  variant="ghost"
+  size="sm"
+  onClick={myActiveLive ? handleEndLive : handleStartLive}
+  disabled={startingLive || endingLive}
+  className={`h-8 px-2 text-xs ${
+    myActiveLive
+      ? "text-red-600 bg-red-500/10 hover:text-red-700 hover:bg-red-500/20"
+      : "text-red-500 hover:text-red-600 hover:bg-red-500/10"
+  }`}
+>
+  <Radio className="w-4 h-4 mr-1" />
+  {myActiveLive
+    ? endingLive
+      ? t.endingLive
+      : t.endLive
+    : startingLive
+      ? t.startingLive
+      : t.startLive}
+</Button>
 </div>
                 <Button 
                   size="sm" 
