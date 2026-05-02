@@ -161,7 +161,12 @@ endLive: "Termina live",
 endingLive: "Chiusura...",
 liveEndedTitle: "Live terminata",
 liveEndedDescription: "La tua live non è più visibile nella sezione Flow.",
-liveEndError: "Non è stato possibile terminare la live",    
+liveEndError: "Non è stato possibile terminare la live",
+prepareLiveTitle: "Prepara la live",
+liveTitlePlaceholder: "Titolo della live",
+startBroadcast: "Avvia diretta",
+cameraPreviewError: "Non è stato possibile accedere a camera e microfono",
+cameraPreviewLoading: "Attivazione camera...",    
 cancel: "Annulla",
 
 add: "Aggiungi",
@@ -298,7 +303,12 @@ endLive: "End live",
 endingLive: "Ending...",
 liveEndedTitle: "Live ended",
 liveEndedDescription: "Your live is no longer visible in Flow.",
-liveEndError: "Unable to end the live",    
+liveEndError: "Unable to end the live",
+prepareLiveTitle: "Prepare live",
+liveTitlePlaceholder: "Live title",
+startBroadcast: "Start live",
+cameraPreviewError: "Unable to access camera and microphone",
+cameraPreviewLoading: "Starting camera...",    
 cancel: "Cancel",
 
 add: "Add",
@@ -645,6 +655,11 @@ export default function Points() {
   const [postText, setPostText] = useState("");
   const [startingLive, setStartingLive] = useState(false);
   const [endingLive, setEndingLive] = useState(false);
+  const [showLiveSetup, setShowLiveSetup] = useState(false);
+  const [liveTitle, setLiveTitle] = useState("");
+  const [livePreviewStream, setLivePreviewStream] = useState<MediaStream | null>(null);
+  const [livePreviewError, setLivePreviewError] = useState("");
+  const [startingPreview, setStartingPreview] = useState(false);
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const { mentionQuery: commentMentionQuery, showMentions: showCommentMentions, handleTextChange: handleCommentTextChange, insertMention: insertCommentMention, closeMentions: closeCommentMentions } = useMention();
   const { mentionQuery: photoMentionQuery, showMentions: showPhotoMentions, handleTextChange: handlePhotoTextChange, insertMention: insertPhotoMention, closeMentions: closePhotoMentions } = useMention();
@@ -655,6 +670,7 @@ export default function Points() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const musicInputRef = useRef<HTMLInputElement>(null);
+  const livePreviewRef = useRef<HTMLVideoElement>(null);
   useEffect(() => {
   const handleLanguageChange = (event: Event) => {
     const customEvent = event as CustomEvent<AppLanguage>;
@@ -663,6 +679,18 @@ export default function Points() {
     }
   };
 
+  useEffect(() => {
+  if (livePreviewRef.current && livePreviewStream) {
+    livePreviewRef.current.srcObject = livePreviewStream;
+  }
+}, [livePreviewStream, showLiveSetup]);
+
+  useEffect(() => {
+  return () => {
+    livePreviewStream?.getTracks().forEach((track) => track.stop());
+  };
+}, [livePreviewStream]);
+    
   window.addEventListener("vibyng-language-change", handleLanguageChange);
 
   return () => {
@@ -678,7 +706,7 @@ useEffect(() => {
     setSelectedPhotoIsTall(false);
     return;
   }
-
+  
   const img = new Image();
   img.onload = () => {
     const ratio = img.naturalHeight / img.naturalWidth;
@@ -788,6 +816,48 @@ const myActiveLive = activeLiveStreams.find((live: any) => {
   const artistId = live.artistId ?? live.artist_id ?? live.artist?.id;
   return Number(artistId) === Number(currentUserId);
 });
+
+  const stopLivePreview = () => {
+  livePreviewStream?.getTracks().forEach((track) => track.stop());
+  setLivePreviewStream(null);
+  setLivePreviewError("");
+  setStartingPreview(false);
+};
+
+const handleOpenLiveSetup = async () => {
+  if (myActiveLive) return;
+
+  const defaultTitle = `Live di ${
+    currentUser?.displayName || (profileData as any)?.displayName || "Vibyng"
+  }`;
+
+  setLiveTitle(defaultTitle);
+  setLivePreviewError("");
+  setShowLiveSetup(true);
+  setStartingPreview(true);
+
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error(t.cameraPreviewError);
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+
+    setLivePreviewStream(stream);
+  } catch (err: any) {
+    setLivePreviewError(err?.message || t.cameraPreviewError);
+  } finally {
+    setStartingPreview(false);
+  }
+};
+
+const handleCloseLiveSetup = () => {
+  stopLivePreview();
+  setShowLiveSetup(false);
+};
   
   const handleStartLive = async () => {
   if (startingLive) return;
@@ -795,13 +865,13 @@ const myActiveLive = activeLiveStreams.find((live: any) => {
   setStartingLive(true);
 
   try {
-    const liveTitle = `Live di ${
-      currentUser?.displayName || (profileData as any)?.displayName || "Vibyng"
-    }`;
+    const finalLiveTitle =
+  liveTitle.trim() ||
+  `Live di ${currentUser?.displayName || (profileData as any)?.displayName || "Vibyng"}`;
 
     await apiRequest("POST", "/api/lives/start", {
       artistId: currentUserId,
-      title: liveTitle,
+      title: finalLiveTitle,
     });
 
     await queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
@@ -820,6 +890,8 @@ const myActiveLive = activeLiveStreams.find((live: any) => {
     setStartingLive(false);
   }
 };
+  stopLivePreview();
+  setShowLiveSetup(false);
 
   const handleEndLive = async () => {
   if (endingLive || !myActiveLive?.id) return;
@@ -1465,7 +1537,7 @@ const reportMutation = useMutation({
 <Button
   variant="ghost"
   size="sm"
-  onClick={myActiveLive ? handleEndLive : handleStartLive}
+  onClick={myActiveLive ? handleEndLive : handleOpenLiveSetup}
   disabled={startingLive || endingLive}
   title={myActiveLive ? t.endLive : t.startLive}
   aria-label={myActiveLive ? t.endLive : t.startLive}
@@ -1502,6 +1574,71 @@ const reportMutation = useMutation({
         </CardContent>
       </Card>
 
+  <Dialog open={showLiveSetup} onOpenChange={(open) => {
+  if (!open) {
+    handleCloseLiveSetup();
+  } else {
+    setShowLiveSetup(true);
+  }
+}}>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle>{t.prepareLiveTitle}</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <div className="relative aspect-[9/16] max-h-[60vh] mx-auto rounded-3xl overflow-hidden bg-black border border-border/60">
+        {livePreviewStream ? (
+          <video
+            ref={livePreviewRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-center px-6">
+            <div className="text-5xl mb-4">🎥</div>
+
+            <p className="text-sm text-muted-foreground">
+              {startingPreview ? t.cameraPreviewLoading : livePreviewError || t.cameraPreviewError}
+            </p>
+          </div>
+        )}
+
+        <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold">
+          ● LIVE
+        </div>
+      </div>
+
+      <Input
+        value={liveTitle}
+        onChange={(e) => setLiveTitle(e.target.value)}
+        placeholder={t.liveTitlePlaceholder}
+      />
+
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          variant="ghost"
+          onClick={handleCloseLiveSetup}
+          disabled={startingLive}
+        >
+          {t.cancel}
+        </Button>
+
+        <Button
+          onClick={handleStartLive}
+          disabled={startingLive || startingPreview || !!livePreviewError}
+          className="bg-red-500 hover:bg-red-600 text-white"
+        >
+          <Radio className="w-4 h-4 mr-2" />
+          {startingLive ? t.startingLive : t.startBroadcast}
+        </Button>
+      </div>
+    </div>
+  </DialogContent>
+</Dialog>
+    
       <Tabs defaultValue="songs" className="w-full">
        <TabsList className="w-full grid grid-cols-6">
           <TabsTrigger value="songs" className="px-1 text-xs" data-testid="tab-songs">
