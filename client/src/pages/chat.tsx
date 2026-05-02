@@ -10,6 +10,7 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MentionText } from "@/components/mention-text";
 import { useMention } from "@/hooks/use-mention";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { parseSharedContentMessage } from "@/lib/shared-content-message";
 import type { User, Message } from "@shared/schema";
@@ -114,7 +115,10 @@ export default function Chat() {
   insertMention,
   closeMentions,
 } = useMention();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+ const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useBodyScrollLock(true);
+
   useEffect(() => {
   const syncLanguage = () => {
     setLanguage(getStoredLanguage());
@@ -237,7 +241,7 @@ useEffect(() => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-8rem)] overflow-hidden min-h-0">
+    <div className="flex flex-col h-[calc(100dvh-8rem)] overflow-hidden overscroll-contain min-h-0">
       <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
         <CardHeader className="flex flex-row items-center gap-3 pb-3 border-b shrink-0">
           <Link href="/messages">
@@ -259,7 +263,7 @@ useEffect(() => {
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 scrollbar-hide [&::-webkit-scrollbar]:hidden">
+        <CardContent className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3 scrollbar-hide [&::-webkit-scrollbar]:hidden">
           {isConversationBlocked ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
               <MessageCircle className="w-12 h-12 text-muted-foreground/50 mb-3" />
