@@ -271,3 +271,68 @@ export function MiniPlayer() {
     </div>
   );
 }
+
+export function CompactMiniPlayer() {
+  const {
+    currentSong,
+    isPlaying,
+    togglePlay,
+    stopPlayback,
+  } = useAudioPlayer();
+
+  if (!currentSong) return null;
+
+  return (
+    <div
+      className="fixed right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[60] max-w-[78vw] rounded-full border border-border bg-card/95 shadow-lg backdrop-blur"
+      data-testid="compact-mini-player"
+    >
+      <div className="flex items-center gap-2 px-2 py-1.5">
+        <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-primary/10 flex items-center justify-center">
+          {currentSong.coverUrl ? (
+            <img
+              src={currentSong.coverUrl}
+              alt={currentSong.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <Music className="w-4 h-4 text-primary" />
+          )}
+        </div>
+
+        <div className="min-w-0 max-w-[34vw]">
+          <p className="text-xs font-medium truncate leading-tight">
+            {currentSong.title}
+          </p>
+          <p className="text-[10px] text-muted-foreground truncate leading-tight">
+            {currentSong.artist}
+          </p>
+        </div>
+
+        <Button
+          size="icon"
+          variant="ghost"
+          className="w-8 h-8 rounded-full shrink-0"
+          onClick={togglePlay}
+          data-testid="button-compact-play-pause"
+        >
+          {isPlaying ? (
+            <Pause className="w-4 h-4" />
+          ) : (
+            <Play className="w-4 h-4 ml-0.5" />
+          )}
+        </Button>
+
+        <Button
+          size="icon"
+          variant="ghost"
+          className="w-7 h-7 rounded-full shrink-0"
+          onClick={stopPlayback}
+          data-testid="button-compact-close-player"
+        >
+          <X className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
