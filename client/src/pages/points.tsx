@@ -2327,16 +2327,20 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
       {selectedVideo && (
         <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
           <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
-            <div className="w-full max-w-lg bg-background rounded-xl overflow-y-auto max-h-[90vh]">
-              <video src={selectedVideo.videoUrl} controls className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black" />
-              <div className="p-4">
+            <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-8rem)] max-h-[88dvh] flex flex-col">
+              <video
+  src={selectedVideo.videoUrl}
+  controls
+  className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black shrink-0"
+/>
+              <div className="p-4 flex flex-col flex-1 min-h-0 overflow-hidden">
                 {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium whitespace-pre-wrap break-words">
   <MentionText text={selectedVideo.title} />
 </p>}
                 <p className="text-xs text-muted-foreground mb-3">
                   {selectedVideo.createdAt && new Date(selectedVideo.createdAt).toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                 </p>
-                <div className="flex items-center gap-4 mb-4 border-b pb-3">
+                <div className="flex items-center gap-4 mb-1 border-b pb-2 shrink-0">
                   <button
   className="flex items-center gap-1 text-sm text-muted-foreground opacity-50 cursor-not-allowed"
   disabled={true}
@@ -2385,8 +2389,8 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
                   </button>
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
-                <div className="mt-4 border-t pt-4 px-4 pb-4">
-  <div className="space-y-4 max-h-[26vh] overflow-y-auto pr-1">
+                <div className="mt-0 pt-2 px-4 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden">
+  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
     {videoCommentsList.map((c: any) => (
       <div key={c.id} className="flex items-start gap-3">
         <Avatar className="w-9 h-9 flex-shrink-0">
@@ -2487,7 +2491,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
     ))}
   </div>
 
-  <div className="pt-3 mt-2 border-t">
+  <div className="pt-2 mt-2 border-t shrink-0 bg-background pb-1">
     <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
       <div className="relative flex-1">
         <input
