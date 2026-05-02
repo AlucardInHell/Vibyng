@@ -657,9 +657,6 @@ export default function Points() {
   const [endingLive, setEndingLive] = useState(false);
   const [showLiveSetup, setShowLiveSetup] = useState(false);
   const [liveTitle, setLiveTitle] = useState("");
-  const [livePreviewStream, setLivePreviewStream] = useState<MediaStream | null>(null);
-  const [livePreviewError, setLivePreviewError] = useState("");
-  const [startingPreview, setStartingPreview] = useState(false);
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const { mentionQuery: commentMentionQuery, showMentions: showCommentMentions, handleTextChange: handleCommentTextChange, insertMention: insertCommentMention, closeMentions: closeCommentMentions } = useMention();
   const { mentionQuery: photoMentionQuery, showMentions: showPhotoMentions, handleTextChange: handlePhotoTextChange, insertMention: insertPhotoMention, closeMentions: closePhotoMentions } = useMention();
@@ -686,17 +683,7 @@ export default function Points() {
   };
 }, []);
 
-useEffect(() => {
-  if (livePreviewRef.current && livePreviewStream) {
-    livePreviewRef.current.srcObject = livePreviewStream;
-  }
-}, [livePreviewStream, showLiveSetup]);
 
-useEffect(() => {
-  return () => {
-    livePreviewStream?.getTracks().forEach((track) => track.stop());
-  };
-}, [livePreviewStream]);
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
   const [selectedPhotoIsTall, setSelectedPhotoIsTall] = useState(false);
@@ -832,7 +819,7 @@ const myActiveLive = activeLiveStreams.find((live: any) => {
   setStartingPreview(false);
 };
 
-const handleOpenLiveSetup = async () => {
+const handleOpenLiveSetup = () => {
   if (myActiveLive) return;
 
   const defaultTitle = `Live di ${
@@ -840,30 +827,11 @@ const handleOpenLiveSetup = async () => {
   }`;
 
   setLiveTitle(defaultTitle);
-  setLivePreviewError("");
   setShowLiveSetup(true);
-  setStartingPreview(true);
-
-  try {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error(t.cameraPreviewError);
-    }
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-
-    setLivePreviewStream(stream);
-  } catch (err: any) {
-    setLivePreviewError(err?.message || t.cameraPreviewError);
-  } finally {
-    setStartingPreview(false);
-  }
 };
 
 const handleCloseLiveSetup = () => {
-  stopLivePreview();
+  if (startingLive) return;
   setShowLiveSetup(false);
 };
   
@@ -883,11 +851,14 @@ const handleCloseLiveSetup = () => {
     });
 
     await queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
+    await refetchActiveLiveStreams();
 
     toast({
       title: t.liveStartedTitle,
       description: t.liveStartedDescription,
     });
+
+    setShowLiveSetup(false);
   } catch (err: any) {
     toast({
       title: t.error,
@@ -1543,7 +1514,7 @@ const reportMutation = useMutation({
 <Button
   variant="ghost"
   size="sm"
-  onClick={myActiveLive ? handleEndLive : handleStartLive}
+  onClick={myActiveLive ? handleEndLive : handleOpenLiveSetup}
   disabled={startingLive || endingLive}
   title={myActiveLive ? t.endLive : t.startLive}
   aria-label={myActiveLive ? t.endLive : t.startLive}
@@ -1579,6 +1550,63 @@ const reportMutation = useMutation({
           </div>
         </CardContent>
       </Card>
+
+<Dialog open={showLiveSetup} onOpenChange={(open) => {
+  if (!open) {
+    handleCloseLiveSetup();
+  } else {
+    setShowLiveSetup(true);
+  }
+}}>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle>{t.prepareLiveTitle}</DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4">
+      <div className="relative aspect-[9/16] max-h-[60vh] mx-auto rounded-3xl overflow-hidden bg-black border border-border/60 flex flex-col items-center justify-center text-center px-6">
+        <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold">
+          ● LIVE
+        </div>
+
+        <div className="text-6xl mb-4">🎥</div>
+
+        <p className="text-white font-semibold">
+          Anteprima live
+        </p>
+
+        <p className="text-white/60 text-sm mt-2 max-w-xs">
+          Camera e microfono saranno collegati nello step successivo.
+        </p>
+      </div>
+
+      <Input
+        value={liveTitle}
+        onChange={(e) => setLiveTitle(e.target.value)}
+        placeholder={t.liveTitlePlaceholder}
+      />
+
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          variant="ghost"
+          onClick={handleCloseLiveSetup}
+          disabled={startingLive}
+        >
+          {t.cancel}
+        </Button>
+
+        <Button
+          onClick={handleStartLive}
+          disabled={startingLive}
+          className="bg-red-500 hover:bg-red-600 text-white"
+        >
+          <Radio className="w-4 h-4 mr-2" />
+          {startingLive ? t.startingLive : t.startBroadcast}
+        </Button>
+      </div>
+    </div>
+  </DialogContent>
+</Dialog>
     
       <Tabs defaultValue="songs" className="w-full">
        <TabsList className="w-full grid grid-cols-6">
