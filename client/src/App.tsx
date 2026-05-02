@@ -13,7 +13,7 @@ import Points from "@/pages/points";
 import Messages from "@/pages/messages";
 import Chat from "@/pages/chat";
 import SearchPage from "@/pages/search";
-import { AudioPlayerProvider, MiniPlayer } from "@/components/audio-player";
+import { AudioPlayerProvider, MiniPlayer, CompactMiniPlayer } from "@/components/audio-player";
 import AuthPage from "@/pages/auth";
 import Onboarding from "@/pages/onboarding";
 import Notifications from "@/pages/notifications";
@@ -458,6 +458,14 @@ function Router() {
     </Switch>
   );
 }
+
+function AppAudioPlayer() {
+  const [location] = useLocation();
+  const isChatRoute = location.startsWith("/chat/");
+
+  return isChatRoute ? <CompactMiniPlayer /> : <MiniPlayer />;
+}
+
 function MessagesButton() {
   const { t } = useLanguage();
   const [location, setLocation] = useLocation();
@@ -1359,7 +1367,7 @@ function AppLayout() {
       <main className="pb-36 pt-4 px-4 max-w-md mx-auto overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         <Router />
       </main>
-      <MiniPlayer />
+      <AppAudioPlayer />
       <BottomNav />
     </div>
   );
