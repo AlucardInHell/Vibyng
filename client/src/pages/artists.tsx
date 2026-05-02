@@ -122,7 +122,7 @@ export default function Artists() {
     }
   });
   const [pausedVideoIds, setPausedVideoIds] = useState<Set<number>>(new Set());
-  const [mutedVideoIds, setMutedVideoIds] = useState<Set<number>>(new Set());
+  const [unmutedVideoIds, setUnmutedVideoIds] = useState<Set<number>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
   const [likeStatusReady, setLikeStatusReady] = useState<Record<number, boolean>>({});
@@ -191,22 +191,6 @@ useEffect(() => {
     },
   });
 
-  useEffect(() => {
-  if (!flowVideos.length) return;
-
-  setMutedVideoIds((prev) => {
-    const next = new Set(prev);
-
-    flowVideos.forEach((video) => {
-      if (!next.has(video.id)) {
-        next.add(video.id);
-      }
-    });
-
-    return next;
-  });
-}, [flowVideos]);
-  
   useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
   }, [savedVideoIds]);
@@ -317,24 +301,45 @@ useEffect(() => {
   });
 
   useEffect(() => {
+  const timers: number[] = [];
+
   activeList.forEach((video, index) => {
     const el = videoRefs.current[video.id];
     if (!el) return;
 
-    if (index === activeIndex && !pausedVideoIds.has(video.id)) {
-      el.muted = mutedVideoIds.has(video.id);
-      el.playsInline = true;
-      el.preload = "auto";
-
-      const tryPlay = () => el.play().catch(() => {});
-      tryPlay();
-      requestAnimationFrame(tryPlay);
-      setTimeout(tryPlay, 120);
-    } else {
+    if (index !== activeIndex) {
       el.pause();
+      return;
     }
+
+    if (pausedVideoIds.has(video.id)) {
+      el.pause();
+      return;
+    }
+
+    const shouldBeMuted = !unmutedVideoIds.has(video.id);
+
+    el.muted = shouldBeMuted;
+    el.defaultMuted = true;
+    el.playsInline = true;
+    el.autoplay = true;
+    el.preload = "auto";
+
+    const tryPlay = () => {
+      el.play().catch(() => {});
+    };
+
+    tryPlay();
+    requestAnimationFrame(tryPlay);
+
+    timers.push(window.setTimeout(tryPlay, 120));
+    timers.push(window.setTimeout(tryPlay, 350));
   });
-}, [activeIndex, activeList, mutedVideoIds, pausedVideoIds, activeTab]);
+
+  return () => {
+    timers.forEach((timer) => window.clearTimeout(timer));
+  };
+}, [activeIndex, activeList, unmutedVideoIds, pausedVideoIds, activeTab]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -369,18 +374,21 @@ useEffect(() => {
   };
 
   const toggleMute = (videoId: number) => {
-    const next = new Set(mutedVideoIds);
-    if (mutedVideoIds.has(videoId)) {
-      next.delete(videoId);
-    } else {
-      next.add(videoId);
-    }
-    setMutedVideoIds(next);
-    const el = videoRefs.current[videoId];
-    if (el) {
-      el.muted = next.has(videoId);
-    }
-  };
+  const next = new Set(unmutedVideoIds);
+
+  if (unmutedVideoIds.has(videoId)) {
+    next.delete(videoId);
+  } else {
+    next.add(videoId);
+  }
+
+  setUnmutedVideoIds(next);
+
+  const el = videoRefs.current[videoId];
+  if (el) {
+    el.muted = !next.has(videoId);
+  }
+};
 
   const toggleSave = (videoId: number) => {
     setSavedVideoIds((prev) =>
@@ -650,7 +658,7 @@ const reportMutation = useMutation({
       >
         {activeList.map((video, index) => {
           const isActive = index === activeIndex;
-          const isMuted = mutedVideoIds.has(video.id);
+          const isMuted = !unmutedVideoIds.has(video.id);
           const isSaved = savedVideoIds.includes(video.id);
           const isLiked = likedMap[video.id] ?? false;
           const likesCount = likeCounts[video.id] ?? Number((video as any).likesCount ?? 0);
@@ -671,14 +679,19 @@ const reportMutation = useMutation({
     ref={(el) => {
       videoRefs.current[video.id] = el;
       if (el && index === activeIndex && !pausedVideoIds.has(video.id)) {
-        el.muted = mutedVideoIds.has(video.id);
-        el.playsInline = true;
-        el.preload = "auto";
+  const shouldBeMuted = !unmutedVideoIds.has(video.id);
 
-        const tryPlay = () => el.play().catch(() => {});
-        requestAnimationFrame(tryPlay);
-        setTimeout(tryPlay, 120);
-      }
+  el.muted = shouldBeMuted;
+  el.defaultMuted = true;
+  el.playsInline = true;
+  el.autoplay = true;
+  el.preload = "auto";
+
+  const tryPlay = () => el.play().catch(() => {});
+  requestAnimationFrame(tryPlay);
+  setTimeout(tryPlay, 120);
+  setTimeout(tryPlay, 350);
+}
     }}
     src={video.videoUrl ?? undefined}
     playsInline
@@ -689,11 +702,18 @@ const reportMutation = useMutation({
     preload="auto"
     className="w-full h-full object-cover"
     onLoadedData={() => {
-      const el = videoRefs.current[video.id];
-      if (el && index === activeIndex && !pausedVideoIds.has(video.id)) {
-        el.play().catch(() => {});
-      }
-    }}
+    const el = videoRefs.current[video.id];
+
+    if (el && index === activeIndex && !pausedVideoIds.has(video.id)) {
+    const shouldBeMuted = !unmutedVideoIds.has(video.id);
+
+    el.muted = shouldBeMuted;
+    el.defaultMuted = true;
+    el.playsInline = true;
+
+    el.play().catch(() => {});
+  }
+}}
   />
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/10 pointer-events-none" />
