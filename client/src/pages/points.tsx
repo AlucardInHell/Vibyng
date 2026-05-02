@@ -341,6 +341,49 @@ type VPointsStatus = {
   }>;
 };
 
+function CommentAuthorName({
+  comment,
+  className = "",
+}: {
+  comment: any;
+  className?: string;
+}) {
+  const currentUserId = getCurrentUserId();
+
+  const authorId = Number(
+    comment.authorId ??
+      comment.author_id ??
+      comment.author?.id ??
+      comment.userId ??
+      comment.user_id ??
+      0
+  );
+
+  const displayName =
+    comment.author?.displayName ??
+    comment.display_name ??
+    comment.displayName ??
+    comment.username ??
+    "Profilo";
+
+  if (!authorId || Number.isNaN(authorId)) {
+    return <span className={className}>{displayName}</span>;
+  }
+
+  const href = authorId === currentUserId ? "/me" : `/artist/${authorId}`;
+
+  return (
+    <Link href={href}>
+      <span
+        className={`${className} cursor-pointer hover:text-primary transition-colors`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {displayName}
+      </span>
+    </Link>
+  );
+}
+
 function MePostComments({
   postId,
   postAuthorId,
@@ -409,9 +452,10 @@ function MePostComments({
 
           <div className="flex-1 bg-muted rounded-lg px-3 py-2">
   <div className="flex items-start justify-between gap-2">
-    <p className="text-sm font-semibold min-w-0 truncate">
-      {comment.author?.displayName}
-    </p>
+    <CommentAuthorName
+  comment={comment}
+  className="block text-sm font-semibold min-w-0 truncate"
+/>
 
     {Number(
       comment.authorId ??
@@ -1554,9 +1598,10 @@ const reportMutation = useMutation({
 
                <div className="flex-1 bg-muted rounded-lg px-3 py-2">
   <div className="flex items-start justify-between gap-2">
-    <p className="text-sm font-semibold min-w-0 truncate">
-      {c.display_name}
-    </p>
+    <CommentAuthorName
+  comment={comment}
+  className="block text-sm font-semibold min-w-0 truncate"
+/>
 
     {Number(c.author_id) !== Number(currentUserId) && (
       <Button
@@ -2405,9 +2450,10 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
 
         <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
   <div className="flex items-start justify-between gap-2">
-    <p className="text-sm font-semibold min-w-0 truncate">
-      {c.display_name}
-    </p>
+   <CommentAuthorName
+  comment={comment}
+  className="block text-sm font-semibold min-w-0 truncate"
+/>
 
     {Number(c.author_id) !== Number(currentUserId) && (
       <Button
