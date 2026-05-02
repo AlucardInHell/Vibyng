@@ -1537,7 +1537,7 @@ const reportMutation = useMutation({
 <Button
   variant="ghost"
   size="sm"
-  onClick={myActiveLive ? handleEndLive : handleOpenLiveSetup}
+  onClick={myActiveLive ? handleEndLive : handleStartLive}
   disabled={startingLive || endingLive}
   title={myActiveLive ? t.endLive : t.startLive}
   aria-label={myActiveLive ? t.endLive : t.startLive}
@@ -1573,71 +1573,6 @@ const reportMutation = useMutation({
           </div>
         </CardContent>
       </Card>
-
-  <Dialog open={showLiveSetup} onOpenChange={(open) => {
-  if (!open) {
-    handleCloseLiveSetup();
-  } else {
-    setShowLiveSetup(true);
-  }
-}}>
-  <DialogContent className="max-w-md">
-    <DialogHeader>
-      <DialogTitle>{t.prepareLiveTitle}</DialogTitle>
-    </DialogHeader>
-
-    <div className="space-y-4">
-      <div className="relative aspect-[9/16] max-h-[60vh] mx-auto rounded-3xl overflow-hidden bg-black border border-border/60">
-        {livePreviewStream ? (
-          <video
-            ref={livePreviewRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center px-6">
-            <div className="text-5xl mb-4">🎥</div>
-
-            <p className="text-sm text-muted-foreground">
-              {startingPreview ? t.cameraPreviewLoading : livePreviewError || t.cameraPreviewError}
-            </p>
-          </div>
-        )}
-
-        <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold">
-          ● LIVE
-        </div>
-      </div>
-
-      <Input
-        value={liveTitle}
-        onChange={(e) => setLiveTitle(e.target.value)}
-        placeholder={t.liveTitlePlaceholder}
-      />
-
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          variant="ghost"
-          onClick={handleCloseLiveSetup}
-          disabled={startingLive}
-        >
-          {t.cancel}
-        </Button>
-
-        <Button
-          onClick={handleStartLive}
-          disabled={startingLive || startingPreview || !!livePreviewError}
-          className="bg-red-500 hover:bg-red-600 text-white"
-        >
-          <Radio className="w-4 h-4 mr-2" />
-          {startingLive ? t.startingLive : t.startBroadcast}
-        </Button>
-      </div>
-    </div>
-  </DialogContent>
-</Dialog>
     
       <Tabs defaultValue="songs" className="w-full">
        <TabsList className="w-full grid grid-cols-6">
