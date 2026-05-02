@@ -348,6 +348,41 @@ function CommentAuthorName({
   comment: any;
   className?: string;
 }) {
+  const currentUserId = getCurrentUserId();
+
+  const authorId = Number(
+    comment.authorId ??
+      comment.author_id ??
+      comment.author?.id ??
+      comment.userId ??
+      comment.user_id ??
+      0
+  );
+
+  const displayName =
+    comment.author?.displayName ??
+    comment.display_name ??
+    comment.displayName ??
+    comment.username ??
+    "Profilo";
+
+  if (!authorId || Number.isNaN(authorId)) {
+    return <span className={className}>{displayName}</span>;
+  }
+
+  const href = authorId === currentUserId ? "/me" : `/artist/${authorId}`;
+
+  return (
+    <Link href={href}>
+      <span
+        className={`${className} cursor-pointer hover:text-primary transition-colors`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {displayName}
+      </span>
+    </Link>
+  );
+}
 
 function CommentAuthorAvatar({
   comment,
@@ -403,42 +438,6 @@ function CommentAuthorAvatar({
         onClick={(e) => e.stopPropagation()}
       >
         {avatar}
-      </span>
-    </Link>
-  );
-}
-  
-  const currentUserId = getCurrentUserId();
-
-  const authorId = Number(
-    comment.authorId ??
-      comment.author_id ??
-      comment.author?.id ??
-      comment.userId ??
-      comment.user_id ??
-      0
-  );
-
-  const displayName =
-    comment.author?.displayName ??
-    comment.display_name ??
-    comment.displayName ??
-    comment.username ??
-    "Profilo";
-
-  if (!authorId || Number.isNaN(authorId)) {
-    return <span className={className}>{displayName}</span>;
-  }
-
-  const href = authorId === currentUserId ? "/me" : `/artist/${authorId}`;
-
-  return (
-    <Link href={href}>
-      <span
-        className={`${className} cursor-pointer hover:text-primary transition-colors`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {displayName}
       </span>
     </Link>
   );
@@ -1640,8 +1639,9 @@ const reportMutation = useMutation({
 
         <div className="mt-4 flex flex-col h-[calc(75vh-5rem)]">
           <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
-            {<CommentAuthorAvatar comment={c} className="w-8 h-8" />
-              <div key={c.id} className="flex gap-2">
+            {photoCommentsList.map((c: any) => (
+  <div key={c.id} className="flex gap-2">
+    <CommentAuthorAvatar comment={c} className="w-8 h-8 flex-shrink-0" />
                 <Avatar className="w-8 h-8 flex-shrink-0">
                   {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
                   <AvatarFallback className="bg-primary/10 text-primary text-xs">
