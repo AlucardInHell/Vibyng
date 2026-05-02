@@ -1638,104 +1638,113 @@ const reportMutation = useMutation({
         </SheetHeader>
 
         <div className="mt-4 flex flex-col h-[calc(75vh-5rem)]">
-          {photoCommentsList.map((c: any) => (
-  <div key={c.id} className="flex gap-2">
-    <CommentAuthorAvatar comment={c} className="w-8 h-8 flex-shrink-0" />
+  <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
+    {photoCommentsList.map((c: any) => (
+      <div key={c.id} className="flex gap-2">
+        <CommentAuthorAvatar comment={c} className="w-8 h-8 flex-shrink-0" />
 
-    <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-  <div className="flex items-start justify-between gap-2">
-    <CommentAuthorName
-  comment={c}
-  className="block text-sm font-semibold min-w-0 truncate"
-/>
+        <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+          <div className="flex items-start justify-between gap-2">
+            <CommentAuthorName
+              comment={c}
+              className="block text-sm font-semibold min-w-0 truncate"
+            />
 
-    {Number(c.author_id) !== Number(currentUserId) && (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+            {Number(c.author_id) !== Number(currentUserId) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
 
-          openReport({
-            targetType: "comment",
-            targetId: String(c.id),
-            targetOwnerId: Number(c.author_id),
-            title: t.reportComment,
-            description: t.reportContentDescription,
-          });
-        }}
-        aria-label={t.reportComment}
-      >
-        <MoreVertical className="w-4 h-4" />
-      </Button>
-    )}
-  </div>
-
-  <p className="text-sm whitespace-pre-wrap break-words">
-    <MentionText text={c.content} />
-  </p>
-
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {c.created_at &&
-                        new Date(c.created_at).toLocaleDateString("it-IT", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      {(Number(c.author_id) === Number(currentUserId) ||
-                        Number(selectedPhoto.artistId) === Number(currentUserId)) && (
-                        <button
-                          className="text-xs text-red-400 hover:text-red-600"
-                          onClick={async () => {
-                            await apiRequest("DELETE", `/api/photos/${selectedPhoto.id}/comments/${c.id}`);
-                            refetchPhotoComments();
-                          }}
-                        >
-                          🗑️
-                        </button>
-                      )}
-
-                      <button
-                        className={`flex items-center gap-1 text-xs ${
-                          Number(c.author_id) === currentUserId
-                            ? "opacity-50 cursor-not-allowed text-muted-foreground"
-                            : c.likedByMe
-                              ? "text-red-500"
-                              : "text-muted-foreground hover:text-red-500"
-                        }`}
-                        disabled={Number(c.author_id) === currentUserId}
-                        onClick={async () => {
-                          if (c.likedByMe) {
-                            await apiRequest(
-                              "POST",
-                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/unlike/${currentUserId}`
-                            );
-                          } else {
-                            await apiRequest(
-                              "POST",
-                              `/api/photos/${selectedPhoto.id}/comments/${c.id}/like/${currentUserId}`
-                            );
-                          }
-                          await refetchPhotoComments();
-                        }}
-                      >
-                        <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
-                        <span>{c.likes_count ?? 0}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                  openReport({
+                    targetType: "comment",
+                    targetId: String(c.id),
+                    targetOwnerId: Number(c.author_id),
+                    title: t.reportComment,
+                    description: t.reportContentDescription,
+                  });
+                }}
+                aria-label={t.reportComment}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            )}
           </div>
 
+          <p className="text-sm whitespace-pre-wrap break-words">
+            <MentionText text={c.content} />
+          </p>
+
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-xs text-muted-foreground">
+              {c.created_at &&
+                new Date(c.created_at).toLocaleDateString("it-IT", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+            </span>
+
+            <div className="flex items-center gap-2">
+              {(Number(c.author_id) === Number(currentUserId) ||
+                Number(selectedPhoto?.artistId) === Number(currentUserId)) && (
+                <button
+                  className="text-xs text-red-400 hover:text-red-600"
+                  onClick={async () => {
+                    await apiRequest(
+                      "DELETE",
+                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}`
+                    );
+                    refetchPhotoComments();
+                  }}
+                >
+                  🗑️
+                </button>
+              )}
+
+              <button
+                className={`flex items-center gap-1 text-xs ${
+                  Number(c.author_id) === currentUserId
+                    ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                    : c.likedByMe
+                      ? "text-red-500"
+                      : "text-muted-foreground hover:text-red-500"
+                }`}
+                disabled={Number(c.author_id) === currentUserId}
+                onClick={async () => {
+                  if (c.likedByMe) {
+                    await apiRequest(
+                      "POST",
+                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}/unlike/${currentUserId}`
+                    );
+                  } else {
+                    await apiRequest(
+                      "POST",
+                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}/like/${currentUserId}`
+                    );
+                  }
+
+                  await refetchPhotoComments();
+                }}
+              >
+                <Heart
+                  className={`w-3 h-3 ${
+                    c.likedByMe ? "fill-red-500" : ""
+                  }`}
+                />
+                <span>{c.likes_count ?? 0}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
           <div className="mt-3 pt-3 border-t bg-background shrink-0">
             <div className="relative">
               <input
