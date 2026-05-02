@@ -1599,7 +1599,7 @@ const reportMutation = useMutation({
                <div className="flex-1 bg-muted rounded-lg px-3 py-2">
   <div className="flex items-start justify-between gap-2">
     <CommentAuthorName
-  comment={comment}
+  comment={c}
   className="block text-sm font-semibold min-w-0 truncate"
 />
 
@@ -2451,7 +2451,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
         <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
   <div className="flex items-start justify-between gap-2">
    <CommentAuthorName
-  comment={comment}
+  comment={c}
   className="block text-sm font-semibold min-w-0 truncate"
 />
 
