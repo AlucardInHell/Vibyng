@@ -122,7 +122,7 @@ export default function Artists() {
     }
   });
   const [pausedVideoIds, setPausedVideoIds] = useState<Set<number>>(new Set());
-  const [unmutedVideoIds, setUnmutedVideoIds] = useState<Set<number>>(new Set());
+  const [flowMuted, setFlowMuted] = useState(true);
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
   const [likeStatusReady, setLikeStatusReady] = useState<Record<number, boolean>>({});
@@ -194,20 +194,6 @@ useEffect(() => {
   useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
   }, [savedVideoIds]);
-
-  useEffect(() => {
-  if (!flowVideos.length) return;
-
-  setLikeCounts((prev) => {
-    const next = { ...prev };
-
-    flowVideos.forEach((video) => {
-      next[video.id] = Number((video as any).likesCount ?? 0);
-    });
-
-    return next;
-  });
-}, [flowVideos]);
 
   const forYouVideos = useMemo(() => {
     return [...flowVideos].sort(
@@ -317,10 +303,8 @@ useEffect(() => {
       return;
     }
 
-    const shouldBeMuted = !unmutedVideoIds.has(video.id);
-
-    el.muted = shouldBeMuted;
-    el.defaultMuted = true;
+    el.muted = flowMuted;
+    el.defaultMuted = flowMuted;
     el.playsInline = true;
     el.autoplay = true;
     el.preload = "auto";
@@ -339,7 +323,7 @@ useEffect(() => {
   return () => {
     timers.forEach((timer) => window.clearTimeout(timer));
   };
-}, [activeIndex, activeList, unmutedVideoIds, pausedVideoIds, activeTab]);
+}, [activeIndex, activeList, flowMuted, pausedVideoIds, activeTab]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -374,19 +358,18 @@ useEffect(() => {
   };
 
   const toggleMute = (videoId: number) => {
-  const next = new Set(unmutedVideoIds);
+  const nextMuted = !flowMuted;
 
-  if (unmutedVideoIds.has(videoId)) {
-    next.delete(videoId);
-  } else {
-    next.add(videoId);
-  }
-
-  setUnmutedVideoIds(next);
+  setFlowMuted(nextMuted);
 
   const el = videoRefs.current[videoId];
   if (el) {
-    el.muted = !next.has(videoId);
+    el.muted = nextMuted;
+    el.defaultMuted = nextMuted;
+
+    if (!pausedVideoIds.has(videoId)) {
+      el.play().catch(() => {});
+    }
   }
 };
 
@@ -658,7 +641,7 @@ const reportMutation = useMutation({
       >
         {activeList.map((video, index) => {
           const isActive = index === activeIndex;
-          const isMuted = !unmutedVideoIds.has(video.id);
+          const isMuted = flowMuted;
           const isSaved = savedVideoIds.includes(video.id);
           const isLiked = likedMap[video.id] ?? false;
           const likesCount = likeCounts[video.id] ?? Number((video as any).likesCount ?? 0);
@@ -679,10 +662,8 @@ const reportMutation = useMutation({
     ref={(el) => {
       videoRefs.current[video.id] = el;
       if (el && index === activeIndex && !pausedVideoIds.has(video.id)) {
-  const shouldBeMuted = !unmutedVideoIds.has(video.id);
-
-  el.muted = shouldBeMuted;
-  el.defaultMuted = true;
+  el.muted = flowMuted;
+  el.defaultMuted = flowMuted;
   el.playsInline = true;
   el.autoplay = true;
   el.preload = "auto";
@@ -702,15 +683,12 @@ const reportMutation = useMutation({
     preload="auto"
     className="w-full h-full object-cover"
     onLoadedData={() => {
-    const el = videoRefs.current[video.id];
+  const el = videoRefs.current[video.id];
 
-    if (el && index === activeIndex && !pausedVideoIds.has(video.id)) {
-    const shouldBeMuted = !unmutedVideoIds.has(video.id);
-
-    el.muted = shouldBeMuted;
-    el.defaultMuted = true;
+  if (el && index === activeIndex && !pausedVideoIds.has(video.id)) {
+    el.muted = flowMuted;
+    el.defaultMuted = flowMuted;
     el.playsInline = true;
-
     el.play().catch(() => {});
   }
 }}
