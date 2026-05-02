@@ -15,6 +15,7 @@ import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMention } from "@/hooks/use-mention";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
 import { useToast } from "@/hooks/use-toast";
@@ -567,6 +568,9 @@ useEffect(() => {
 });
 
   const isVideoLiked = videoLikeData?.liked ?? false;
+
+  useBodyScrollLock(Boolean(selectedVideo || selectedPhoto || photoCommentsOpen));
+
   const [photoLikes, setPhotoLikes] = useState<Record<number, boolean>>({});
   const [photoComments, setPhotoComments] = useState<Record<number, string[]>>({});
   const [commentInput, setCommentInput] = useState("");
@@ -1658,7 +1662,7 @@ return (
         </TabsContent>
 
        {selectedVideo && (
-  <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
+  <div className="fixed inset-0 z-50 bg-black/90 flex flex-col overflow-hidden overscroll-contain" onClick={() => setSelectedVideo(null)}>
     <div className="absolute inset-x-0 top-4 z-30 flex justify-end gap-2 px-4">
       {Number(selectedVideo.artistId) !== Number(currentUserId) && (
         <Button
@@ -2373,7 +2377,7 @@ return (
    {selectedPhoto && (
   <>
     <div
-      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
+      className="fixed inset-0 z-[80] bg-black/95 flex flex-col overflow-hidden overscroll-contain"
       onClick={() => {
         setSelectedPhoto(null);
         setPhotoCommentsOpen(false);
