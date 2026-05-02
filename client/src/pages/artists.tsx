@@ -125,6 +125,8 @@ export default function Artists() {
   const [mutedVideoIds, setMutedVideoIds] = useState<Set<number>>(new Set());
   const [likeCounts, setLikeCounts] = useState<Record<number, number>>({});
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
+  const [likeStatusReady, setLikeStatusReady] = useState<Record<number, boolean>>({});
+  const [likePendingMap, setLikePendingMap] = useState<Record<number, boolean>>({});
   const [reportOpen, setReportOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
   targetType: "comment";
@@ -265,6 +267,16 @@ useEffect(() => {
         });
 
         return next;
+
+     setLikeStatusReady((prev) => {
+  const next = { ...prev };
+
+  entries.forEach(([videoId]) => {
+    next[videoId] = true;
+  });
+
+  return next;
+});   
       });
     } catch {
       // Non blocchiamo il Flow se uno stato like non viene caricato.
@@ -361,26 +373,48 @@ useEffect(() => {
   };
 
   const handleLike = async (video: FlowVideo) => {
-     if (Number(video.artist.id) === Number(currentUserId)) return;
-    const isLiked = likedMap[video.id] ?? false;
-    const currentCount = likeCounts[video.id] ?? Number((video as any).likesCount ?? 0);
+  if (Number(video.artist.id) === Number(currentUserId)) return;
 
-    if (isLiked) {
-      await apiRequest("POST", `/api/videos/${video.id}/unlike`, { userId: currentUserId });
-      setLikedMap((prev) => ({ ...prev, [video.id]: false }));
-      setLikeCounts((prev) => ({ ...prev, [video.id]: Math.max(0, currentCount - 1) }));
-    } else {
-      await apiRequest("POST", `/api/videos/${video.id}/like`, { userId: currentUserId });
-      setLikedMap((prev) => ({ ...prev, [video.id]: true }));
-      setLikeCounts((prev) => ({ ...prev, [video.id]: currentCount + 1 }));
+  const videoId = Number(video.id);
+
+  if (!likeStatusReady[videoId] || likePendingMap[videoId]) {
+    return;
+  }
+
+  setLikePendingMap((prev) => ({ ...prev, [videoId]: true }));
+
+  try {
+    const isLiked = likedMap[videoId] ?? false;
+
+    const res = isLiked
+      ? await apiRequest("POST", `/api/videos/${videoId}/unlike`, {
+          userId: currentUserId,
+        })
+      : await apiRequest("POST", `/api/videos/${videoId}/like`, {
+          userId: currentUserId,
+        });
+
+    const data = await res.json().catch(() => null);
+
+    setLikedMap((prev) => ({
+      ...prev,
+      [videoId]: !isLiked,
+    }));
+
+    if (typeof data?.likesCount === "number") {
+      setLikeCounts((prev) => ({
+        ...prev,
+        [videoId]: Number(data.likesCount),
+      }));
     }
 
-    const likedRes = await fetch(`/api/videos/${video.id}/liked/${currentUserId}`);
+    const likedRes = await fetch(`/api/videos/${videoId}/liked/${currentUserId}`);
     if (likedRes.ok) {
       const likedData = await likedRes.json();
+
       setLikedMap((prev) => ({
         ...prev,
-        [video.id]: Boolean(likedData?.liked),
+        [videoId]: Boolean(likedData?.liked),
       }));
     }
 
@@ -390,12 +424,19 @@ useEffect(() => {
 
     await queryClient.invalidateQueries({
       queryKey: ["/api/flow/client"],
+      exact: false,
     });
 
     await queryClient.invalidateQueries({
       queryKey: ["/api/posts"],
     });
-  };
+  } finally {
+    setLikePendingMap((prev) => ({
+      ...prev,
+      [videoId]: false,
+    }));
+  }
+};
 
   const handleShare = async (video: FlowVideo) => {
     const shareUrl = buildContentShareUrl("video", video.id);
@@ -667,15 +708,17 @@ const reportMutation = useMutation({
 
                     <div className="flex flex-col items-center gap-4 text-white">
                       <button
-  disabled={isOwnVideo}
+  disabled={isOwnVideo || !likeStatusReady[video.id] || likePendingMap[video.id]}
   onClick={(e) => {
     e.stopPropagation();
     if (isOwnVideo) return;
     handleLike(video);
   }}
   className={`flex flex-col items-center gap-2 ${
-    isOwnVideo ? "opacity-50 cursor-not-allowed" : ""
-  }`}
+  isOwnVideo || !likeStatusReady[video.id] || likePendingMap[video.id]
+    ? "opacity-50 cursor-not-allowed"
+    : ""
+}`}
 >
                         <Heart className={`w-7 h-7 ${isLiked ? "fill-red-400 text-red-400" : ""}`} />
                        <span className="text-[11px]">{likesCount >= 1000 ? `${(likesCount / 1000).toFixed(1)}K` : likesCount}</span>
