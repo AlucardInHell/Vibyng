@@ -657,6 +657,9 @@ export default function Points() {
   const [endingLive, setEndingLive] = useState(false);
   const [showLiveSetup, setShowLiveSetup] = useState(false);
   const [liveTitle, setLiveTitle] = useState("");
+  const [livePreviewStream, setLivePreviewStream] = useState<MediaStream | null>(null);
+  const [livePreviewError, setLivePreviewError] = useState("");
+  const [startingPreview, setStartingPreview] = useState(false);
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
   const { mentionQuery: commentMentionQuery, showMentions: showCommentMentions, handleTextChange: handleCommentTextChange, insertMention: insertCommentMention, closeMentions: closeCommentMentions } = useMention();
   const { mentionQuery: photoMentionQuery, showMentions: showPhotoMentions, handleTextChange: handlePhotoTextChange, insertMention: insertPhotoMention, closeMentions: closePhotoMentions } = useMention();
@@ -683,6 +686,23 @@ export default function Points() {
   };
 }, []);
 
+  useEffect(() => {
+  if (!showLiveSetup || !livePreviewRef.current || !livePreviewStream) return;
+
+  livePreviewRef.current.srcObject = livePreviewStream;
+
+  return () => {
+    if (livePreviewRef.current) {
+      livePreviewRef.current.srcObject = null;
+    }
+  };
+}, [showLiveSetup, livePreviewStream]);
+
+useEffect(() => {
+  return () => {
+    livePreviewStream?.getTracks().forEach((track) => track.stop());
+  };
+}, [livePreviewStream]);
 
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
@@ -813,13 +833,41 @@ const myActiveLive = activeLiveStreams.find((live: any) => {
 });
 
   const stopLivePreview = () => {
-  livePreviewStream?.getTracks().forEach((track) => track.stop());
-  setLivePreviewStream(null);
+  setLivePreviewStream((stream) => {
+    stream?.getTracks().forEach((track) => track.stop());
+    return null;
+  });
+
   setLivePreviewError("");
   setStartingPreview(false);
 };
 
-const handleOpenLiveSetup = () => {
+const startLivePreview = async () => {
+  setLivePreviewError("");
+  setStartingPreview(true);
+
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error(t.cameraPreviewError);
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: false,
+    });
+
+    setLivePreviewStream((previousStream) => {
+      previousStream?.getTracks().forEach((track) => track.stop());
+      return stream;
+    });
+  } catch (err: any) {
+    setLivePreviewError(err?.message || t.cameraPreviewError);
+  } finally {
+    setStartingPreview(false);
+  }
+};
+
+const handleOpenLiveSetup = async () => {
   if (myActiveLive) return;
 
   const defaultTitle = `Live di ${
@@ -828,10 +876,14 @@ const handleOpenLiveSetup = () => {
 
   setLiveTitle(defaultTitle);
   setShowLiveSetup(true);
+
+  await startLivePreview();
 };
 
 const handleCloseLiveSetup = () => {
   if (startingLive) return;
+
+  stopLivePreview();
   setShowLiveSetup(false);
 };
   
@@ -857,7 +909,8 @@ const handleCloseLiveSetup = () => {
       title: t.liveStartedTitle,
       description: t.liveStartedDescription,
     });
-
+    
+    stopLivePreview();
     setShowLiveSetup(false);
   } catch (err: any) {
     toast({
@@ -1559,54 +1612,67 @@ const reportMutation = useMutation({
   }
 }}>
   <DialogContent className="max-w-md">
-    <DialogHeader>
-      <DialogTitle>{t.prepareLiveTitle}</DialogTitle>
-    </DialogHeader>
+  <DialogHeader>
+    <DialogTitle>{t.prepareLiveTitle}</DialogTitle>
+  </DialogHeader>
 
-    <div className="space-y-4">
-      <div className="relative aspect-[9/16] max-h-[60vh] mx-auto rounded-3xl overflow-hidden bg-black border border-border/60 flex flex-col items-center justify-center text-center px-6">
-        <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold">
-          ● LIVE
+  <div className="space-y-4">
+    <div className="relative aspect-[9/16] max-h-[60vh] mx-auto rounded-3xl overflow-hidden bg-black border border-border/60 flex flex-col items-center justify-center text-center px-6">
+      {livePreviewStream ? (
+        <video
+          ref={livePreviewRef}
+          autoPlay
+          playsInline
+          muted
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div className="relative z-10 flex flex-col items-center justify-center">
+          <div className="text-6xl mb-4">🎥</div>
+
+          <p className="text-white font-semibold">
+            {startingPreview ? t.cameraPreviewLoading : "Anteprima live"}
+          </p>
+
+          <p className="text-white/60 text-sm mt-2 max-w-xs">
+            {livePreviewError || "Camera attiva, audio disattivato per questo test."}
+          </p>
         </div>
+      )}
 
-        <div className="text-6xl mb-4">🎥</div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
 
-        <p className="text-white font-semibold">
-          Anteprima live
-        </p>
-
-        <p className="text-white/60 text-sm mt-2 max-w-xs">
-          Camera e microfono saranno collegati nello step successivo.
-        </p>
-      </div>
-
-      <Input
-        value={liveTitle}
-        onChange={(e) => setLiveTitle(e.target.value)}
-        placeholder={t.liveTitlePlaceholder}
-      />
-
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          variant="ghost"
-          onClick={handleCloseLiveSetup}
-          disabled={startingLive}
-        >
-          {t.cancel}
-        </Button>
-
-        <Button
-          onClick={handleStartLive}
-          disabled={startingLive}
-          className="bg-red-500 hover:bg-red-600 text-white"
-        >
-          <Radio className="w-4 h-4 mr-2" />
-          {startingLive ? t.startingLive : t.startBroadcast}
-        </Button>
+      <div className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-500 text-white text-xs font-semibold z-10">
+        ● LIVE
       </div>
     </div>
-  </DialogContent>
-</Dialog>
+
+    <Input
+      value={liveTitle}
+      onChange={(e) => setLiveTitle(e.target.value)}
+      placeholder={t.liveTitlePlaceholder}
+    />
+
+    <div className="flex items-center justify-end gap-2">
+     <Button
+  variant="ghost"
+  onClick={handleCloseLiveSetup}
+  disabled={startingLive || startingPreview}
+>
+  {t.cancel}
+</Button>
+
+      <Button
+        onClick={handleStartLive}
+        disabled={startingLive || startingPreview}
+        className="bg-red-500 hover:bg-red-600 text-white"
+      >
+        <Radio className="w-4 h-4 mr-2" />
+        {startingLive ? t.startingLive : t.startBroadcast}
+      </Button>
+    </div>
+  </div>
+</DialogContent>
     
       <Tabs defaultValue="songs" className="w-full">
        <TabsList className="w-full grid grid-cols-6">
