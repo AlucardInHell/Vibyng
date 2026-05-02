@@ -2492,14 +2492,9 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
                 </div>
                 <div className="mt-0 pt-2 px-4 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden">
   <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
-    {<CommentAuthorAvatar comment={c} className="w-9 h-9 flex-shrink-0" />
-      <div key={c.id} className="flex items-start gap-3">
-        <Avatar className="w-9 h-9 flex-shrink-0">
-          {c.avatar_url && <AvatarImage src={c.avatar_url} alt={c.display_name} />}
-          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-            {c.display_name?.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
+  {videoCommentsList.map((c: any) => (
+    <div key={c.id} className="flex items-start gap-3">
+      <CommentAuthorAvatar comment={c} className="w-9 h-9 flex-shrink-0" />
 
         <div className="flex-1 bg-muted rounded-xl px-4 py-3 min-w-0">
   <div className="flex items-start justify-between gap-2">
