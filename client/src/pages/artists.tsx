@@ -579,7 +579,7 @@ const reportMutation = useMutation({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
   <DialogContent className="z-[130]">
     <DialogHeader>
@@ -640,7 +640,7 @@ const reportMutation = useMutation({
         <h1 className="text-2xl font-semibold">Flow</h1>
       </div>
 
-      <div className="flex items-center gap-2 sticky top-0 z-20 bg-background/95 backdrop-blur py-2 overflow-x-auto scrollbar-hide">
+      <div className="flex items-center gap-2 sticky top-0 z-20 bg-background/95 backdrop-blur py-1 overflow-x-auto scrollbar-hide">
         <button
           className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition whitespace-nowrap shrink-0 ${
             activeTab === "for-you" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
@@ -709,7 +709,7 @@ const reportMutation = useMutation({
           return (
             <section
               key={video.id}
-              className="h-[calc(100dvh-20rem)] sm:h-[calc(100dvh-18rem)] snap-start py-1"
+              className="h-[calc(100dvh-20rem)] sm:h-[calc(100dvh-18rem)] snap-start py-0"
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
               <div
