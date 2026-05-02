@@ -141,6 +141,33 @@ const [reportDetails, setReportDetails] = useState("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
 useEffect(() => {
+  const handleFlowRefresh = () => {
+    setActiveTab("for-you");
+    setActiveIndex(0);
+    setCommentsOpenId(null);
+    setCommentInput("");
+    setPausedVideoIds(new Set());
+    closeMentions();
+
+    queryClient.invalidateQueries({ queryKey: ["/api/artists"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/flow/client"], exact: false });
+
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    });
+  };
+
+  window.addEventListener("vibyng-flow-refresh", handleFlowRefresh);
+
+  return () => {
+    window.removeEventListener("vibyng-flow-refresh", handleFlowRefresh);
+  };
+}, [closeMentions]);
+  
+useEffect(() => {
   const handleLanguageChange = (event: Event) => {
     const customEvent = event as CustomEvent<AppLanguage>;
     if (customEvent.detail === "it" || customEvent.detail === "en") {
