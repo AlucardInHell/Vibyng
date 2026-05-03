@@ -1692,13 +1692,16 @@ return (
 
        {selectedVideo && (
   <div className="fixed inset-0 z-50 bg-black/90 flex flex-col overflow-hidden overscroll-contain" onClick={() => setSelectedVideo(null)}>
-    <div className="absolute inset-x-0 top-4 z-30 flex justify-end gap-2 px-4">
+    <div
+  className="absolute inset-x-0 top-4 z-[9999] flex justify-end gap-2 px-4 pointer-events-none"
+  onClick={(e) => e.stopPropagation()}
+>
       {Number(selectedVideo.artistId) !== Number(currentUserId) && (
     
     <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white"
+          className="relative z-[10000] pointer-events-auto h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1717,33 +1720,35 @@ return (
         </Button>
       )}
 
-      {Number(selectedVideo.artistId) === Number(currentUserId) && (
-        <button
-          type="button"
-          data-no-card-click
-          className="h-10 w-10 rounded-full bg-black/40 text-red-400 text-lg hover:bg-black/60 hover:text-red-500 flex items-center justify-center"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onTouchStart={(e) => {
-            e.stopPropagation();
-          }}
-          onClick={async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+    {Number(selectedVideo.artistId ?? selectedVideo.artist_id) === Number(currentUserId) && (
+  <button
+    type="button"
+    data-no-card-click
+    className="relative z-[10000] pointer-events-auto h-10 w-10 rounded-full bg-black/40 text-red-400 text-lg hover:bg-black/60 hover:text-red-500 flex items-center justify-center"
+    onPointerDown={(e) => {
+      e.stopPropagation();
+    }}
+    onMouseDown={(e) => {
+      e.stopPropagation();
+    }}
+    onTouchStart={(e) => {
+      e.stopPropagation();
+    }}
+    onClick={async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-            await handleDeleteProfileVideo(selectedVideo.id);
-          }}
-          aria-label="Elimina video"
-          title="Elimina video"
-        >
-          🗑️
-        </button>
-      )}
+      await handleDeleteProfileVideo(Number(selectedVideo.id));
+    }}
+    aria-label="Elimina video"
+    title="Elimina video"
+  >
+    🗑️
+  </button>
+)}
 
       <button
-        className="h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center"
+       className="relative z-[10000] pointer-events-auto h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
