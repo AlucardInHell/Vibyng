@@ -237,7 +237,51 @@ await db.execute(sql`
   ON video_comment_likes (comment_id, user_id)
 `);
 
- await db.execute(sql`
+await db.execute(sql`
+  ALTER TABLE artist_songs
+  ADD COLUMN IF NOT EXISTS likes_count integer DEFAULT 0
+`);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS song_likes (
+    id serial PRIMARY KEY,
+    song_id integer NOT NULL REFERENCES artist_songs(id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS song_likes_song_user_idx
+  ON song_likes (song_id, user_id)
+`);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS song_comments (
+    id serial PRIMARY KEY,
+    song_id integer NOT NULL REFERENCES artist_songs(id) ON DELETE CASCADE,
+    author_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content text NOT NULL,
+    likes_count integer DEFAULT 0,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS song_comment_likes (
+    id serial PRIMARY KEY,
+    comment_id integer NOT NULL REFERENCES song_comments(id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS song_comment_likes_comment_user_idx
+  ON song_comment_likes (comment_id, user_id)
+`);
+   
+await db.execute(sql`
   CREATE TABLE IF NOT EXISTS story_likes (
     id serial PRIMARY KEY,
     story_id integer NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
@@ -642,6 +686,416 @@ app.post("/api/videos/:videoId/unlike", async (req, res) => {
     });
   }
 });
+
+// === SONG LIKES & COMMENTS ===
+
+const syncSongLikesCount = async (songId: number) => {
+  const countResult = await db.execute(sql`
+    SELECT COUNT(DISTINCT user_id)::int AS "likesCount"
+    FROM song_likes
+    WHERE song_id = ${songId}
+  `);
+
+  const likesCount = Number(
+    (countResult.rows[0] as any)?.likesCount ??
+    (countResult.rows[0] as any)?.likescount ??
+    0
+  );
+
+  await db.execute(sql`
+    UPDATE artist_songs
+    SET likes_count = ${likesCount}
+    WHERE id = ${songId}
+  `);
+
+  return likesCount;
+};
+
+app.get("/api/songs/:songId/liked/:userId", async (req, res) => {
+  try {
+    const songId = Number(req.params.songId);
+    const userId = Number(req.params.userId);
+
+    if (!songId || !userId) {
+      return res.status(400).json({
+        message: "Dati verifica like song non validi",
+      });
+    }
+
+    const result = await db.execute(sql`
+      SELECT id
+      FROM song_likes
+      WHERE song_id = ${songId}
+        AND user_id = ${userId}
+      LIMIT 1
+    `);
+
+    const likesCount = await syncSongLikesCount(songId);
+
+    res.json({
+      liked: result.rows.length > 0,
+      likesCount,
+    });
+  } catch (err: any) {
+    console.error("[song-liked] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nella verifica del like song",
+      detail: err?.message,
+    });
+  }
+});
+
+const songLikeHandler = async (req: any, res: any) => {
+  try {
+    const songId = Number(req.params.songId);
+    const userId = Number(req.params.userId || req.body?.userId);
+
+    if (!songId || !userId) {
+      return res.status(400).json({
+        message: "Dati like song non validi",
+      });
+    }
+
+    const songResult = await db.execute(sql`
+      SELECT id, artist_id AS "artistId"
+      FROM artist_songs
+      WHERE id = ${songId}
+      LIMIT 1
+    `);
+
+    const song = songResult.rows[0];
+
+    if (!song) {
+      return res.status(404).json({
+        message: "Song non trovata",
+      });
+    }
+
+    if (Number(song.artistId) === Number(userId)) {
+      return res.status(403).json({
+        message: "Non puoi mettere like alla tua song",
+      });
+    }
+
+    await db.execute(sql`
+      INSERT INTO song_likes (song_id, user_id)
+      VALUES (${songId}, ${userId})
+      ON CONFLICT (song_id, user_id) DO NOTHING
+    `);
+
+    const likesCount = await syncSongLikesCount(songId);
+
+    res.json({
+      liked: true,
+      likesCount,
+    });
+  } catch (err: any) {
+    console.error("[song-like] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nel like song",
+      detail: err?.message,
+    });
+  }
+};
+
+const songUnlikeHandler = async (req: any, res: any) => {
+  try {
+    const songId = Number(req.params.songId);
+    const userId = Number(req.params.userId || req.body?.userId);
+
+    if (!songId || !userId) {
+      return res.status(400).json({
+        message: "Dati unlike song non validi",
+      });
+    }
+
+    await db.execute(sql`
+      DELETE FROM song_likes
+      WHERE song_id = ${songId}
+        AND user_id = ${userId}
+    `);
+
+    const likesCount = await syncSongLikesCount(songId);
+
+    res.json({
+      liked: false,
+      likesCount,
+    });
+  } catch (err: any) {
+    console.error("[song-unlike] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nell'unlike song",
+      detail: err?.message,
+    });
+  }
+};
+
+app.post("/api/songs/:songId/like/:userId", songLikeHandler);
+app.post("/api/songs/:songId/like", songLikeHandler);
+app.post("/api/songs/:songId/unlike/:userId", songUnlikeHandler);
+app.post("/api/songs/:songId/unlike", songUnlikeHandler);
+
+app.get("/api/songs/:songId/comments", async (req, res) => {
+  try {
+    const songId = Number(req.params.songId);
+    const userId = Number(req.query.userId || 0);
+
+    if (!songId) {
+      return res.status(400).json({
+        message: "ID song non valido",
+      });
+    }
+
+    const result = await db.execute(sql`
+      SELECT
+        sc.id,
+        sc.song_id,
+        sc.author_id,
+        sc.content,
+        sc.likes_count,
+        sc.created_at,
+        u.display_name,
+        u.avatar_url,
+        u.username,
+        EXISTS (
+          SELECT 1
+          FROM song_comment_likes scl
+          WHERE scl.comment_id = sc.id
+            AND scl.user_id = ${userId}
+        ) AS "likedByMe"
+      FROM song_comments sc
+      JOIN users u ON u.id = sc.author_id
+      WHERE sc.song_id = ${songId}
+        AND COALESCE(u.is_deleted, false) = false
+      ORDER BY sc.created_at ASC
+    `);
+
+    res.json(result.rows);
+  } catch (err: any) {
+    console.error("[song-comments] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nel recupero commenti song",
+      detail: err?.message,
+    });
+  }
+});
+
+app.post("/api/songs/:songId/comments", async (req, res) => {
+  try {
+    const songId = Number(req.params.songId);
+    const authorId = Number(req.body?.authorId);
+    const content = String(req.body?.content || "").trim();
+
+    if (!songId || !authorId || !content) {
+      return res.status(400).json({
+        message: "Dati commento song non validi",
+      });
+    }
+
+    const songResult = await db.execute(sql`
+      SELECT id, artist_id AS "artistId"
+      FROM artist_songs
+      WHERE id = ${songId}
+      LIMIT 1
+    `);
+
+    const song = songResult.rows[0];
+
+    if (!song) {
+      return res.status(404).json({
+        message: "Song non trovata",
+      });
+    }
+
+    if (await denyIfBlocked(res, authorId, Number(song.artistId))) return;
+
+    const created = await db.execute(sql`
+      INSERT INTO song_comments (song_id, author_id, content)
+      VALUES (${songId}, ${authorId}, ${content})
+      RETURNING *
+    `);
+
+    await sendMentionNotifications(content, authorId);
+
+    res.status(201).json(created.rows[0]);
+  } catch (err: any) {
+    console.error("[song-comment-create] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nella creazione commento song",
+      detail: err?.message,
+    });
+  }
+});
+
+app.delete("/api/songs/:songId/comments/:commentId", async (req, res) => {
+  try {
+    const songId = Number(req.params.songId);
+    const commentId = Number(req.params.commentId);
+    const userId = Number(req.query.userId || req.body?.userId);
+
+    if (!songId || !commentId || !userId) {
+      return res.status(400).json({
+        message: "Dati cancellazione commento song non validi",
+      });
+    }
+
+    const result = await db.execute(sql`
+      DELETE FROM song_comments sc
+      USING artist_songs s
+      WHERE sc.id = ${commentId}
+        AND sc.song_id = ${songId}
+        AND s.id = sc.song_id
+        AND (
+          sc.author_id = ${userId}
+          OR s.artist_id = ${userId}
+        )
+      RETURNING sc.id
+    `);
+
+    if (!result.rows.length) {
+      return res.status(403).json({
+        message: "Non puoi cancellare questo commento",
+      });
+    }
+
+    res.json({
+      success: true,
+      deletedCommentId: commentId,
+    });
+  } catch (err: any) {
+    console.error("[song-comment-delete] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nella cancellazione commento song",
+      detail: err?.message,
+    });
+  }
+});
+
+app.post("/api/songs/:songId/comments/:commentId/like/:userId", async (req, res) => {
+  try {
+    const commentId = Number(req.params.commentId);
+    const userId = Number(req.params.userId);
+
+    if (!commentId || !userId) {
+      return res.status(400).json({
+        message: "Dati like commento song non validi",
+      });
+    }
+
+    const commentResult = await db.execute(sql`
+      SELECT id, author_id
+      FROM song_comments
+      WHERE id = ${commentId}
+      LIMIT 1
+    `);
+
+    const comment = commentResult.rows[0];
+
+    if (!comment) {
+      return res.status(404).json({
+        message: "Commento non trovato",
+      });
+    }
+
+    if (Number(comment.author_id) === Number(userId)) {
+      return res.status(403).json({
+        message: "Non puoi mettere like al tuo commento",
+      });
+    }
+
+    await db.execute(sql`
+      INSERT INTO song_comment_likes (comment_id, user_id)
+      VALUES (${commentId}, ${userId})
+      ON CONFLICT (comment_id, user_id) DO NOTHING
+    `);
+
+    const countResult = await db.execute(sql`
+      SELECT COUNT(DISTINCT user_id)::int AS "likesCount"
+      FROM song_comment_likes
+      WHERE comment_id = ${commentId}
+    `);
+
+    const likesCount = Number(
+      (countResult.rows[0] as any)?.likesCount ??
+      (countResult.rows[0] as any)?.likescount ??
+      0
+    );
+
+    await db.execute(sql`
+      UPDATE song_comments
+      SET likes_count = ${likesCount}
+      WHERE id = ${commentId}
+    `);
+
+    res.json({
+      liked: true,
+      likesCount,
+    });
+  } catch (err: any) {
+    console.error("[song-comment-like] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore like commento song",
+      detail: err?.message,
+    });
+  }
+});
+
+app.post("/api/songs/:songId/comments/:commentId/unlike/:userId", async (req, res) => {
+  try {
+    const commentId = Number(req.params.commentId);
+    const userId = Number(req.params.userId);
+
+    if (!commentId || !userId) {
+      return res.status(400).json({
+        message: "Dati unlike commento song non validi",
+      });
+    }
+
+    await db.execute(sql`
+      DELETE FROM song_comment_likes
+      WHERE comment_id = ${commentId}
+        AND user_id = ${userId}
+    `);
+
+    const countResult = await db.execute(sql`
+      SELECT COUNT(DISTINCT user_id)::int AS "likesCount"
+      FROM song_comment_likes
+      WHERE comment_id = ${commentId}
+    `);
+
+    const likesCount = Number(
+      (countResult.rows[0] as any)?.likesCount ??
+      (countResult.rows[0] as any)?.likescount ??
+      0
+    );
+
+    await db.execute(sql`
+      UPDATE song_comments
+      SET likes_count = ${likesCount}
+      WHERE id = ${commentId}
+    `);
+
+    res.json({
+      liked: false,
+      likesCount,
+    });
+  } catch (err: any) {
+    console.error("[song-comment-unlike] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore unlike commento song",
+      detail: err?.message,
+    });
+  }
+});
+  
 // === FLOW CLIENT ===
 
 app.get("/api/flow/client", async (req, res) => {
@@ -734,8 +1188,12 @@ ap.created_at AS "createdAt",
           s.cover_url AS "coverUrl",
           s.duration AS duration,
           NULL::text AS description,
-         0 AS "likesCount",
-0 AS "commentsCount",
+          COALESCE(s.likes_count, 0) AS "likesCount",
+(
+  SELECT COUNT(*)::int
+  FROM song_comments sc
+  WHERE sc.song_id = s.id
+) AS "commentsCount",
 s.created_at AS "createdAt",
           json_build_object(
             'id', u.id,
