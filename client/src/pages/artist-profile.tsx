@@ -1691,10 +1691,18 @@ return (
         </TabsContent>
 
        {selectedVideo && (
-  <div className="fixed inset-0 z-50 bg-black/90 flex flex-col overflow-hidden overscroll-contain" onClick={() => setSelectedVideo(null)}>
+  <div
+    className="fixed inset-0 z-50 bg-black/90 flex flex-col overflow-hidden overscroll-contain"
+    onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        setSelectedVideo(null);
+      }
+    }}
+  >
     <div
-  className="absolute inset-x-0 top-4 z-[9999] flex justify-end gap-2 px-4 pointer-events-none"
+  className="absolute inset-x-0 top-4 z-[9999] flex justify-end gap-2 px-4"
   onClick={(e) => e.stopPropagation()}
+  onPointerDown={(e) => e.stopPropagation()}
 >
       {Number(selectedVideo.artistId) !== Number(currentUserId) && (
     
@@ -1724,21 +1732,20 @@ return (
   <button
     type="button"
     data-no-card-click
-    className="relative z-[10000] pointer-events-auto h-10 w-10 rounded-full bg-black/40 text-red-400 text-lg hover:bg-black/60 hover:text-red-500 flex items-center justify-center"
+    className="relative z-[10000] h-10 w-10 rounded-full bg-black/40 text-red-400 text-lg hover:bg-black/60 hover:text-red-500 flex items-center justify-center touch-manipulation"
     onPointerDown={(e) => {
+      e.preventDefault();
       e.stopPropagation();
     }}
-    onMouseDown={(e) => {
-      e.stopPropagation();
-    }}
-    onTouchStart={(e) => {
-      e.stopPropagation();
-    }}
-    onClick={async (e) => {
+    onPointerUp={async (e) => {
       e.preventDefault();
       e.stopPropagation();
 
       await handleDeleteProfileVideo(Number(selectedVideo.id));
+    }}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
     }}
     aria-label="Elimina video"
     title="Elimina video"
@@ -1748,15 +1755,20 @@ return (
 )}
 
       <button
-       className="relative z-[10000] pointer-events-auto h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setSelectedVideo(null);
-        }}
-      >
-        ✕
-      </button>
+  type="button"
+  className="relative z-[10000] h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center touch-manipulation"
+  onPointerDown={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedVideo(null);
+  }}
+>
+  ✕
+</button>
     </div>
 
     <div className="flex-1 flex items-start justify-center px-4 pt-8 pb-[5.25rem] overflow-hidden" onClick={e => e.stopPropagation()}>
