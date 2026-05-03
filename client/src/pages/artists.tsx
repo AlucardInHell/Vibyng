@@ -14,6 +14,7 @@ import { buildContentShareUrl, shareVibyngContent } from "@/lib/share-content";
 import type { ArtistVideo, User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useAudioPlayer, type Song } from "@/components/audio-player";
 
 function getCurrentUserId(): number {
   try {
@@ -192,6 +193,7 @@ export default function Artists() {
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = flowTranslations[language];
   const { toast } = useToast();
+  const { playSong } = useAudioPlayer();
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
 
   const [activeTab, setActiveTab] = useState<FlowTab>("for-you");
@@ -351,6 +353,19 @@ const flowVideos = useMemo<FlowVideo[]>(() => {
   return flowContent.filter((item): item is FlowVideo => item.type === "video");
 }, [flowContent]);
 
+const flowSongs = useMemo<Song[]>(() => {
+  return flowContent
+    .filter((item): item is FlowSong => item.type === "song")
+    .map((song) => ({
+      id: song.id,
+      title: song.title || "Brano",
+      artist: song.artist.displayName,
+      audioUrl: song.audioUrl,
+      coverUrl: song.coverUrl || undefined,
+      duration: song.duration || undefined,
+    }));
+}, [flowContent]);
+  
 const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<ActiveLiveStream[]>({
   queryKey: ["/api/lives/active"],
   enabled: activeTab === "live",
@@ -630,6 +645,39 @@ useEffect(() => {
   }
 };
 
+  const pauseAllFlowVideos = () => {
+  Object.values(videoRefs.current).forEach((videoEl) => {
+    videoEl?.pause();
+  });
+
+  setPausedVideoIds((prev) => {
+    const next = new Set(prev);
+
+    activeList.forEach((item) => {
+      if (item.type === "video") {
+        next.add(item.id);
+      }
+    });
+
+    return next;
+  });
+};
+
+const handlePlayFlowSong = (song: FlowSong) => {
+  pauseAllFlowVideos();
+
+  const playerSong: Song = {
+    id: song.id,
+    title: song.title || "Brano",
+    artist: song.artist.displayName,
+    audioUrl: song.audioUrl,
+    coverUrl: song.coverUrl || undefined,
+    duration: song.duration || undefined,
+  };
+
+  playSong(playerSong, flowSongs);
+};
+  
   const handleShare = async (video: FlowVideo) => {
     const shareUrl = buildContentShareUrl("video", video.id);
 
@@ -994,13 +1042,18 @@ const reportMutation = useMutation({
               </div>
             )}
 
-            <button
-              type="button"
-              className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/30 text-white text-3xl flex items-center justify-center shadow-xl"
-              aria-label="Play brano"
-            >
-              ▶
-            </button>
+           <button
+  type="button"
+  className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/30 text-white text-3xl flex items-center justify-center shadow-xl"
+  aria-label="Play brano"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handlePlayFlowSong(item);
+  }}
+>
+  ▶
+</button>
           </div>
 
           <div className="mt-6 max-w-[80%]">
