@@ -212,6 +212,10 @@ export default function Artists() {
   const [likedMap, setLikedMap] = useState<Record<number, boolean>>({});
   const [likeStatusReady, setLikeStatusReady] = useState<Record<number, boolean>>({});
   const [likePendingMap, setLikePendingMap] = useState<Record<number, boolean>>({});
+  const [photoLikedMap, setPhotoLikedMap] = useState<Record<number, boolean>>({});
+  const [photoLikeCounts, setPhotoLikeCounts] = useState<Record<number, number>>({});
+  const [photoLikeReadyMap, setPhotoLikeReadyMap] = useState<Record<number, boolean>>({});
+  const [photoLikePendingMap, setPhotoLikePendingMap] = useState<Record<number, boolean>>({});
   const [reportOpen, setReportOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
   targetType: "comment";
@@ -352,6 +356,10 @@ const flowContent = useMemo<FlowContent[]>(() => {
 const flowVideos = useMemo<FlowVideo[]>(() => {
   return flowContent.filter((item): item is FlowVideo => item.type === "video");
 }, [flowContent]);
+
+const flowPhotos = useMemo<FlowPhoto[]>(() => {
+  return flowContent.filter((item): item is FlowPhoto => item.type === "photo");
+}, [flowContent]);  
  
 const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<ActiveLiveStream[]>({
   queryKey: ["/api/lives/active"],
@@ -413,6 +421,59 @@ const trendContent = useMemo(() => {
 
 useEffect(() => {
   if (!flowVideos.length || !currentUserId) return;
+
+  useEffect(() => {
+  if (!flowPhotos.length || !currentUserId) return;
+
+  let cancelled = false;
+
+  const loadPhotoLikedStatuses = async () => {
+    try {
+      const entries = await Promise.all(
+        flowPhotos.map(async (photo) => {
+          const res = await fetch(`/api/photos/${photo.id}/liked/${currentUserId}`);
+
+          if (!res.ok) {
+            return [photo.id, false] as const;
+          }
+
+          const data = await res.json();
+          return [photo.id, Boolean(data?.liked)] as const;
+        })
+      );
+
+      if (cancelled) return;
+
+      setPhotoLikedMap((prev) => {
+        const next = { ...prev };
+
+        entries.forEach(([photoId, liked]) => {
+          next[photoId] = liked;
+        });
+
+        return next;
+      });
+
+      setPhotoLikeReadyMap((prev) => {
+        const next = { ...prev };
+
+        entries.forEach(([photoId]) => {
+          next[photoId] = true;
+        });
+
+        return next;
+      });
+    } catch {
+      // Non blocchiamo il Flow se lo stato like foto non viene caricato.
+    }
+  };
+
+  loadPhotoLikedStatuses();
+
+  return () => {
+    cancelled = true;
+  };
+}, [flowPhotos, currentUserId]);
 
   let cancelled = false;
 
@@ -640,6 +701,58 @@ useEffect(() => {
   }
 };
 
+const handlePhotoLike = async (photo: FlowPhoto) => {
+  if (Number(photo.artist.id) === Number(currentUserId)) return;
+
+  const photoId = Number(photo.id);
+
+  if (!photoLikeReadyMap[photoId] || photoLikePendingMap[photoId]) {
+    return;
+  }
+
+  setPhotoLikePendingMap((prev) => ({ ...prev, [photoId]: true }));
+
+  try {
+    const isLiked = photoLikedMap[photoId] ?? false;
+
+    const res = isLiked
+      ? await apiRequest("POST", `/api/photos/${photoId}/unlike/${currentUserId}`)
+      : await apiRequest("POST", `/api/photos/${photoId}/like/${currentUserId}`);
+
+    const data = await res.json().catch(() => null);
+
+    setPhotoLikedMap((prev) => ({
+      ...prev,
+      [photoId]: !isLiked,
+    }));
+
+    if (typeof data?.likesCount === "number") {
+      setPhotoLikeCounts((prev) => ({
+        ...prev,
+        [photoId]: Number(data.likesCount),
+      }));
+    } else {
+      setPhotoLikeCounts((prev) => ({
+        ...prev,
+        [photoId]: Math.max(
+          0,
+          Number(prev[photoId] ?? photo.likesCount ?? 0) + (isLiked ? -1 : 1)
+        ),
+      }));
+    }
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/flow/client"],
+      exact: false,
+    });
+  } finally {
+    setPhotoLikePendingMap((prev) => ({
+      ...prev,
+      [photoId]: false,
+    }));
+  }
+};
+  
   const pauseAllFlowVideos = () => {
   Object.values(videoRefs.current).forEach((videoEl) => {
     videoEl?.pause();
@@ -1212,12 +1325,35 @@ const reportMutation = useMutation({
             </Link>
 
             <div className="flex flex-col items-center gap-4 text-white">
-              <div className="flex flex-col items-center gap-1 opacity-80">
-                <Heart className="w-6 h-6" />
-                <span className="text-[11px]">
-                  {item.likesCount ?? 0}
-                </span>
-              </div>
+              <button
+  type="button"
+  className={`flex flex-col items-center gap-1 ${
+    Number(item.artist.id) === Number(currentUserId)
+      ? "opacity-50 cursor-not-allowed"
+      : photoLikedMap[item.id]
+        ? "text-red-500"
+        : "text-white"
+  }`}
+  disabled={
+    Number(item.artist.id) === Number(currentUserId) ||
+    !photoLikeReadyMap[item.id] ||
+    photoLikePendingMap[item.id]
+  }
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handlePhotoLike(item);
+  }}
+>
+  <Heart
+    className={`w-6 h-6 ${
+      photoLikedMap[item.id] ? "fill-red-500 text-red-500" : ""
+    }`}
+  />
+  <span className="text-[11px]">
+    {photoLikeCounts[item.id] ?? item.likesCount ?? 0}
+  </span>
+</button>
 
               <div className="flex flex-col items-center gap-1 opacity-60">
                 <MessageCircle className="w-6 h-6" />
