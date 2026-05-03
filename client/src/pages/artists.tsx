@@ -110,7 +110,26 @@ function getStoredLanguage(): AppLanguage {
   } catch {}
   return "it";
 }
+type FlowItem = {
+  type: "video" | "photo" | "song";
+  id: number;
+  artistId: number;
+  title: string;
+  mediaUrl: string;
+  thumbnailUrl?: string | null;
+  imageUrl?: string | null;
+  audioUrl?: string | null;
+  coverUrl?: string | null;
+  duration?: number | null;
+  description?: string | null;
+  likesCount?: number | null;
+  createdAt?: string | null;
+  artist: User;
+};
+
 type FlowVideo = ArtistVideo & {
+  type?: "video";
+  mediaUrl?: string;
   artist: User;
 };
 type ActiveLiveStream = {
@@ -224,32 +243,36 @@ useEffect(() => {
     },
   });
 
-  const { data: flowVideos = [] } = useQuery<FlowVideo[]>({
-    queryKey: ["/api/flow/client", artists.map((a) => a.id).join(",")],
-    enabled: artists.length > 0,
-    queryFn: async () => {
-      const all = await Promise.all(
-        artists.map(async (artist) => {
-          const res = await fetch(`/api/users/${artist.id}/videos`);
-          if (!res.ok) return [] as FlowVideo[];
-          const videos: ArtistVideo[] = await res.json();
-          return videos
-            .filter((video) => !!video.videoUrl)
-            .map((video) => ({
-              ...video,
-              artist,
-            }));
-        })
-      );
+  const { data: flowItems = [], isLoading: flowLoading } = useQuery<FlowItem[]>({
+  queryKey: ["/api/flow/client", activeTab],
+  enabled: activeTab !== "live",
+  queryFn: async () => {
+    const res = await fetch(`/api/flow/client?tab=${activeTab}`);
 
-      return all
-        .flat()
-        .sort(
-          (a, b) =>
-            new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime()
-        );
-    },
-  });
+    if (!res.ok) {
+      throw new Error(t.loadArtistsError);
+    }
+
+    return res.json();
+  },
+});
+
+const flowVideos = useMemo<FlowVideo[]>(() => {
+  return flowItems
+    .filter((item) => item.type === "video" && !!item.mediaUrl)
+    .map((item) => ({
+      id: item.id,
+      artistId: item.artistId,
+      title: item.title || "Video",
+      videoUrl: item.mediaUrl,
+      thumbnailUrl: item.thumbnailUrl || item.mediaUrl,
+      likesCount: item.likesCount ?? 0,
+      createdAt: item.createdAt as any,
+      type: "video",
+      mediaUrl: item.mediaUrl,
+      artist: item.artist,
+    })) as FlowVideo[];
+}, [flowItems]);
 
 const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<ActiveLiveStream[]>({
   queryKey: ["/api/lives/active"],
@@ -600,7 +623,7 @@ const reportMutation = useMutation({
     await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
   };
 
-  if (isLoading) {
+  if (isLoading || flowLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-pulse flex flex-col items-center gap-2">
