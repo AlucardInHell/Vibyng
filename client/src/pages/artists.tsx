@@ -128,10 +128,28 @@ type FlowItem = {
 };
 
 type FlowVideo = ArtistVideo & {
-  type?: "video";
+  type: "video";
+  flowKey: string;
   mediaUrl?: string;
   artist: User;
 };
+
+type FlowPhoto = {
+  type: "photo";
+  flowKey: string;
+  id: number;
+  artistId: number;
+  title: string;
+  mediaUrl: string;
+  imageUrl: string;
+  description?: string | null;
+  likesCount?: number | null;
+  createdAt?: string | null;
+  artist: User;
+};
+
+type FlowContent = FlowVideo | FlowPhoto;
+
 type ActiveLiveStream = {
   id: number;
   artistId: number;
@@ -257,22 +275,45 @@ useEffect(() => {
   },
 });
 
-const flowVideos = useMemo<FlowVideo[]>(() => {
+const flowContent = useMemo<FlowContent[]>(() => {
   return flowItems
-    .filter((item) => item.type === "video" && !!item.mediaUrl)
-    .map((item) => ({
-      id: item.id,
-      artistId: item.artistId,
-      title: item.title || "Video",
-      videoUrl: item.mediaUrl,
-      thumbnailUrl: item.thumbnailUrl || item.mediaUrl,
-      likesCount: item.likesCount ?? 0,
-      createdAt: item.createdAt as any,
-      type: "video",
-      mediaUrl: item.mediaUrl,
-      artist: item.artist,
-    })) as FlowVideo[];
+    .filter((item) => (item.type === "video" || item.type === "photo") && !!item.mediaUrl)
+    .map((item) => {
+      if (item.type === "photo") {
+        return {
+          type: "photo",
+          flowKey: `photo-${item.id}`,
+          id: item.id,
+          artistId: item.artistId,
+          title: item.title || "Foto",
+          mediaUrl: item.mediaUrl,
+          imageUrl: item.imageUrl || item.mediaUrl,
+          description: item.description,
+          likesCount: item.likesCount ?? 0,
+          createdAt: item.createdAt,
+          artist: item.artist,
+        };
+      }
+
+      return {
+        id: item.id,
+        artistId: item.artistId,
+        title: item.title || "Video",
+        videoUrl: item.mediaUrl,
+        thumbnailUrl: item.thumbnailUrl || item.mediaUrl,
+        likesCount: item.likesCount ?? 0,
+        createdAt: item.createdAt as any,
+        type: "video",
+        flowKey: `video-${item.id}`,
+        mediaUrl: item.mediaUrl,
+        artist: item.artist,
+      };
+    }) as FlowContent[];
 }, [flowItems]);
+
+const flowVideos = useMemo<FlowVideo[]>(() => {
+  return flowContent.filter((item): item is FlowVideo => item.type === "video");
+}, [flowContent]);
 
 const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<ActiveLiveStream[]>({
   queryKey: ["/api/lives/active"],
@@ -388,8 +429,10 @@ useEffect(() => {
   const timers: number[] = [];
 
   activeList.forEach((video, index) => {
-    const el = videoRefs.current[video.id];
-    if (!el) return;
+  if (video.type !== "video") return;
+
+  const el = videoRefs.current[video.id];
+  if (!el) return;
 
     if (index !== activeIndex) {
       el.pause();
