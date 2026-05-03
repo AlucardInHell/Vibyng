@@ -412,8 +412,131 @@ await db.execute(sql`
   WHERE status = 'live'
 `);
 
-// === LIVE STREAMS ===
+// === FLOW CLIENT ===
 
+app.get("/api/flow/client", async (req, res) => {
+  try {
+    const tab = String(req.query.tab || "for-you");
+    const limitRaw = Number(req.query.limit || 50);
+    const limit = Number.isFinite(limitRaw)
+      ? Math.min(Math.max(limitRaw, 1), 100)
+      : 50;
+
+    const result = await db.execute(sql`
+      WITH flow_items AS (
+        SELECT
+          'video'::text AS type,
+          av.id AS id,
+          av.artist_id AS "artistId",
+          av.title AS title,
+          av.video_url AS "mediaUrl",
+          av.thumbnail_url AS "thumbnailUrl",
+          NULL::text AS "imageUrl",
+          NULL::text AS "audioUrl",
+          NULL::text AS "coverUrl",
+          NULL::integer AS duration,
+          NULL::text AS description,
+          COALESCE(av.likes_count, 0) AS "likesCount",
+          av.created_at AS "createdAt",
+          json_build_object(
+            'id', u.id,
+            'username', u.username,
+            'displayName', u.display_name,
+            'avatarUrl', u.avatar_url,
+            'role', u.role
+          ) AS artist
+        FROM artist_videos av
+        JOIN users u ON u.id = av.artist_id
+        WHERE av.video_url IS NOT NULL
+          AND COALESCE(u.is_deleted, false) = false
+          AND u.role = 'artist'
+
+        UNION ALL
+
+        SELECT
+          'photo'::text AS type,
+          ap.id AS id,
+          ap.artist_id AS "artistId",
+          COALESCE(ap.title, 'Foto') AS title,
+          ap.image_url AS "mediaUrl",
+          NULL::text AS "thumbnailUrl",
+          ap.image_url AS "imageUrl",
+          NULL::text AS "audioUrl",
+          NULL::text AS "coverUrl",
+          NULL::integer AS duration,
+          ap.description AS description,
+          COALESCE(ap.likes_count, 0) AS "likesCount",
+          ap.created_at AS "createdAt",
+          json_build_object(
+            'id', u.id,
+            'username', u.username,
+            'displayName', u.display_name,
+            'avatarUrl', u.avatar_url,
+            'role', u.role
+          ) AS artist
+        FROM artist_photos ap
+        JOIN users u ON u.id = ap.artist_id
+        WHERE ap.image_url IS NOT NULL
+          AND COALESCE(u.is_deleted, false) = false
+          AND u.role = 'artist'
+
+        UNION ALL
+
+        SELECT
+          'song'::text AS type,
+          s.id AS id,
+          s.artist_id AS "artistId",
+          s.title AS title,
+          s.audio_url AS "mediaUrl",
+          NULL::text AS "thumbnailUrl",
+          NULL::text AS "imageUrl",
+          s.audio_url AS "audioUrl",
+          s.cover_url AS "coverUrl",
+          s.duration AS duration,
+          NULL::text AS description,
+          0 AS "likesCount",
+          s.created_at AS "createdAt",
+          json_build_object(
+            'id', u.id,
+            'username', u.username,
+            'displayName', u.display_name,
+            'avatarUrl', u.avatar_url,
+            'role', u.role
+          ) AS artist
+        FROM artist_songs s
+        JOIN users u ON u.id = s.artist_id
+        WHERE s.audio_url IS NOT NULL
+          AND COALESCE(u.is_deleted, false) = false
+          AND u.role = 'artist'
+      )
+      SELECT *
+      FROM flow_items
+      ORDER BY
+        CASE
+          WHEN ${tab} = 'trend' THEN "likesCount"
+          ELSE 0
+        END DESC,
+        CASE
+          WHEN ${tab} = 'emerging' THEN "likesCount"
+          ELSE 0
+        END ASC,
+        "createdAt" DESC
+      LIMIT ${limit}
+    `);
+
+    res.json(result.rows);
+  } catch (err: any) {
+    console.error("[flow-client] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nel recupero del Flow",
+      detail: err?.message,
+    });
+  }
+});
+  
+// === LIVE STREAMS ===
+  
 app.get("/api/lives/active", async (_req, res) => {
   try {
     const result = await db.execute(sql`
