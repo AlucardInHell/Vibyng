@@ -330,9 +330,9 @@ const flowContent = useMemo<FlowContent[]>(() => {
     audioUrl: item.audioUrl || item.mediaUrl,
     coverUrl: item.coverUrl,
     duration: item.duration,
-   likesCount: item.likesCount ?? 0,
-commentsCount: item.commentsCount ?? 0,
-createdAt: item.createdAt,
+    likesCount: item.likesCount ?? 0,
+    commentsCount: item.commentsCount ?? 0,
+    createdAt: item.createdAt,
     artist: item.artist,
   };
 }
@@ -348,8 +348,8 @@ createdAt: item.createdAt,
           imageUrl: item.imageUrl || item.mediaUrl,
           description: item.description,
           likesCount: item.likesCount ?? 0,
-commentsCount: item.commentsCount ?? 0,
-createdAt: item.createdAt,
+          commentsCount: item.commentsCount ?? 0,
+          createdAt: item.createdAt,
           artist: item.artist,
         };
       }
@@ -361,8 +361,8 @@ createdAt: item.createdAt,
         videoUrl: item.mediaUrl,
         thumbnailUrl: item.thumbnailUrl || item.mediaUrl,
         likesCount: item.likesCount ?? 0,
-commentsCount: item.commentsCount ?? 0,
-createdAt: item.createdAt as any,
+        commentsCount: item.commentsCount ?? 0,
+        createdAt: item.createdAt as any,
         type: "video",
         flowKey: `video-${item.id}`,
         mediaUrl: item.mediaUrl,
@@ -1426,8 +1426,10 @@ const reportMutation = useMutation({
 >
   <MessageCircle className="w-6 h-6" />
   <span className="text-[11px]">
-    {commentsOpenType === "photo" && commentsOpenId === item.id ? comments.length : 0}
-  </span>
+  {commentsOpenType === "photo" && commentsOpenId === item.id
+    ? comments.length
+    : Number((item as any).commentsCount ?? 0)}
+</span>
 </button>
               
             </div>
