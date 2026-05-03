@@ -2606,37 +2606,17 @@ app.post("/api/videos/:videoId/like", async (req, res) => {
     const userId = Number(req.body.userId);
 
     if (!videoId || !userId) {
-      return res.status(400).json({ message: "Dati like video non validi" });
+      return res.status(400).json({ message: "Dati like non validi" });
     }
-
-    const videoResult = await db.execute(sql`
-      SELECT likes_count, artist_id
-      FROM artist_videos
-      WHERE id = ${videoId}
-      LIMIT 1
-    `);
-
-    const video = videoResult.rows[0] as any;
-
-    if (!video) {
-      return res.status(404).json({ message: "Video non trovato" });
-    }
-
-    if (await denyIfBlocked(
-      res,
-      userId,
-      Number(video.artist_id),
-      "Non puoi interagire con questo video perché tra voi esiste un blocco."
-    )) return;
 
     const inserted = await db.execute(sql`
       INSERT INTO video_likes (video_id, user_id)
       VALUES (${videoId}, ${userId})
-      ON CONFLICT DO NOTHING
+      ON CONFLICT (video_id, user_id) DO NOTHING
       RETURNING id
     `);
 
-    if ((inserted.rows?.length ?? 0) > 0) {
+    if (inserted.rows.length > 0) {
       await db.execute(sql`
         UPDATE artist_videos
         SET likes_count = COALESCE(likes_count, 0) + 1
@@ -2644,51 +2624,43 @@ app.post("/api/videos/:videoId/like", async (req, res) => {
       `);
     }
 
-    const updatedResult = await db.execute(sql`
-      SELECT likes_count, artist_id
+    const count = await db.execute(sql`
+      SELECT COALESCE(likes_count, 0) AS "likesCount"
       FROM artist_videos
       WHERE id = ${videoId}
+      LIMIT 1
     `);
 
-    const updatedVideo = updatedResult.rows[0] as any;
-
-    if (
-      (inserted.rows?.length ?? 0) > 0 &&
-      updatedVideo &&
-      Number(updatedVideo.artist_id) !== Number(userId)
-    ) {
-      const liker = await storage.getUser(userId);
-
-      await storage.createNotification({
-        userId: Number(updatedVideo.artist_id),
-        type: "like",
-        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
-        relatedUserId: userId,
-      });
-    }
-
     res.json({
-      success: true,
-      likesCount: Number(updatedVideo?.likes_count ?? 0),
+      liked: true,
+      likesCount: Number(count.rows[0]?.likesCount ?? 0),
     });
   } catch (err: any) {
-    console.error("[video-like]", err?.message || err);
-    res.status(400).json({ message: "Errore nel like", detail: err?.message });
+    console.error("[video-like] error:", err?.message || err);
+    res.status(400).json({
+      message: "Errore nel like video",
+      detail: err?.message,
+    });
   }
 });
 
 app.post("/api/videos/:videoId/unlike", async (req, res) => {
   try {
     const videoId = Number(req.params.videoId);
-    const { userId } = req.body;
+    const userId = Number(req.body.userId);
+
+    if (!videoId || !userId) {
+      return res.status(400).json({ message: "Dati unlike non validi" });
+    }
 
     const deleted = await db.execute(sql`
       DELETE FROM video_likes
-      WHERE video_id = ${videoId} AND user_id = ${userId}
+      WHERE video_id = ${videoId}
+        AND user_id = ${userId}
       RETURNING id
     `);
 
-    if ((deleted.rows?.length ?? 0) > 0) {
+    if (deleted.rows.length > 0) {
       await db.execute(sql`
         UPDATE artist_videos
         SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0)
@@ -2696,16 +2668,23 @@ app.post("/api/videos/:videoId/unlike", async (req, res) => {
       `);
     }
 
-    const result = await db.execute(sql`
-      SELECT likes_count
+    const count = await db.execute(sql`
+      SELECT COALESCE(likes_count, 0) AS "likesCount"
       FROM artist_videos
       WHERE id = ${videoId}
+      LIMIT 1
     `);
 
-    res.json({ success: true, likesCount: Number(result.rows[0]?.likes_count ?? 0) });
+    res.json({
+      liked: false,
+      likesCount: Number(count.rows[0]?.likesCount ?? 0),
+    });
   } catch (err: any) {
-    console.error("[video-unlike]", err?.message);
-    res.status(400).json({ message: "Errore nel unlike", detail: err?.message });
+    console.error("[video-unlike] error:", err?.message || err);
+    res.status(400).json({
+      message: "Errore nell'unlike video",
+      detail: err?.message,
+    });
   }
 });
 
@@ -2714,16 +2693,25 @@ app.get("/api/videos/:videoId/liked/:userId", async (req, res) => {
     const videoId = Number(req.params.videoId);
     const userId = Number(req.params.userId);
 
+    if (!videoId || !userId) {
+      return res.status(400).json({ message: "Dati like non validi" });
+    }
+
     const result = await db.execute(sql`
       SELECT id
       FROM video_likes
-      WHERE video_id = ${videoId} AND user_id = ${userId}
+      WHERE video_id = ${videoId}
+        AND user_id = ${userId}
+      LIMIT 1
     `);
 
     res.json({ liked: result.rows.length > 0 });
   } catch (err: any) {
-    console.error("[video-liked]", err?.message);
-    res.json({ liked: false });
+    console.error("[video-liked] error:", err?.message || err);
+    res.status(400).json({
+      message: "Errore nella verifica del like video",
+      detail: err?.message,
+    });
   }
 });
   
