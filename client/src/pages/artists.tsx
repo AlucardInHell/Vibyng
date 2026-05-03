@@ -1413,9 +1413,12 @@ const reportMutation = useMutation({
     {commentsOpenType === "photo" && commentsOpenId === item.id ? comments.length : 0}
   </span>
 </button>
+              
+            </div>
+          </div>
 
 {commentsOpenType === "photo" && commentsOpenId === item.id && (
-  <div className="absolute inset-x-3 top-16 bottom-24 rounded-3xl bg-black/90 border border-white/10 backdrop-blur z-30 flex flex-col overflow-hidden">
+  <div className="absolute left-3 right-3 top-20 h-[55%] rounded-3xl bg-black/95 border border-white/10 backdrop-blur z-50 flex flex-col overflow-hidden shadow-2xl">
     <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
       <p className="text-white text-sm font-semibold">
         {t.comments}
@@ -1437,7 +1440,7 @@ const reportMutation = useMutation({
       </button>
     </div>
 
-   <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
+  <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
       {comments.length === 0 ? (
         <p className="text-white/55 text-sm text-center py-4">
           {t.noComments}
@@ -1519,9 +1522,7 @@ const reportMutation = useMutation({
     </div>
   </div>
 )}              
-              
-            </div>
-          </div>
+          
         </div>
       </section>
     );
