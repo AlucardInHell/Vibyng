@@ -418,20 +418,26 @@ function LanguageProvider({ children }: { children: React.ReactNode }) {
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("vibyng-theme") as Theme;
-      if (stored) return stored;
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("vibyng-theme") as Theme;
+
+    if (stored === "light" || stored === "dark") {
+      return stored;
     }
-    return "light";
-  });
+  }
+
+  return "dark";
+});
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(theme);
-    localStorage.setItem("vibyng-theme", theme);
-  }, [theme]);
+  const root = document.documentElement;
+
+  root.classList.remove("light", "dark");
+  root.classList.add(theme);
+  root.style.colorScheme = theme;
+
+  localStorage.setItem("vibyng-theme", theme);
+}, [theme]);;
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
