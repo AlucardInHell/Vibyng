@@ -434,11 +434,13 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   root.classList.remove("light", "dark");
   root.classList.add(theme);
-  root.style.colorScheme = theme;
+
+  // Evita che Chrome/Samsung Internet applichino il filtro "sito scuro"
+  // sopra i colori già gestiti da Vibyng.
+  root.style.colorScheme = "only light";
 
   localStorage.setItem("vibyng-theme", theme);
-}, [theme]);;
-
+}, [theme]);
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
