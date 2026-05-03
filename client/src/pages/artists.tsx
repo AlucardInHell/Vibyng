@@ -198,6 +198,7 @@ export default function Artists() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentsOpenId, setCommentsOpenId] = useState<number | null>(null);
   const [commentInput, setCommentInput] = useState("");
+  const [commentsOpenType, setCommentsOpenType] = useState<"video" | "photo" | null>(null);
   const [savedVideoIds, setSavedVideoIds] = useState<number[]>(() => {
     try {
       const raw = localStorage.getItem("flow-saved-videos");
@@ -236,6 +237,7 @@ useEffect(() => {
     setActiveTab("for-you");
     setActiveIndex(0);
     setCommentsOpenId(null);
+    setCommentsOpenType(null);
     setCommentInput("");
     setPausedVideoIds(new Set());
     closeMentions();
@@ -525,16 +527,20 @@ useEffect(() => {
   };
 }, [flowVideos, currentUserId]);
 
-  const { data: comments = [], refetch: refetchComments } = useQuery<any[]>({
-    queryKey: ["/api/videos", commentsOpenId, "comments", currentUserId],
-    enabled: commentsOpenId !== null,
-    queryFn: async () => {
-      const res = await fetch(`/api/videos/${commentsOpenId}/comments?userId=${currentUserId}`);
-      return res.json();
-    },
-    staleTime: 0,
-  });
+ const { data: comments = [], refetch: refetchComments } = useQuery<any[]>({
+  queryKey: ["/api/flow/comments", commentsOpenType, commentsOpenId, currentUserId],
+  enabled: commentsOpenId !== null && commentsOpenType !== null,
+  queryFn: async () => {
+    const endpoint =
+      commentsOpenType === "photo"
+        ? `/api/photos/${commentsOpenId}/comments?userId=${currentUserId}`
+        : `/api/videos/${commentsOpenId}/comments?userId=${currentUserId}`;
 
+    const res = await fetch(endpoint);
+    return res.json();
+  },
+  staleTime: 0,
+});
   useEffect(() => {
   const timers: number[] = [];
 
@@ -579,6 +585,7 @@ useEffect(() => {
   useEffect(() => {
     setActiveIndex(0);
     setCommentsOpenId(null);
+    setCommentsOpenType(null);
   }, [activeTab]);
 
   useEffect(() => {
@@ -597,6 +604,7 @@ useEffect(() => {
     if (nextIndex !== activeIndex) {
       setActiveIndex(nextIndex);
       setCommentsOpenId(null);
+      setCommentsOpenType(null);
       setCommentInput("");
     }
   };
@@ -881,21 +889,51 @@ const reportMutation = useMutation({
     });
   },
 });
-  
-  const handleSubmitComment = async () => {
-    if (!commentsOpenId || !commentInput.trim()) return;
 
-    await apiRequest("POST", `/api/videos/${commentsOpenId}/comments`, {
-      authorId: currentUserId,
-      content: commentInput.trim(),
-    });
+  const toggleFlowComments = (type: "video" | "photo", id: number) => {
+  const alreadyOpen = commentsOpenType === type && commentsOpenId === id;
 
+  if (alreadyOpen) {
+    setCommentsOpenType(null);
+    setCommentsOpenId(null);
+    setCommentsOpenType(null);
     setCommentInput("");
     closeMentions();
-    await refetchComments();
-    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
-  };
+    return;
+  }
+
+  setCommentsOpenType(type);
+  setCommentsOpenId(id);
+  setCommentInput("");
+  closeMentions();
+}; 
+  
+  const handleSubmitComment = async () => {
+  if (!commentsOpenId || !commentsOpenType || !commentInput.trim()) return;
+
+  const endpoint =
+    commentsOpenType === "photo"
+      ? `/api/photos/${commentsOpenId}/comments`
+      : `/api/videos/${commentsOpenId}/comments`;
+
+  await apiRequest("POST", endpoint, {
+    authorId: currentUserId,
+    content: commentInput.trim(),
+  });
+
+  setCommentInput("");
+  closeMentions();
+
+  await refetchComments();
+
+  await queryClient.invalidateQueries({
+    queryKey: ["/api/flow/client"],
+    exact: false,
+  });
+
+  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+};
 
   if (isLoading || flowLoading) {
     return (
@@ -1358,12 +1396,131 @@ const reportMutation = useMutation({
   </span>
 </button>
 
-              <div className="flex flex-col items-center gap-1 opacity-60">
-                <MessageCircle className="w-6 h-6" />
-                <span className="text-[11px]">
-                  0
-                </span>
+              <button
+  type="button"
+  className={`flex flex-col items-center gap-1 ${
+    commentsOpenType === "photo" && commentsOpenId === item.id
+      ? "text-primary"
+      : "text-white opacity-80"
+  }`}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFlowComments("photo", item.id);
+  }}
+>
+  <MessageCircle className="w-6 h-6" />
+  <span className="text-[11px]">
+    {commentsOpenType === "photo" && commentsOpenId === item.id ? comments.length : 0}
+  </span>
+</button>
+
+{commentsOpenType === "photo" && commentsOpenId === item.id && (
+  <div className="absolute inset-x-3 bottom-3 max-h-[52%] rounded-3xl bg-black/85 border border-white/10 backdrop-blur z-20 flex flex-col overflow-hidden">
+    <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+      <p className="text-white text-sm font-semibold">
+        {t.comments}
+      </p>
+
+      <button
+        type="button"
+        className="text-white/60 text-sm"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setCommentsOpenType(null);
+          setCommentsOpenId(null);
+          setCommentInput("");
+          closeMentions();
+        }}
+      >
+        ✕
+      </button>
+    </div>
+
+    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+      {comments.length === 0 ? (
+        <p className="text-white/55 text-sm text-center py-4">
+          {t.noComments}
+        </p>
+      ) : (
+        comments.map((comment: any) => {
+          const displayName =
+            comment.author?.displayName ??
+            comment.display_name ??
+            comment.displayName ??
+            comment.username ??
+            "Profilo";
+
+          const avatarUrl =
+            comment.author?.avatarUrl ??
+            comment.author?.avatar_url ??
+            comment.avatarUrl ??
+            comment.avatar_url ??
+            null;
+
+          return (
+            <div key={comment.id} className="flex gap-2">
+              <Avatar className="w-8 h-8 shrink-0">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+                <AvatarFallback className="bg-primary/20 text-white text-xs">
+                  {displayName?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="min-w-0 flex-1 rounded-2xl bg-white/10 px-3 py-2">
+                <p className="text-white text-xs font-semibold truncate">
+                  {displayName}
+                </p>
+
+                <p className="text-white/85 text-sm whitespace-pre-wrap break-words">
+                  <MentionText text={comment.content} />
+                </p>
               </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+
+    <div className="p-3 border-t border-white/10 flex gap-2">
+      <div className="relative flex-1">
+        <Input
+          value={commentInput}
+          placeholder={t.commentPlaceholder}
+          className="bg-white/10 border-white/10 text-white placeholder:text-white/45"
+          onChange={(e) => {
+            setCommentInput(e.target.value);
+            handleTextChange(e.target.value, e.target.selectionStart || 0);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSubmitComment();
+            }
+          }}
+        />
+
+        <MentionDropdown
+          query={mentionQuery}
+          visible={showMentions}
+          onSelect={(username) => {
+            setCommentInput(insertMention(commentInput, username));
+            closeMentions();
+          }}
+        />
+      </div>
+
+      <Button
+        size="icon"
+        onClick={handleSubmitComment}
+        disabled={!commentInput.trim()}
+      >
+        <MessageCircle className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+)}              
+              
             </div>
           </div>
         </div>
@@ -1377,7 +1534,7 @@ const reportMutation = useMutation({
           const isSaved = savedVideoIds.includes(video.id);
           const isLiked = likedMap[video.id] ?? false;
           const likesCount = likeCounts[video.id] ?? Number((video as any).likesCount ?? 0);
-          const commentsOpen = commentsOpenId === video.id;
+          const commentsOpen = commentsOpenType === "video" && commentsOpenId === video.id;
           const isOwnVideo = Number(video.artist.id) === Number(currentUserId);
 
           return (
