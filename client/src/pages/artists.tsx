@@ -420,9 +420,6 @@ const trendContent = useMemo(() => {
   const activeVideo = activeList[activeIndex] ?? null;
 
 useEffect(() => {
-  if (!flowVideos.length || !currentUserId) return;
-
-  useEffect(() => {
   if (!flowPhotos.length || !currentUserId) return;
 
   let cancelled = false;
@@ -475,6 +472,9 @@ useEffect(() => {
   };
 }, [flowPhotos, currentUserId]);
 
+useEffect(() => {
+  if (!flowVideos.length || !currentUserId) return;
+
   let cancelled = false;
 
   const loadLikedStatuses = async () => {
@@ -482,7 +482,10 @@ useEffect(() => {
       const entries = await Promise.all(
         flowVideos.map(async (video) => {
           const res = await fetch(`/api/videos/${video.id}/liked/${currentUserId}`);
-          if (!res.ok) return [video.id, false] as const;
+
+          if (!res.ok) {
+            return [video.id, false] as const;
+          }
 
           const data = await res.json();
           return [video.id, Boolean(data?.liked)] as const;
@@ -499,16 +502,16 @@ useEffect(() => {
         });
 
         return next;
+      });
 
-     setLikeStatusReady((prev) => {
-  const next = { ...prev };
+      setLikeStatusReady((prev) => {
+        const next = { ...prev };
 
-  entries.forEach(([videoId]) => {
-    next[videoId] = true;
-  });
+        entries.forEach(([videoId]) => {
+          next[videoId] = true;
+        });
 
-  return next;
-});   
+        return next;
       });
     } catch {
       // Non blocchiamo il Flow se uno stato like non viene caricato.
