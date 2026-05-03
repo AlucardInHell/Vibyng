@@ -2777,21 +2777,34 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
  <Share2 className="w-5 h-5" />
 {t.share}
 </button>
-                  <button
-                    className="flex items-center gap-1 text-sm text-red-500"
-                    onClick={async () => {
-                      try {
-                        await apiRequest("DELETE", `/api/videos/${selectedVideo.id}`);
-                        queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "videos"] });
-                        setSelectedVideo(null);
-                        toast({ title: "Video eliminato" });
-                      } catch {
-                        toast({ title: t.error, variant: "destructive" });
-                      }
-                    }}
-                  >
-                    🗑️
-                  </button>
+               <button
+  type="button"
+  className="text-xs text-red-400 hover:text-red-600"
+  onClick={async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    await apiRequest(
+      "DELETE",
+      `/api/videos/${video.id}?userId=${currentUserId}`
+    );
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/users", currentUserId, "videos"],
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/flow/client"],
+      exact: false,
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/posts"],
+    });
+  }}
+>
+  🗑️
+</button>
                   <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
                 <div className="mt-0 pt-2 px-4 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden">
