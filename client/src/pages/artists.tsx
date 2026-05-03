@@ -148,7 +148,22 @@ type FlowPhoto = {
   artist: User;
 };
 
-type FlowContent = FlowVideo | FlowPhoto;
+type FlowSong = {
+  type: "song";
+  flowKey: string;
+  id: number;
+  artistId: number;
+  title: string;
+  mediaUrl: string;
+  audioUrl: string;
+  coverUrl?: string | null;
+  duration?: number | null;
+  likesCount?: number | null;
+  createdAt?: string | null;
+  artist: User;
+};
+
+type FlowContent = FlowVideo | FlowPhoto | FlowSong;
 
 type ActiveLiveStream = {
   id: number;
@@ -277,8 +292,29 @@ useEffect(() => {
 
 const flowContent = useMemo<FlowContent[]>(() => {
   return flowItems
-    .filter((item) => (item.type === "video" || item.type === "photo") && !!item.mediaUrl)
+    .filter(
+  (item) =>
+    (item.type === "video" || item.type === "photo" || item.type === "song") &&
+    !!item.mediaUrl
+)
     .map((item) => {
+    if (item.type === "song") {
+  return {
+    type: "song",
+    flowKey: `song-${item.id}`,
+    id: item.id,
+    artistId: item.artistId,
+    title: item.title || "Brano",
+    mediaUrl: item.mediaUrl,
+    audioUrl: item.audioUrl || item.mediaUrl,
+    coverUrl: item.coverUrl,
+    duration: item.duration,
+    likesCount: item.likesCount ?? 0,
+    createdAt: item.createdAt,
+    artist: item.artist,
+  };
+}
+
       if (item.type === "photo") {
         return {
           type: "photo",
@@ -917,6 +953,130 @@ const reportMutation = useMutation({
   className={`${activeTab === "live" ? "hidden" : ""} h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] overflow-y-auto snap-y snap-mandatory`}
 >
         {activeList.map((item, index) => {
+  if (item.type === "song") {
+  const hasCover = !!item.coverUrl;
+
+  return (
+    <section
+      key={item.flowKey}
+      className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
+    >
+      <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
+        {hasCover ? (
+          <img
+            src={item.coverUrl || ""}
+            alt={item.title || "Brano"}
+            className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-70"
+            loading={index === activeIndex ? "eager" : "lazy"}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-950 via-black to-primary/40" />
+        )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/35 pointer-events-none" />
+
+        <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary/80 text-white text-xs font-semibold border border-white/10 shadow-lg">
+          SONG
+        </div>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
+          <div className="relative">
+            {hasCover ? (
+              <img
+                src={item.coverUrl || ""}
+                alt={item.title || "Brano"}
+                className="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl object-cover shadow-2xl border border-white/15"
+                loading={index === activeIndex ? "eager" : "lazy"}
+              />
+            ) : (
+              <div className="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl bg-black/40 border border-white/15 shadow-2xl flex items-center justify-center">
+                <span className="text-7xl">♪</span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/30 text-white text-3xl flex items-center justify-center shadow-xl"
+              aria-label="Play brano"
+            >
+              ▶
+            </button>
+          </div>
+
+          <div className="mt-6 max-w-[80%]">
+            <p className="text-white text-2xl font-bold leading-tight truncate">
+              {item.title || "Brano"}
+            </p>
+
+            <p className="text-white/75 text-sm mt-2 truncate">
+              {item.artist.displayName}
+            </p>
+
+            <p className="text-white/45 text-xs mt-1 truncate">
+              @{item.artist.username}
+            </p>
+          </div>
+
+          <div className="mt-5 flex items-center gap-1 opacity-70">
+            <span className="w-1 h-4 rounded-full bg-white/60" />
+            <span className="w-1 h-7 rounded-full bg-white/80" />
+            <span className="w-1 h-5 rounded-full bg-white/60" />
+            <span className="w-1 h-9 rounded-full bg-white/90" />
+            <span className="w-1 h-4 rounded-full bg-white/60" />
+            <span className="w-1 h-6 rounded-full bg-white/80" />
+            <span className="w-1 h-3 rounded-full bg-white/50" />
+          </div>
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
+          <Link href={`/artist/${item.artist.id}`}>
+            <div className="flex items-end gap-2 min-w-0 max-w-[70%] cursor-pointer">
+              <Avatar className="w-11 h-11 border-2 border-primary/80">
+                {item.artist.avatarUrl && (
+                  <AvatarImage
+                    src={item.artist.avatarUrl}
+                    alt={item.artist.displayName}
+                  />
+                )}
+
+                <AvatarFallback className="bg-primary/20 text-white">
+                  {item.artist.displayName?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="min-w-0">
+                <p className="text-white text-lg font-semibold leading-tight truncate">
+                  {item.artist.displayName}
+                </p>
+
+                <p className="text-white/70 text-xs truncate">
+                  Brano musicale
+                </p>
+              </div>
+            </div>
+          </Link>
+
+          <div className="flex flex-col items-center gap-4 text-white">
+            <div className="flex flex-col items-center gap-1 opacity-80">
+              <Heart className="w-6 h-6" />
+              <span className="text-[11px]">
+                {item.likesCount ?? 0}
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center gap-1 opacity-60">
+              <MessageCircle className="w-6 h-6" />
+              <span className="text-[11px]">
+                0
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+  
   if (item.type === "photo") {
     return (
       <section
