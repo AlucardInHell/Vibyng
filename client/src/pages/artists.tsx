@@ -1461,6 +1461,20 @@ const reportMutation = useMutation({
             comment.avatar_url ??
             null;
 
+          const commentAuthorId =
+           comment.author?.id ??
+           comment.author_id ??
+           comment.authorId ??
+           null;
+
+          const commentLikedByMe = Boolean(comment.likedByMe);
+
+          const commentLikesCount = Number(comment.likes_count ?? comment.likesCount ?? 0);
+
+          const canDeleteComment =
+          Number(commentAuthorId) === Number(currentUserId) ||
+          Number(item.artist.id) === Number(currentUserId);
+          
           return (
             <div key={comment.id} className="flex gap-2">
               <Avatar className="w-8 h-8 shrink-0">
@@ -1471,14 +1485,115 @@ const reportMutation = useMutation({
               </Avatar>
 
               <div className="min-w-0 flex-1 rounded-2xl bg-white/10 px-3 py-2">
-                <p className="text-white text-xs font-semibold truncate">
-                  {displayName}
-                </p>
+  <div className="flex items-start justify-between gap-2">
+    <p className="text-white text-xs font-semibold truncate">
+      {displayName}
+    </p>
 
-                <p className="text-white/85 text-sm whitespace-pre-wrap break-words">
-                  <MentionText text={comment.content} />
-                </p>
-              </div>
+    {Number(commentAuthorId) !== Number(currentUserId) && (
+      <button
+        type="button"
+        className="text-white/45 hover:text-white shrink-0"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          openReport({
+            targetType: "comment",
+            targetId: String(comment.id),
+            targetOwnerId: commentAuthorId ? Number(commentAuthorId) : null,
+            title: t.reportComment,
+            description: t.reportContentDescription,
+          });
+        }}
+        aria-label={t.reportComment}
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+    )}
+  </div>
+
+  <p className="text-white/85 text-sm whitespace-pre-wrap break-words mt-0.5">
+    <MentionText text={comment.content} />
+  </p>
+
+  <div className="flex items-center justify-between gap-2 mt-2">
+    <span className="text-[11px] text-white/45">
+      {comment.created_at || comment.createdAt
+        ? new Date(comment.created_at ?? comment.createdAt).toLocaleDateString("it-IT", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : ""}
+    </span>
+
+    <div className="flex items-center gap-3">
+      {canDeleteComment && (
+        <button
+          type="button"
+          className="text-[11px] text-red-300 hover:text-red-400"
+          onClick={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            await apiRequest(
+              "DELETE",
+              `/api/photos/${item.id}/comments/${comment.id}`
+            );
+
+            await refetchComments();
+
+            await queryClient.invalidateQueries({
+              queryKey: ["/api/flow/client"],
+              exact: false,
+            });
+          }}
+        >
+          🗑️
+        </button>
+      )}
+
+      <button
+        type="button"
+        className={`flex items-center gap-1 text-[11px] ${
+          Number(commentAuthorId) === Number(currentUserId)
+            ? "opacity-50 cursor-not-allowed text-white/35"
+            : commentLikedByMe
+              ? "text-red-400"
+              : "text-white/55 hover:text-red-400"
+        }`}
+        disabled={Number(commentAuthorId) === Number(currentUserId)}
+        onClick={async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (commentLikedByMe) {
+            await apiRequest(
+              "POST",
+              `/api/photos/${item.id}/comments/${comment.id}/unlike/${currentUserId}`
+            );
+          } else {
+            await apiRequest(
+              "POST",
+              `/api/photos/${item.id}/comments/${comment.id}/like/${currentUserId}`
+            );
+          }
+
+          await refetchComments();
+        }}
+      >
+        <Heart
+          className={`w-3 h-3 ${
+            commentLikedByMe ? "fill-red-400 text-red-400" : ""
+          }`}
+        />
+        <span>{commentLikesCount}</span>
+      </button>
+    </div>
+  </div>
+</div>
             </div>
           );
         })
