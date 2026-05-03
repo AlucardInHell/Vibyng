@@ -497,7 +497,163 @@ app.delete("/api/videos/:videoId", deleteVideoHandler);
 // Compatibilità con eventuali chiamate già presenti nel frontend
 app.delete("/api/users/:userId/videos/:videoId", deleteVideoHandler);
 
-  
+// === VIDEO LIKES ===
+
+app.get("/api/videos/:videoId/liked/:userId", async (req, res) => {
+  try {
+    const videoId = Number(req.params.videoId);
+    const userId = Number(req.params.userId);
+
+    if (!videoId || !userId) {
+      return res.status(400).json({
+        message: "Dati verifica like video non validi",
+      });
+    }
+
+    const result = await db.execute(sql`
+      SELECT id
+      FROM video_likes
+      WHERE video_id = ${videoId}
+        AND user_id = ${userId}
+      LIMIT 1
+    `);
+
+    res.json({
+      liked: result.rows.length > 0,
+    });
+  } catch (err: any) {
+    console.error("[video-liked] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nella verifica del like video",
+      detail: err?.message,
+    });
+  }
+});
+
+app.post("/api/videos/:videoId/like", async (req, res) => {
+  try {
+    const videoId = Number(req.params.videoId);
+    const userId = Number(req.body?.userId);
+
+    if (!videoId || !userId) {
+      return res.status(400).json({
+        message: "Dati like video non validi",
+      });
+    }
+
+    const videoResult = await db.execute(sql`
+      SELECT id, artist_id AS "artistId"
+      FROM artist_videos
+      WHERE id = ${videoId}
+      LIMIT 1
+    `);
+
+    const video = videoResult.rows[0];
+
+    if (!video) {
+      return res.status(404).json({
+        message: "Video non trovato",
+      });
+    }
+
+    if (Number(video.artistId) === Number(userId)) {
+      return res.status(403).json({
+        message: "Non puoi mettere like al tuo video",
+      });
+    }
+
+    const inserted = await db.execute(sql`
+      INSERT INTO video_likes (video_id, user_id)
+      VALUES (${videoId}, ${userId})
+      ON CONFLICT (video_id, user_id) DO NOTHING
+      RETURNING id
+    `);
+
+    if (inserted.rows.length > 0) {
+      await db.execute(sql`
+        UPDATE artist_videos
+        SET likes_count = COALESCE(likes_count, 0) + 1
+        WHERE id = ${videoId}
+      `);
+    }
+
+    const countResult = await db.execute(sql`
+      SELECT COALESCE(likes_count, 0) AS "likesCount"
+      FROM artist_videos
+      WHERE id = ${videoId}
+      LIMIT 1
+    `);
+
+    res.json({
+      liked: true,
+      likesCount: Number(
+        (countResult.rows[0] as any)?.likesCount ??
+        (countResult.rows[0] as any)?.likescount ??
+        0
+      ),
+    });
+  } catch (err: any) {
+    console.error("[video-like] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nel like video",
+      detail: err?.message,
+    });
+  }
+});
+
+app.post("/api/videos/:videoId/unlike", async (req, res) => {
+  try {
+    const videoId = Number(req.params.videoId);
+    const userId = Number(req.body?.userId);
+
+    if (!videoId || !userId) {
+      return res.status(400).json({
+        message: "Dati unlike video non validi",
+      });
+    }
+
+    const deleted = await db.execute(sql`
+      DELETE FROM video_likes
+      WHERE video_id = ${videoId}
+        AND user_id = ${userId}
+      RETURNING id
+    `);
+
+    if (deleted.rows.length > 0) {
+      await db.execute(sql`
+        UPDATE artist_videos
+        SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0)
+        WHERE id = ${videoId}
+      `);
+    }
+
+    const countResult = await db.execute(sql`
+      SELECT COALESCE(likes_count, 0) AS "likesCount"
+      FROM artist_videos
+      WHERE id = ${videoId}
+      LIMIT 1
+    `);
+
+    res.json({
+      liked: false,
+      likesCount: Number(
+        (countResult.rows[0] as any)?.likesCount ??
+        (countResult.rows[0] as any)?.likescount ??
+        0
+      ),
+    });
+  } catch (err: any) {
+    console.error("[video-unlike] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nell'unlike video",
+      detail: err?.message,
+    });
+  }
+});
+
 // === FLOW CLIENT ===
 
 app.get("/api/flow/client", async (req, res) => {
