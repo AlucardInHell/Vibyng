@@ -123,6 +123,7 @@ type FlowItem = {
   duration?: number | null;
   description?: string | null;
   likesCount?: number | null;
+  commentsCount?: number | null;
   createdAt?: string | null;
   artist: User;
 };
@@ -131,6 +132,7 @@ type FlowVideo = ArtistVideo & {
   type: "video";
   flowKey: string;
   mediaUrl?: string;
+  commentsCount?: number | null;
   artist: User;
 };
 
@@ -144,6 +146,7 @@ type FlowPhoto = {
   imageUrl: string;
   description?: string | null;
   likesCount?: number | null;
+  commentsCount?: number | null;
   createdAt?: string | null;
   artist: User;
 };
@@ -327,8 +330,9 @@ const flowContent = useMemo<FlowContent[]>(() => {
     audioUrl: item.audioUrl || item.mediaUrl,
     coverUrl: item.coverUrl,
     duration: item.duration,
-    likesCount: item.likesCount ?? 0,
-    createdAt: item.createdAt,
+   likesCount: item.likesCount ?? 0,
+commentsCount: item.commentsCount ?? 0,
+createdAt: item.createdAt,
     artist: item.artist,
   };
 }
@@ -344,7 +348,8 @@ const flowContent = useMemo<FlowContent[]>(() => {
           imageUrl: item.imageUrl || item.mediaUrl,
           description: item.description,
           likesCount: item.likesCount ?? 0,
-          createdAt: item.createdAt,
+commentsCount: item.commentsCount ?? 0,
+createdAt: item.createdAt,
           artist: item.artist,
         };
       }
@@ -356,7 +361,8 @@ const flowContent = useMemo<FlowContent[]>(() => {
         videoUrl: item.mediaUrl,
         thumbnailUrl: item.thumbnailUrl || item.mediaUrl,
         likesCount: item.likesCount ?? 0,
-        createdAt: item.createdAt as any,
+commentsCount: item.commentsCount ?? 0,
+createdAt: item.createdAt as any,
         type: "video",
         flowKey: `video-${item.id}`,
         mediaUrl: item.mediaUrl,
@@ -1787,11 +1793,11 @@ const reportMutation = useMutation({
   }}
 >
   <MessageCircle className="w-6 h-6" />
-  <span className="text-[11px]">
-    {commentsOpenType === "video" && commentsOpenId === video.id
-      ? comments.length
-      : 0}
-  </span>
+ <span className="text-[11px]">
+  {commentsOpenType === "video" && commentsOpenId === video.id
+    ? comments.length
+    : Number((video as any).commentsCount ?? 0)}
+</span>
 </button>
 
                       <button
