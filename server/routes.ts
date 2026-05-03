@@ -412,6 +412,92 @@ await db.execute(sql`
   WHERE status = 'live'
 `);
 
+// === DELETE VIDEO ===
+
+const deleteVideoHandler = async (req: any, res: any) => {
+  try {
+    const videoId = Number(req.params.videoId || req.params.id);
+    const userId = Number(req.query.userId || req.body?.userId || req.params.userId);
+
+    if (!videoId || !userId) {
+      return res.status(400).json({
+        message: "Dati cancellazione video non validi",
+      });
+    }
+
+    const videoResult = await db.execute(sql`
+      SELECT id, artist_id AS "artistId"
+      FROM artist_videos
+      WHERE id = ${videoId}
+      LIMIT 1
+    `);
+
+    const video = videoResult.rows[0];
+
+    if (!video) {
+      return res.status(404).json({
+        message: "Video non trovato",
+      });
+    }
+
+    if (Number(video.artistId) !== Number(userId)) {
+      return res.status(403).json({
+        message: "Non puoi cancellare un video che non ti appartiene",
+      });
+    }
+
+    await db.execute(sql`
+      DELETE FROM video_comment_likes
+      WHERE comment_id IN (
+        SELECT id
+        FROM video_comments
+        WHERE video_id = ${videoId}
+      )
+    `);
+
+    await db.execute(sql`
+      DELETE FROM video_comments
+      WHERE video_id = ${videoId}
+    `);
+
+    await db.execute(sql`
+      DELETE FROM video_likes
+      WHERE video_id = ${videoId}
+    `);
+
+    const deleted = await db.execute(sql`
+      DELETE FROM artist_videos
+      WHERE id = ${videoId}
+        AND artist_id = ${userId}
+      RETURNING id
+    `);
+
+    if (!deleted.rows.length) {
+      return res.status(404).json({
+        message: "Video non trovato o già cancellato",
+      });
+    }
+
+    res.json({
+      success: true,
+      deletedVideoId: videoId,
+    });
+  } catch (err: any) {
+    console.error("[delete-video] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nella cancellazione del video",
+      detail: err?.message,
+    });
+  }
+};
+
+app.delete("/api/videos/:videoId", deleteVideoHandler);
+
+// Compatibilità con eventuali chiamate già presenti nel frontend
+app.delete("/api/users/:userId/videos/:videoId", deleteVideoHandler);
+
+  
 // === FLOW CLIENT ===
 
 app.get("/api/flow/client", async (req, res) => {
