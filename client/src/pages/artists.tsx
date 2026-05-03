@@ -1418,7 +1418,7 @@ const reportMutation = useMutation({
           </div>
 
 {commentsOpenType === "photo" && commentsOpenId === item.id && (
-  <div className="absolute inset-x-0 bottom-0 h-[58%] rounded-t-3xl bg-black/95 border-t border-white/10 backdrop-blur z-50 flex flex-col overflow-hidden shadow-2xl">
+  <div className="absolute inset-x-0 bottom-0 h-[72%] rounded-t-3xl bg-black/95 border-t border-white/10 backdrop-blur z-50 flex flex-col overflow-hidden shadow-2xl">
     <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
       <p className="text-white text-sm font-semibold">
         {t.comments}
