@@ -334,35 +334,43 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
   }, [savedVideoIds]);
 
-  const forYouVideos = useMemo(() => {
-    return [...flowVideos].sort(
-      (a, b) =>
-        new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime()
+ const forYouContent = useMemo(() => {
+  return [...flowContent].sort(
+    (a, b) =>
+      new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime()
+  );
+}, [flowContent]);
+
+const emergingContent = useMemo(() => {
+  return [...flowContent].sort((a, b) => {
+    const aLikes = Number((a as any).likesCount ?? 0);
+    const bLikes = Number((b as any).likesCount ?? 0);
+
+    return (
+      aLikes - bLikes ||
+      new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime()
     );
-  }, [flowVideos]);
+  });
+}, [flowContent]);
 
-  const emergingVideos = useMemo(() => {
-    return [...flowVideos].sort((a, b) => {
-      const aLikes = Number((a as any).likesCount ?? 0);
-      const bLikes = Number((b as any).likesCount ?? 0);
-      return aLikes - bLikes || new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime();
-    });
-  }, [flowVideos]);
+const trendContent = useMemo(() => {
+  return [...flowContent].sort((a, b) => {
+    const aLikes = Number((a as any).likesCount ?? 0);
+    const bLikes = Number((b as any).likesCount ?? 0);
 
-  const trendVideos = useMemo(() => {
-    return [...flowVideos].sort((a, b) => {
-      const aLikes = Number((a as any).likesCount ?? 0);
-      const bLikes = Number((b as any).likesCount ?? 0);
-      return bLikes - aLikes || new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime();
-    });
-  }, [flowVideos]);
-
-  const activeList = useMemo(() => {
+    return (
+      bLikes - aLikes ||
+      new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime()
+    );
+  });
+}, [flowContent]);
+  
+ const activeList = useMemo<FlowContent[]>(() => {
   if (activeTab === "live") return [];
-  if (activeTab === "emerging") return emergingVideos;
-  if (activeTab === "trend") return trendVideos;
-  return forYouVideos;
-}, [activeTab, emergingVideos, trendVideos, forYouVideos]);
+  if (activeTab === "emerging") return emergingContent;
+  if (activeTab === "trend") return trendContent;
+  return forYouContent;
+}, [activeTab, emergingContent, trendContent, forYouContent]);
   const activeVideo = activeList[activeIndex] ?? null;
 
 useEffect(() => {
@@ -908,7 +916,87 @@ const reportMutation = useMutation({
   onScroll={handleScroll}
   className={`${activeTab === "live" ? "hidden" : ""} h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] overflow-y-auto snap-y snap-mandatory`}
 >
-        {activeList.map((video, index) => {
+        {activeList.map((item, index) => {
+  if (item.type === "photo") {
+    return (
+      <section
+        key={item.flowKey}
+        className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
+      >
+        <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
+          <img
+            src={item.imageUrl}
+            alt={item.title || "Foto"}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading={index === activeIndex ? "eager" : "lazy"}
+          />
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-black/20 pointer-events-none" />
+
+          <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/50 text-white text-xs font-semibold border border-white/10">
+            FOTO
+          </div>
+
+          <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
+            <Link href={`/artist/${item.artist.id}`}>
+              <div className="flex items-end gap-2 min-w-0 max-w-[75%] cursor-pointer">
+                <Avatar className="w-11 h-11 border-2 border-white/70">
+                  {item.artist.avatarUrl && (
+                    <AvatarImage
+                      src={item.artist.avatarUrl}
+                      alt={item.artist.displayName}
+                    />
+                  )}
+
+                  <AvatarFallback className="bg-primary/20 text-white">
+                    {item.artist.displayName?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="min-w-0">
+                  <p className="text-white text-lg font-semibold leading-tight truncate">
+                    {item.artist.displayName}
+                  </p>
+
+                  <p className="text-white/90 text-sm leading-tight truncate">
+                    {item.title || "Foto"}
+                  </p>
+
+                  {item.description && (
+                    <p className="text-white/70 text-xs leading-tight truncate mt-1">
+                      {item.description}
+                    </p>
+                  )}
+
+                  <p className="text-white/60 text-xs truncate mt-1">
+                    @{item.artist.username}
+                  </p>
+                </div>
+              </div>
+            </Link>
+
+            <div className="flex flex-col items-center gap-4 text-white">
+              <div className="flex flex-col items-center gap-1 opacity-80">
+                <Heart className="w-6 h-6" />
+                <span className="text-[11px]">
+                  {item.likesCount ?? 0}
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center gap-1 opacity-60">
+                <MessageCircle className="w-6 h-6" />
+                <span className="text-[11px]">
+                  0
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const video = item;
           const isActive = index === activeIndex;
           const isMuted = flowMuted;
           const isSaved = savedVideoIds.includes(video.id);
@@ -919,7 +1007,7 @@ const reportMutation = useMutation({
 
           return (
             <section
-              key={video.id}
+              key={video.flowKey}
               className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
