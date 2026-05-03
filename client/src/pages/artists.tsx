@@ -527,7 +527,7 @@ useEffect(() => {
   };
 }, [flowVideos, currentUserId]);
 
- const { data: comments = [], refetch: refetchComments } = useQuery<any[]>({
+  const { data: comments = [], refetch: refetchComments } = useQuery<any[]>({
   queryKey: ["/api/flow/comments", commentsOpenType, commentsOpenId, currentUserId],
   enabled: commentsOpenId !== null && commentsOpenType !== null,
   queryFn: async () => {
@@ -896,7 +896,6 @@ const reportMutation = useMutation({
   if (alreadyOpen) {
     setCommentsOpenType(null);
     setCommentsOpenId(null);
-    setCommentsOpenType(null);
     setCommentInput("");
     closeMentions();
     return;
@@ -906,7 +905,7 @@ const reportMutation = useMutation({
   setCommentsOpenId(id);
   setCommentInput("");
   closeMentions();
-}; 
+};
   
   const handleSubmitComment = async () => {
   if (!commentsOpenId || !commentsOpenType || !commentInput.trim()) return;
@@ -1416,7 +1415,7 @@ const reportMutation = useMutation({
 </button>
 
 {commentsOpenType === "photo" && commentsOpenId === item.id && (
-  <div className="absolute inset-x-3 bottom-3 max-h-[52%] rounded-3xl bg-black/85 border border-white/10 backdrop-blur z-20 flex flex-col overflow-hidden">
+  <div className="absolute inset-x-3 top-16 bottom-24 rounded-3xl bg-black/90 border border-white/10 backdrop-blur z-30 flex flex-col overflow-hidden">
     <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
       <p className="text-white text-sm font-semibold">
         {t.comments}
@@ -1438,7 +1437,7 @@ const reportMutation = useMutation({
       </button>
     </div>
 
-    <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+   <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
       {comments.length === 0 ? (
         <p className="text-white/55 text-sm text-center py-4">
           {t.noComments}
@@ -1649,15 +1648,25 @@ const reportMutation = useMutation({
                       </button>
 
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCommentsOpenId(commentsOpen ? null : video.id);
-                          setCommentInput("");
-                        }}
-                        className="flex flex-col items-center gap-2"
-                      >
-                        <MessageCircle className="w-7 h-7" />
-                      </button>
+  type="button"
+  className={`flex flex-col items-center gap-1 ${
+    commentsOpenType === "video" && commentsOpenId === video.id
+      ? "text-primary"
+      : "text-white"
+  }`}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFlowComments("video", video.id);
+  }}
+>
+  <MessageCircle className="w-6 h-6" />
+  <span className="text-[11px]">
+    {commentsOpenType === "video" && commentsOpenId === video.id
+      ? comments.length
+      : 0}
+  </span>
+</button>
 
                       <button
                         onClick={(e) => {
