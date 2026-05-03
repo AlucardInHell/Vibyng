@@ -568,6 +568,29 @@ useEffect(() => {
 });
 
   const isVideoLiked = videoLikeData?.liked ?? false;
+  const handleDeleteProfileVideo = async (videoId: number) => {
+  await apiRequest(
+    "DELETE",
+    `/api/videos/${videoId}?userId=${currentUserId}`
+  );
+
+  if (selectedVideo?.id === videoId) {
+    setSelectedVideo(null);
+  }
+
+  await queryClient.invalidateQueries({
+    queryKey: ["/api/users", artistId, "videos"],
+  });
+
+  await queryClient.invalidateQueries({
+    queryKey: ["/api/flow/client"],
+    exact: false,
+  });
+
+  await queryClient.invalidateQueries({
+    queryKey: ["/api/posts"],
+  });
+};
 
   useBodyScrollLock(Boolean(selectedVideo || selectedPhoto || photoCommentsOpen));
 
@@ -1627,13 +1650,19 @@ return (
     <Card
       key={video.id}
       className="overflow-hidden hover-elevate cursor-pointer"
-      onClick={() => {
-        setSelectedVideo(video);
-        setVideoLikeCount(prev => ({
-          ...prev,
-          [video.id]: Number((video as any).likesCount ?? 0),
-        }));
-      }}
+      onClick={(e) => {
+  const target = e.target as HTMLElement;
+
+  if (target.closest("button, a, input, textarea, [data-no-card-click]")) {
+    return;
+  }
+
+  setSelectedVideo(video);
+  setVideoLikeCount((prev) => ({
+    ...prev,
+    [video.id]: Number((video as any).likesCount ?? 0),
+  }));
+}}
     >
       <div className="relative">
         {video.videoUrl ? (
@@ -1665,7 +1694,8 @@ return (
   <div className="fixed inset-0 z-50 bg-black/90 flex flex-col overflow-hidden overscroll-contain" onClick={() => setSelectedVideo(null)}>
     <div className="absolute inset-x-0 top-4 z-30 flex justify-end gap-2 px-4">
       {Number(selectedVideo.artistId) !== Number(currentUserId) && (
-        <Button
+    
+    <Button
           variant="ghost"
           size="icon"
           className="h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 hover:text-white"
@@ -1685,6 +1715,31 @@ return (
         >
           <MoreVertical className="w-6 h-6" />
         </Button>
+      )}
+
+      {Number(selectedVideo.artistId) === Number(currentUserId) && (
+        <button
+          type="button"
+          data-no-card-click
+          className="h-10 w-10 rounded-full bg-black/40 text-red-400 text-lg hover:bg-black/60 hover:text-red-500 flex items-center justify-center"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
+          onClick={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            await handleDeleteProfileVideo(selectedVideo.id);
+          }}
+          aria-label="Elimina video"
+          title="Elimina video"
+        >
+          🗑️
+        </button>
       )}
 
       <button
