@@ -14,7 +14,6 @@ import { buildContentShareUrl, shareVibyngContent } from "@/lib/share-content";
 import type { ArtistVideo, User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useAudioPlayer, type Song } from "@/components/audio-player";
 
 function getCurrentUserId(): number {
   try {
@@ -193,7 +192,6 @@ export default function Artists() {
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = flowTranslations[language];
   const { toast } = useToast();
-  const { playSong } = useAudioPlayer();
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
 
   const [activeTab, setActiveTab] = useState<FlowTab>("for-you");
@@ -227,6 +225,8 @@ const [reportDetails, setReportDetails] = useState("");
   
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
+  const flowAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingFlowSongKey, setPlayingFlowSongKey] = useState<string | null>(null);
 useEffect(() => {
   const handleFlowRefresh = () => {
     setActiveTab("for-you");
@@ -352,20 +352,7 @@ const flowContent = useMemo<FlowContent[]>(() => {
 const flowVideos = useMemo<FlowVideo[]>(() => {
   return flowContent.filter((item): item is FlowVideo => item.type === "video");
 }, [flowContent]);
-
-const flowSongs = useMemo<Song[]>(() => {
-  return flowContent
-    .filter((item): item is FlowSong => item.type === "song")
-    .map((song) => ({
-      id: song.id,
-      title: song.title || "Brano",
-      artist: song.artist.displayName,
-      audioUrl: song.audioUrl,
-      coverUrl: song.coverUrl || undefined,
-      duration: song.duration || undefined,
-    }));
-}, [flowContent]);
-  
+ 
 const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<ActiveLiveStream[]>({
   queryKey: ["/api/lives/active"],
   enabled: activeTab === "live",
@@ -530,6 +517,14 @@ useEffect(() => {
     setCommentsOpenId(null);
   }, [activeTab]);
 
+  useEffect(() => {
+  const activeItem = activeList[activeIndex];
+
+  if (!activeItem || activeItem.type !== "song" || activeItem.flowKey !== playingFlowSongKey) {
+    stopFlowSong();
+  }
+}, [activeIndex, activeTab]);
+
   const handleScroll = () => {
     const container = scrollRef.current;
     if (!container) return;
@@ -663,19 +658,47 @@ useEffect(() => {
   });
 };
 
+const stopFlowSong = () => {
+  if (flowAudioRef.current) {
+    flowAudioRef.current.pause();
+    flowAudioRef.current.currentTime = 0;
+    flowAudioRef.current = null;
+  }
+
+  setPlayingFlowSongKey(null);
+};
+
 const handlePlayFlowSong = (song: FlowSong) => {
   pauseAllFlowVideos();
 
-  const playerSong: Song = {
-    id: song.id,
-    title: song.title || "Brano",
-    artist: song.artist.displayName,
-    audioUrl: song.audioUrl,
-    coverUrl: song.coverUrl || undefined,
-    duration: song.duration || undefined,
+  if (playingFlowSongKey === song.flowKey && flowAudioRef.current) {
+    flowAudioRef.current.pause();
+    setPlayingFlowSongKey(null);
+    return;
+  }
+
+  if (flowAudioRef.current) {
+    flowAudioRef.current.pause();
+    flowAudioRef.current.currentTime = 0;
+  }
+
+  const audio = new Audio(song.audioUrl);
+  flowAudioRef.current = audio;
+
+  audio.onended = () => {
+    setPlayingFlowSongKey(null);
+    flowAudioRef.current = null;
   };
 
-  playSong(playerSong, flowSongs);
+  audio
+    .play()
+    .then(() => {
+      setPlayingFlowSongKey(song.flowKey);
+    })
+    .catch(() => {
+      setPlayingFlowSongKey(null);
+      flowAudioRef.current = null;
+    });
 };
   
   const handleShare = async (video: FlowVideo) => {
@@ -1045,14 +1068,14 @@ const reportMutation = useMutation({
            <button
   type="button"
   className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-white/20 backdrop-blur border border-white/30 text-white text-3xl flex items-center justify-center shadow-xl"
-  aria-label="Play brano"
+  aria-label={playingFlowSongKey === item.flowKey ? "Pausa brano" : "Play brano"}
   onClick={(e) => {
     e.preventDefault();
     e.stopPropagation();
     handlePlayFlowSong(item);
   }}
 >
-  ▶
+  {playingFlowSongKey === item.flowKey ? "❚❚" : "▶"}
 </button>
           </div>
 
