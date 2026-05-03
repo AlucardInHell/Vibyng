@@ -2736,8 +2736,19 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
       </div>
     )}
       {selectedVideo && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col" onClick={() => setSelectedVideo(null)}>
-          <div className="flex-1 flex items-center justify-center p-4" onClick={e => e.stopPropagation()}>
+  <div
+    className="fixed inset-0 z-50 bg-black/90 flex flex-col overflow-hidden overscroll-contain"
+    onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        setSelectedVideo(null);
+      }
+    }}
+  >
+         <div
+  className="absolute inset-x-0 top-4 z-[9999] flex justify-end gap-2 px-4"
+  onClick={(e) => e.stopPropagation()}
+  onPointerDown={(e) => e.stopPropagation()}
+>
             <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-8rem)] max-h-[88dvh] flex flex-col">
               <video
   src={selectedVideo.videoUrl}
@@ -2783,49 +2794,66 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
  <Share2 className="w-5 h-5" />
 {t.share}
 </button>
-               <button
-  type="button"
-  data-no-card-click
-  className="relative z-30 pointer-events-auto text-xs text-red-400 hover:text-red-600"
-  onMouseDown={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }}
-  onTouchStart={(e) => {
-    e.stopPropagation();
-  }}
-  onClick={async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+               {Number(selectedVideo.artistId ?? selectedVideo.artist_id) === Number(currentUserId) && (
+  <button
+    type="button"
+    data-no-card-click
+    className="relative z-[10000] h-10 w-10 rounded-full bg-black/40 text-red-400 text-lg hover:bg-black/60 hover:text-red-500 flex items-center justify-center touch-manipulation"
+    onPointerDown={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }}
+    onPointerUp={async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    await apiRequest(
-      "DELETE",
-      `/api/videos/${video.id}?userId=${currentUserId}`
-    );
+      const videoId = Number(selectedVideo.id);
 
-    if (selectedVideo?.id === video.id) {
+      await apiRequest(
+        "DELETE",
+        `/api/videos/${videoId}?userId=${currentUserId}`
+      );
+
       setSelectedVideo(null);
-    }
 
-    await queryClient.invalidateQueries({
-      queryKey: ["/api/users", currentUserId, "videos"],
-    });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/users", currentUserId, "videos"],
+      });
 
-    await queryClient.invalidateQueries({
-      queryKey: ["/api/flow/client"],
-      exact: false,
-    });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/flow/client"],
+        exact: false,
+      });
 
-    await queryClient.invalidateQueries({
-      queryKey: ["/api/posts"],
-    });
+      await queryClient.invalidateQueries({
+        queryKey: ["/api/posts"],
+      });
+    }}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }}
+    aria-label={t.delete}
+    title={t.delete}
+  >
+    🗑️
+  </button>
+)}
+                 <button
+  type="button"
+  className="ml-auto relative z-[10000] h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center touch-manipulation"
+  onPointerDown={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
   }}
-  aria-label={t.delete}
-  title={t.delete}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedVideo(null);
+  }}
 >
-  🗑️
+  ✕
 </button>
-                  <button className="ml-auto text-muted-foreground text-lg" onClick={() => setSelectedVideo(null)}>✕</button>
                 </div>
                 <div className="mt-0 pt-2 px-4 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden">
   <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
