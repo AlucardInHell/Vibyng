@@ -499,6 +499,28 @@ app.delete("/api/users/:userId/videos/:videoId", deleteVideoHandler);
 
 // === VIDEO LIKES ===
 
+const syncVideoLikesCount = async (videoId: number) => {
+  const countResult = await db.execute(sql`
+    SELECT COUNT(DISTINCT user_id)::int AS "likesCount"
+    FROM video_likes
+    WHERE video_id = ${videoId}
+  `);
+
+  const likesCount = Number(
+    (countResult.rows[0] as any)?.likesCount ??
+    (countResult.rows[0] as any)?.likescount ??
+    0
+  );
+
+  await db.execute(sql`
+    UPDATE artist_videos
+    SET likes_count = ${likesCount}
+    WHERE id = ${videoId}
+  `);
+
+  return likesCount;
+};
+
 app.get("/api/videos/:videoId/liked/:userId", async (req, res) => {
   try {
     const videoId = Number(req.params.videoId);
@@ -518,8 +540,11 @@ app.get("/api/videos/:videoId/liked/:userId", async (req, res) => {
       LIMIT 1
     `);
 
+    const likesCount = await syncVideoLikesCount(videoId);
+
     res.json({
       liked: result.rows.length > 0,
+      likesCount,
     });
   } catch (err: any) {
     console.error("[video-liked] error:", err?.message || err);
@@ -563,35 +588,17 @@ app.post("/api/videos/:videoId/like", async (req, res) => {
       });
     }
 
-    const inserted = await db.execute(sql`
+    await db.execute(sql`
       INSERT INTO video_likes (video_id, user_id)
       VALUES (${videoId}, ${userId})
       ON CONFLICT (video_id, user_id) DO NOTHING
-      RETURNING id
     `);
 
-    if (inserted.rows.length > 0) {
-      await db.execute(sql`
-        UPDATE artist_videos
-        SET likes_count = COALESCE(likes_count, 0) + 1
-        WHERE id = ${videoId}
-      `);
-    }
-
-    const countResult = await db.execute(sql`
-      SELECT COALESCE(likes_count, 0) AS "likesCount"
-      FROM artist_videos
-      WHERE id = ${videoId}
-      LIMIT 1
-    `);
+    const likesCount = await syncVideoLikesCount(videoId);
 
     res.json({
       liked: true,
-      likesCount: Number(
-        (countResult.rows[0] as any)?.likesCount ??
-        (countResult.rows[0] as any)?.likescount ??
-        0
-      ),
+      likesCount,
     });
   } catch (err: any) {
     console.error("[video-like] error:", err?.message || err);
@@ -614,35 +621,17 @@ app.post("/api/videos/:videoId/unlike", async (req, res) => {
       });
     }
 
-    const deleted = await db.execute(sql`
+    await db.execute(sql`
       DELETE FROM video_likes
       WHERE video_id = ${videoId}
         AND user_id = ${userId}
-      RETURNING id
     `);
 
-    if (deleted.rows.length > 0) {
-      await db.execute(sql`
-        UPDATE artist_videos
-        SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0)
-        WHERE id = ${videoId}
-      `);
-    }
-
-    const countResult = await db.execute(sql`
-      SELECT COALESCE(likes_count, 0) AS "likesCount"
-      FROM artist_videos
-      WHERE id = ${videoId}
-      LIMIT 1
-    `);
+    const likesCount = await syncVideoLikesCount(videoId);
 
     res.json({
       liked: false,
-      likesCount: Number(
-        (countResult.rows[0] as any)?.likesCount ??
-        (countResult.rows[0] as any)?.likescount ??
-        0
-      ),
+      likesCount,
     });
   } catch (err: any) {
     console.error("[video-unlike] error:", err?.message || err);
@@ -653,7 +642,6 @@ app.post("/api/videos/:videoId/unlike", async (req, res) => {
     });
   }
 });
-
 // === FLOW CLIENT ===
 
 app.get("/api/flow/client", async (req, res) => {
