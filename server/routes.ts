@@ -667,7 +667,12 @@ app.get("/api/flow/client", async (req, res) => {
           NULL::integer AS duration,
           NULL::text AS description,
           COALESCE(av.likes_count, 0) AS "likesCount",
-          av.created_at AS "createdAt",
+(
+  SELECT COUNT(*)::int
+  FROM video_comments vc
+  WHERE vc.video_id = av.id
+) AS "commentsCount",
+av.created_at AS "createdAt",
           json_build_object(
             'id', u.id,
             'username', u.username,
@@ -696,7 +701,12 @@ app.get("/api/flow/client", async (req, res) => {
           NULL::integer AS duration,
           ap.description AS description,
           COALESCE(ap.likes_count, 0) AS "likesCount",
-          ap.created_at AS "createdAt",
+(
+  SELECT COUNT(*)::int
+  FROM photo_comments pc
+  WHERE pc.photo_id = ap.id
+) AS "commentsCount",
+ap.created_at AS "createdAt",
           json_build_object(
             'id', u.id,
             'username', u.username,
@@ -724,8 +734,9 @@ app.get("/api/flow/client", async (req, res) => {
           s.cover_url AS "coverUrl",
           s.duration AS duration,
           NULL::text AS description,
-          0 AS "likesCount",
-          s.created_at AS "createdAt",
+         0 AS "likesCount",
+0 AS "commentsCount",
+s.created_at AS "createdAt",
           json_build_object(
             'id', u.id,
             'username', u.username,
