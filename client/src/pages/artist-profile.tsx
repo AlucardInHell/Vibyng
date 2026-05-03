@@ -2733,47 +2733,125 @@ return (
             ))}
           </div>
 
-          <div className="mt-3 pt-3 border-t bg-background shrink-0">
-            <div className="relative">
-              <input
-                className="w-full text-sm border rounded-lg px-3 py-2 bg-background"
-                placeholder={t.commentPlaceholder}
-                value={commentInput}
-                onChange={(e) => {
-                  setCommentInput(e.target.value);
-                  handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
-                }}
-               onKeyDown={async (e) => {
-  if (e.key === "Enter" && commentInput.trim()) {
-    await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-      authorId: currentUserId,
-      content: commentInput.trim(),
-    });
-    setCommentInput("");
-    closePhotoCommentMentions();
-    await refetchPhotoComments();
-    await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
-    await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
-    await queryClient.invalidateQueries({ queryKey: [`/api/users/${currentUserId}`] });
-  }
-}}
-              />
-              <MentionDropdown
-                query={photoCommentMentionQuery}
-                visible={showPhotoCommentMentions}
-                onSelect={(username) => {
-                  setCommentInput(insertPhotoCommentMention(commentInput, username));
-                  closePhotoCommentMentions();
-                }}
-              />
-            </div>
-          </div>
+         <div className="border-t px-3 py-3 shrink-0 bg-background">
+  <div className="flex items-center gap-2">
+    <div className="relative flex-1">
+      <Input
+        value={commentInput}
+        placeholder={t.commentPlaceholder}
+        className="w-full"
+        onChange={(e) => {
+          setCommentInput(e.target.value);
+          handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+        }}
+        onKeyDown={async (e) => {
+          if (e.key !== "Enter" || !commentInput.trim() || !selectedPhoto?.id) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+            authorId: currentUserId,
+            content: commentInput.trim(),
+          });
+
+          setCommentInput("");
+          closePhotoCommentMentions();
+
+          await refetchPhotoComments();
+
+          const photoOwnerId = Number(
+            selectedPhoto.artistId ??
+            selectedPhoto.artist_id ??
+            selectedPhoto.userId ??
+            selectedPhoto.user_id ??
+            artistId
+          );
+
+          await queryClient.invalidateQueries({
+            queryKey: ["/api/users", photoOwnerId, "photos"],
+          });
+
+          await queryClient.invalidateQueries({
+            queryKey: ["/api/flow/client"],
+            exact: false,
+          });
+
+          await queryClient.invalidateQueries({
+            queryKey: ["/api/vpoints", currentUserId, "status"],
+          });
+
+          await queryClient.invalidateQueries({
+            queryKey: ["/api/users", currentUserId],
+          });
+        }}
+      />
+
+      <MentionDropdown
+        query={photoCommentMentionQuery}
+        visible={showPhotoCommentMentions}
+        onSelect={(username) => {
+          setCommentInput(insertPhotoCommentMention(commentInput, username));
+          closePhotoCommentMentions();
+        }}
+      />
+    </div>
+
+    <Button
+      size="icon"
+      disabled={!commentInput.trim() || !selectedPhoto?.id}
+      onClick={async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!commentInput.trim() || !selectedPhoto?.id) return;
+
+        await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+          authorId: currentUserId,
+          content: commentInput.trim(),
+        });
+
+        setCommentInput("");
+        closePhotoCommentMentions();
+
+        await refetchPhotoComments();
+
+        const photoOwnerId = Number(
+          selectedPhoto.artistId ??
+          selectedPhoto.artist_id ??
+          selectedPhoto.userId ??
+          selectedPhoto.user_id ??
+          artistId
+        );
+
+        await queryClient.invalidateQueries({
+          queryKey: ["/api/users", photoOwnerId, "photos"],
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: ["/api/flow/client"],
+          exact: false,
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: ["/api/vpoints", currentUserId, "status"],
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: ["/api/users", currentUserId],
+        });
+      }}
+    >
+      <Send className="w-4 h-4" />
+    </Button>
+  </div>
+</div>
         </div>
       </SheetContent>
     </Sheet>
   </>
 )}
-   <Dialog open={connectionsOpen} onOpenChange={setConnectionsOpen}>
+<Dialog open={connectionsOpen} onOpenChange={setConnectionsOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Connessioni</DialogTitle>
