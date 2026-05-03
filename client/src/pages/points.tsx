@@ -2094,13 +2094,19 @@ await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] })
   <Card
     key={video.id}
     className="overflow-hidden hover-elevate cursor-pointer"
-    onClick={() => {
-      setSelectedVideo(video);
-      setVideoLikeCount(prev => ({
-        ...prev,
-        [video.id]: Number((video as any).likesCount ?? 0),
-      }));
-    }}
+    onClick={(e) => {
+  const target = e.target as HTMLElement;
+
+  if (target.closest("button, a, input, textarea, [data-no-card-click]")) {
+    return;
+  }
+
+  setSelectedVideo(video);
+  setVideoLikeCount(prev => ({
+    ...prev,
+    [video.id]: Number((video as any).likesCount ?? 0),
+  }));
+}}
     data-testid={`card-video-${video.id}`}
   >
     <div className="relative">
@@ -2779,7 +2785,15 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
 </button>
                <button
   type="button"
-  className="text-xs text-red-400 hover:text-red-600"
+  data-no-card-click
+  className="relative z-30 pointer-events-auto text-xs text-red-400 hover:text-red-600"
+  onMouseDown={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+  onTouchStart={(e) => {
+    e.stopPropagation();
+  }}
   onClick={async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2788,6 +2802,10 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
       "DELETE",
       `/api/videos/${video.id}?userId=${currentUserId}`
     );
+
+    if (selectedVideo?.id === video.id) {
+      setSelectedVideo(null);
+    }
 
     await queryClient.invalidateQueries({
       queryKey: ["/api/users", currentUserId, "videos"],
@@ -2802,6 +2820,8 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
       queryKey: ["/api/posts"],
     });
   }}
+  aria-label={t.delete}
+  title={t.delete}
 >
   🗑️
 </button>
