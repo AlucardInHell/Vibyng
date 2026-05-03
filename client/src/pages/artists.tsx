@@ -232,7 +232,17 @@ const [reportDetails, setReportDetails] = useState("");
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const flowAudioRef = useRef<HTMLAudioElement | null>(null);
   const [playingFlowSongKey, setPlayingFlowSongKey] = useState<string | null>(null);
-useEffect(() => {
+  useEffect(() => {
+  return () => {
+    if (flowAudioRef.current) {
+      flowAudioRef.current.pause();
+      flowAudioRef.current.currentTime = 0;
+      flowAudioRef.current = null;
+    }
+  };
+}, []);
+  
+  useEffect(() => {
   const handleFlowRefresh = () => {
     setActiveTab("for-you");
     setActiveIndex(0);
