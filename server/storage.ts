@@ -442,10 +442,29 @@ async likePost(postId: number, userId: number): Promise<void> {
   }
 
   async getVideosByArtist(artistId: number): Promise<ArtistVideo[]> {
-    return await db.select().from(artistVideos)
-      .where(eq(artistVideos.artistId, artistId))
-      .orderBy(desc(artistVideos.createdAt));
-  }
+  const result = await db.execute(sql`
+    SELECT
+      av.id,
+      av.artist_id AS "artistId",
+      av.title,
+      av.video_url AS "videoUrl",
+      av.thumbnail_url AS "thumbnailUrl",
+      COALESCE(vl.likes_count, 0)::int AS "likesCount",
+      av.created_at AS "createdAt"
+    FROM artist_videos av
+    LEFT JOIN (
+      SELECT
+        video_id,
+        COUNT(DISTINCT user_id)::int AS likes_count
+      FROM video_likes
+      GROUP BY video_id
+    ) vl ON vl.video_id = av.id
+    WHERE av.artist_id = ${artistId}
+    ORDER BY av.created_at DESC
+  `);
+
+  return result.rows as unknown as ArtistVideo[];
+}
 
   async createVideo(insertVideo: InsertArtistVideo): Promise<ArtistVideo> {
     const [video] = await db.insert(artistVideos).values(insertVideo).returning();
@@ -744,11 +763,30 @@ async deleteVideo(videoId: number): Promise<void> {
     await db.delete(artistVideos).where(eq(artistVideos.id, videoId));
   }
   
-  async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
-    return await db.select().from(artistVideos)
-      .where(eq(artistVideos.artistId, userId))
-      .orderBy(desc(artistVideos.createdAt));
-  }
+ async getVideosByUser(userId: number): Promise<ArtistVideo[]> {
+  const result = await db.execute(sql`
+    SELECT
+      av.id,
+      av.artist_id AS "artistId",
+      av.title,
+      av.video_url AS "videoUrl",
+      av.thumbnail_url AS "thumbnailUrl",
+      COALESCE(vl.likes_count, 0)::int AS "likesCount",
+      av.created_at AS "createdAt"
+    FROM artist_videos av
+    LEFT JOIN (
+      SELECT
+        video_id,
+        COUNT(DISTINCT user_id)::int AS likes_count
+      FROM video_likes
+      GROUP BY video_id
+    ) vl ON vl.video_id = av.id
+    WHERE av.artist_id = ${userId}
+    ORDER BY av.created_at DESC
+  `);
+
+  return result.rows as unknown as ArtistVideo[];
+}
 
   async getConversation(userId1: number, userId2: number): Promise<(Message & { sender: User })[]> {
     const results = await db.select({
