@@ -1346,59 +1346,6 @@ const reportMutation = useMutation({
           SONG   
         </div>
 
-        <div className="absolute right-4 top-[32%] z-40 flex flex-col items-center gap-5 text-white">
-  <button
-    type="button"
-    className={`flex flex-col items-center gap-1 ${
-      Number(item.artist.id) === Number(currentUserId)
-        ? "opacity-50 cursor-not-allowed"
-        : songLikedMap[item.id]
-          ? "text-red-500"
-          : "text-white"
-    }`}
-    disabled={
-      Number(item.artist.id) === Number(currentUserId) ||
-      !songLikeReadyMap[item.id] ||
-      songLikePendingMap[item.id]
-    }
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleSongLike(item);
-    }}
-  >
-    <Heart
-      className={`w-6 h-6 ${
-        songLikedMap[item.id] ? "fill-red-500 text-red-500" : ""
-      }`}
-    />
-    <span className="text-[11px]">
-      {songLikeCounts[item.id] ?? item.likesCount ?? 0}
-    </span>
-  </button>
-
-  <button
-    type="button"
-    className={`flex flex-col items-center gap-1 ${
-      commentsOpenType === "song" && commentsOpenId === item.id
-        ? "text-primary"
-        : "text-white opacity-80"
-    }`}
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      toggleFlowComments("song", item.id);
-    }}
-  >
-    <MessageCircle className="w-6 h-6" />
-    <span className="text-[11px]">
-      {commentsOpenType === "song" && commentsOpenId === item.id
-        ? comments.length
-        : Number((item as any).commentsCount ?? 0)}
-    </span>
-  </button>
-</div>
-
         {commentsOpenType === "song" && commentsOpenId === item.id && (
   <div className="absolute inset-x-0 bottom-0 h-[72%] rounded-t-3xl bg-black/95 border-t border-white/10 backdrop-blur z-50 flex flex-col overflow-hidden shadow-2xl">
     <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
@@ -1689,137 +1636,57 @@ const reportMutation = useMutation({
           </Link>
 
           <div className="flex flex-col items-center gap-4 text-white">
-            <div className="flex flex-col items-center gap-1 opacity-80">
-              <Heart className="w-6 h-6" />
-              <span className="text-[11px]">
-                {item.likesCount ?? 0}
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center gap-1 opacity-60">
-              <MessageCircle className="w-6 h-6" />
-              <span className="text-[11px]">
-                0
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-  
-  if (item.type === "photo") {
-    return (
-      <section
-        key={item.flowKey}
-        className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
-      >
-        <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
-          <img
-            src={item.imageUrl}
-            alt={item.title || "Foto"}
-            className="absolute inset-0 w-full h-full object-cover"
-            loading={index === activeIndex ? "eager" : "lazy"}
-          />
-
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-black/20 pointer-events-none" />
-
-          <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/50 text-white text-xs font-semibold border border-white/10">
-            FOTO
-          </div>
-
-          <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
-            <Link href={`/artist/${item.artist.id}`}>
-              <div className="flex items-end gap-2 min-w-0 max-w-[75%] cursor-pointer">
-                <Avatar className="w-11 h-11 border-2 border-white/70">
-                  {item.artist.avatarUrl && (
-                    <AvatarImage
-                      src={item.artist.avatarUrl}
-                      alt={item.artist.displayName}
-                    />
-                  )}
-
-                  <AvatarFallback className="bg-primary/20 text-white">
-                    {item.artist.displayName?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="min-w-0">
-                  <p className="text-white text-lg font-semibold leading-tight truncate">
-                    {item.artist.displayName}
-                  </p>
-
-                  <p className="text-white/90 text-sm leading-tight truncate">
-                    {item.title || "Foto"}
-                  </p>
-
-                  {item.description && (
-                    <p className="text-white/70 text-xs leading-tight truncate mt-1">
-                      {item.description}
-                    </p>
-                  )}
-
-                  <p className="text-white/60 text-xs truncate mt-1">
-                    @{item.artist.username}
-                  </p>
-                </div>
-              </div>
-            </Link>
-
-            <div className="flex flex-col items-center gap-4 text-white">
-              <button
-  type="button"
-  className={`flex flex-col items-center gap-1 ${
-    Number(item.artist.id) === Number(currentUserId)
-      ? "opacity-50 cursor-not-allowed"
-      : photoLikedMap[item.id]
-        ? "text-red-500"
-        : "text-white"
-  }`}
-  disabled={
-    Number(item.artist.id) === Number(currentUserId) ||
-    !photoLikeReadyMap[item.id] ||
-    photoLikePendingMap[item.id]
-  }
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    handlePhotoLike(item);
-  }}
->
-  <Heart
-    className={`w-6 h-6 ${
-      photoLikedMap[item.id] ? "fill-red-500 text-red-500" : ""
+  <button
+    type="button"
+    className={`flex flex-col items-center gap-1 ${
+      Number(item.artist.id) === Number(currentUserId)
+        ? "opacity-50 cursor-not-allowed"
+        : songLikedMap[item.id]
+          ? "text-red-500"
+          : "text-white"
     }`}
-  />
-  <span className="text-[11px]">
-    {photoLikeCounts[item.id] ?? item.likesCount ?? 0}
-  </span>
-</button>
+    disabled={
+      Number(item.artist.id) === Number(currentUserId) ||
+      !songLikeReadyMap[item.id] ||
+      songLikePendingMap[item.id]
+    }
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSongLike(item);
+    }}
+  >
+    <Heart
+      className={`w-7 h-7 ${
+        songLikedMap[item.id] ? "fill-red-500 text-red-500" : ""
+      }`}
+    />
+    <span className="text-[11px]">
+      {songLikeCounts[item.id] ?? item.likesCount ?? 0}
+    </span>
+  </button>
 
-              <button
-  type="button"
-  className={`flex flex-col items-center gap-1 ${
-    commentsOpenType === "photo" && commentsOpenId === item.id
-      ? "text-primary"
-      : "text-white opacity-80"
-  }`}
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    toggleFlowComments("photo", item.id);
-  }}
->
-  <MessageCircle className="w-6 h-6" />
-  <span className="text-[11px]">
-  {commentsOpenType === "photo" && commentsOpenId === item.id
-    ? comments.length
-    : Number((item as any).commentsCount ?? 0)}
-</span>
-</button>
-              
-            </div>
+  <button
+    type="button"
+    className={`flex flex-col items-center gap-1 ${
+      commentsOpenType === "song" && commentsOpenId === item.id
+        ? "text-primary"
+        : "text-white opacity-80"
+    }`}
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleFlowComments("song", item.id);
+    }}
+  >
+    <MessageCircle className="w-7 h-7" />
+    <span className="text-[11px]">
+      {commentsOpenType === "song" && commentsOpenId === item.id
+        ? comments.length
+        : Number((item as any).commentsCount ?? 0)}
+    </span>
+  </button>
+</div>
           </div>
 
 {commentsOpenType === "photo" && commentsOpenId === item.id && (
