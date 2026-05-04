@@ -515,7 +515,12 @@ useEffect(() => {
           }
 
           const data = await res.json();
-          return [song.id, Boolean(data?.liked)] as const;
+
+return [
+  song.id,
+  Boolean(data?.liked),
+  Number(data?.likesCount ?? song.likesCount ?? 0),
+] as const;
         })
       );
 
@@ -531,6 +536,16 @@ useEffect(() => {
         return next;
       });
 
+     setSongLikeCounts((prev) => {
+  const next = { ...prev };
+
+  entries.forEach(([songId, _liked, likesCount]) => {
+    next[songId] = Number(likesCount ?? 0);
+  });
+
+  return next;
+});
+      
       setSongLikeReadyMap((prev) => {
         const next = { ...prev };
 
