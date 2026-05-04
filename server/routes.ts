@@ -269,6 +269,19 @@ await db.execute(sql`
   ON song_likes (song_id, user_id)
 `);
 
+  await db.execute(sql`
+  UPDATE artist_songs s
+  SET likes_count = COALESCE(sl.likes_count, 0)
+  FROM (
+    SELECT
+      song_id,
+      COUNT(DISTINCT user_id)::int AS likes_count
+    FROM song_likes
+    GROUP BY song_id
+  ) sl
+  WHERE s.id = sl.song_id
+`);
+
 await db.execute(sql`
   CREATE TABLE IF NOT EXISTS song_comments (
     id serial PRIMARY KEY,
