@@ -3663,7 +3663,11 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
         title,
         video_url AS "videoUrl",
         thumbnail_url AS "thumbnailUrl",
-        likes_count AS "likesCount",
+        (
+        SELECT COUNT(DISTINCT vl.user_id)::int
+        FROM video_likes vl
+        WHERE vl.video_id = artist_videos.id
+        ) AS "likesCount",
         created_at AS "createdAt"
       FROM artist_videos
       WHERE artist_id = ${userId}
