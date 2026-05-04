@@ -1346,7 +1346,7 @@ const reportMutation = useMutation({
           SONG   
         </div>
 
-        <div className="absolute right-4 bottom-24 z-20 flex flex-col items-center gap-4 text-white">
+        <div className="absolute right-4 top-[32%] z-40 flex flex-col items-center gap-5 text-white">
   <button
     type="button"
     className={`flex flex-col items-center gap-1 ${
