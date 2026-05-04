@@ -219,6 +219,29 @@ await db.execute(sql`
 `);
 
 await db.execute(sql`
+  UPDATE artist_videos av
+  SET likes_count = COALESCE(vl.likes_count, 0)
+  FROM (
+    SELECT
+      video_id,
+      COUNT(DISTINCT user_id)::int AS likes_count
+    FROM video_likes
+    GROUP BY video_id
+  ) vl
+  WHERE av.id = vl.video_id
+`);
+
+await db.execute(sql`
+  UPDATE artist_videos av
+  SET likes_count = 0
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM video_likes vl
+    WHERE vl.video_id = av.id
+  )
+`);
+  
+await db.execute(sql`
   ALTER TABLE video_comments
   ADD COLUMN IF NOT EXISTS likes_count integer DEFAULT 0
 `);
