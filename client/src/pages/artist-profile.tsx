@@ -1796,23 +1796,58 @@ return (
       videoLikeCount[selectedVideo.id] ??
       Number((selectedVideo as any).likesCount ?? 0);
 
-    if (isVideoLiked) {
-      await apiRequest("POST", `/api/videos/${selectedVideo.id}/unlike`, { userId: currentUserId });
-      setVideoLikeCount(prev => ({
-        ...prev,
-        [selectedVideo.id]: Math.max(0, currentCount - 1),
-      }));
-    } else {
-      await apiRequest("POST", `/api/videos/${selectedVideo.id}/like`, { userId: currentUserId });
-      setVideoLikeCount(prev => ({
-        ...prev,
-        [selectedVideo.id]: currentCount + 1,
-      }));
-    }
+    const nextLiked = !isVideoLiked;
 
-    await refetchVideoLike();
-    queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "videos"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
+let nextLikesCount = currentCount;
+
+if (isVideoLiked) {
+  const res = await apiRequest("POST", `/api/videos/${selectedVideo.id}/unlike`, {
+    userId: currentUserId,
+  });
+
+  const data = await res.json().catch(() => null);
+
+  nextLikesCount = Number(
+    data?.likesCount ?? Math.max(0, currentCount - 1)
+  );
+} else {
+  const res = await apiRequest("POST", `/api/videos/${selectedVideo.id}/like`, {
+    userId: currentUserId,
+  });
+
+  const data = await res.json().catch(() => null);
+
+  nextLikesCount = Number(
+    data?.likesCount ?? currentCount + 1
+  );
+}
+
+setVideoLikeCount((prev) => ({
+  ...prev,
+  [selectedVideo.id]: nextLikesCount,
+}));
+
+queryClient.setQueryData(
+  ["/api/videos", selectedVideo.id, "liked", currentUserId],
+  {
+    liked: nextLiked,
+    likesCount: nextLikesCount,
+  }
+);
+
+setSelectedVideo((prev: any) =>
+  prev && Number(prev.id) === Number(selectedVideo.id)
+    ? {
+        ...prev,
+        likesCount: nextLikesCount,
+      }
+    : prev
+);
+
+await refetchVideoLike();
+
+queryClient.invalidateQueries({ queryKey: ["/api/users", artistId, "videos"] });
+queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
   }}
 >
   <Heart className={`w-5 h-5 ${isVideoLiked ? "fill-red-500" : ""}`} />
