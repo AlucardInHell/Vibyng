@@ -230,16 +230,6 @@ await db.execute(sql`
   ) vl
   WHERE av.id = vl.video_id
 `);
-
-await db.execute(sql`
-  UPDATE artist_videos av
-  SET likes_count = 0
-  WHERE NOT EXISTS (
-    SELECT 1
-    FROM video_likes vl
-    WHERE vl.video_id = av.id
-  )
-`);
   
 await db.execute(sql`
   ALTER TABLE video_comments
@@ -600,19 +590,38 @@ app.get("/api/videos/:videoId/liked/:userId", async (req, res) => {
     }
 
     const result = await db.execute(sql`
-      SELECT id
+  SELECT id
+  FROM video_likes
+  WHERE video_id = ${videoId}
+    AND user_id = ${userId}
+  LIMIT 1
+`);
+
+const countResult = await db.execute(sql`
+  SELECT GREATEST(
+    COALESCE((
+      SELECT likes_count
+      FROM artist_videos
+      WHERE id = ${videoId}
+    ), 0),
+    COALESCE((
+      SELECT COUNT(DISTINCT user_id)::int
       FROM video_likes
       WHERE video_id = ${videoId}
-        AND user_id = ${userId}
-      LIMIT 1
-    `);
+    ), 0)
+  ) AS "likesCount"
+`);
 
-    const likesCount = await syncVideoLikesCount(videoId);
+const likesCount = Number(
+  (countResult.rows[0] as any)?.likesCount ??
+  (countResult.rows[0] as any)?.likescount ??
+  0
+);
 
-    res.json({
-      liked: result.rows.length > 0,
-      likesCount,
-    });
+res.json({
+  liked: result.rows.length > 0,
+  likesCount,
+});
   } catch (err: any) {
     console.error("[video-liked] error:", err?.message || err);
 
