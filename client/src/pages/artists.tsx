@@ -162,6 +162,7 @@ type FlowSong = {
   coverUrl?: string | null;
   duration?: number | null;
   likesCount?: number | null;
+  commentsCount?: number | null;
   createdAt?: string | null;
   artist: User;
 };
@@ -201,7 +202,7 @@ export default function Artists() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentsOpenId, setCommentsOpenId] = useState<number | null>(null);
   const [commentInput, setCommentInput] = useState("");
-  const [commentsOpenType, setCommentsOpenType] = useState<"video" | "photo" | null>(null);
+  const [commentsOpenType, setCommentsOpenType] = useState<"video" | "photo" | "song" | null>(null);
   const [savedVideoIds, setSavedVideoIds] = useState<number[]>(() => {
     try {
       const raw = localStorage.getItem("flow-saved-videos");
@@ -220,6 +221,10 @@ export default function Artists() {
   const [photoLikeCounts, setPhotoLikeCounts] = useState<Record<number, number>>({});
   const [photoLikeReadyMap, setPhotoLikeReadyMap] = useState<Record<number, boolean>>({});
   const [photoLikePendingMap, setPhotoLikePendingMap] = useState<Record<number, boolean>>({});
+  const [songLikedMap, setSongLikedMap] = useState<Record<number, boolean>>({});
+  const [songLikeCounts, setSongLikeCounts] = useState<Record<number, number>>({});
+  const [songLikeReadyMap, setSongLikeReadyMap] = useState<Record<number, boolean>>({});
+  const [songLikePendingMap, setSongLikePendingMap] = useState<Record<number, boolean>>({});
   const [reportOpen, setReportOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
   targetType: "comment";
@@ -228,8 +233,8 @@ export default function Artists() {
   title: string;
   description: string;
 } | null>(null);
-const [reportReason, setReportReason] = useState("offensive");
-const [reportDetails, setReportDetails] = useState("");
+  const [reportReason, setReportReason] = useState("offensive");
+  const [reportDetails, setReportDetails] = useState("");
   
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
@@ -377,7 +382,11 @@ const flowVideos = useMemo<FlowVideo[]>(() => {
 
 const flowPhotos = useMemo<FlowPhoto[]>(() => {
   return flowContent.filter((item): item is FlowPhoto => item.type === "photo");
-}, [flowContent]);  
+}, [flowContent]);
+
+const flowSongs = useMemo<FlowSong[]>(() => {
+  return flowContent.filter((item): item is FlowSong => item.type === "song");
+}, [flowContent]);
  
 const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<ActiveLiveStream[]>({
   queryKey: ["/api/lives/active"],
@@ -491,6 +500,59 @@ useEffect(() => {
 }, [flowPhotos, currentUserId]);
 
 useEffect(() => {
+  if (!flowSongs.length || !currentUserId) return;
+
+  let cancelled = false;
+
+  const loadSongLikedStatuses = async () => {
+    try {
+      const entries = await Promise.all(
+        flowSongs.map(async (song) => {
+          const res = await fetch(`/api/songs/${song.id}/liked/${currentUserId}`);
+
+          if (!res.ok) {
+            return [song.id, false] as const;
+          }
+
+          const data = await res.json();
+          return [song.id, Boolean(data?.liked)] as const;
+        })
+      );
+
+      if (cancelled) return;
+
+      setSongLikedMap((prev) => {
+        const next = { ...prev };
+
+        entries.forEach(([songId, liked]) => {
+          next[songId] = liked;
+        });
+
+        return next;
+      });
+
+      setSongLikeReadyMap((prev) => {
+        const next = { ...prev };
+
+        entries.forEach(([songId]) => {
+          next[songId] = true;
+        });
+
+        return next;
+      });
+    } catch {
+      // Non blocchiamo il Flow se lo stato like song non viene caricato.
+    }
+  };
+
+  loadSongLikedStatuses();
+
+  return () => {
+    cancelled = true;
+  };
+}, [flowSongs, currentUserId]);  
+
+useEffect(() => {
   if (!flowVideos.length || !currentUserId) return;
 
   let cancelled = false;
@@ -548,9 +610,11 @@ useEffect(() => {
   enabled: commentsOpenId !== null && commentsOpenType !== null,
   queryFn: async () => {
     const endpoint =
-      commentsOpenType === "photo"
-        ? `/api/photos/${commentsOpenId}/comments?userId=${currentUserId}`
-        : `/api/videos/${commentsOpenId}/comments?userId=${currentUserId}`;
+  commentsOpenType === "photo"
+    ? `/api/photos/${commentsOpenId}/comments?userId=${currentUserId}`
+    : commentsOpenType === "song"
+      ? `/api/songs/${commentsOpenId}/comments?userId=${currentUserId}`
+      : `/api/videos/${commentsOpenId}/comments?userId=${currentUserId}`;
 
     const res = await fetch(endpoint);
     return res.json();
@@ -779,6 +843,67 @@ const handlePhotoLike = async (photo: FlowPhoto) => {
     }));
   }
 };
+
+const handleSongLike = async (song: FlowSong) => {
+  if (Number(song.artist.id) === Number(currentUserId)) return;
+
+  const songId = Number(song.id);
+
+  if (!songLikeReadyMap[songId] || songLikePendingMap[songId]) {
+    return;
+  }
+
+  setSongLikePendingMap((prev) => ({ ...prev, [songId]: true }));
+
+  try {
+    const isLiked = songLikedMap[songId] ?? false;
+
+    const res = isLiked
+      ? await apiRequest("POST", `/api/songs/${songId}/unlike/${currentUserId}`)
+      : await apiRequest("POST", `/api/songs/${songId}/like/${currentUserId}`);
+
+    const data = await res.json().catch(() => null);
+
+    setSongLikedMap((prev) => ({
+      ...prev,
+      [songId]: Boolean(data?.liked ?? !isLiked),
+    }));
+
+    if (typeof data?.likesCount === "number") {
+      setSongLikeCounts((prev) => ({
+        ...prev,
+        [songId]: Number(data.likesCount),
+      }));
+    }
+
+    const likedRes = await fetch(`/api/songs/${songId}/liked/${currentUserId}`);
+    if (likedRes.ok) {
+      const likedData = await likedRes.json();
+
+      setSongLikedMap((prev) => ({
+        ...prev,
+        [songId]: Boolean(likedData?.liked),
+      }));
+
+      if (typeof likedData?.likesCount === "number") {
+        setSongLikeCounts((prev) => ({
+          ...prev,
+          [songId]: Number(likedData.likesCount),
+        }));
+      }
+    }
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/flow/client"],
+      exact: false,
+    });
+  } finally {
+    setSongLikePendingMap((prev) => ({
+      ...prev,
+      [songId]: false,
+    }));
+  }
+};
   
   const pauseAllFlowVideos = () => {
   Object.values(videoRefs.current).forEach((videoEl) => {
@@ -906,7 +1031,7 @@ const reportMutation = useMutation({
   },
 });
 
-  const toggleFlowComments = (type: "video" | "photo", id: number) => {
+  const toggleFlowComments = (type: "video" | "photo" | "song", id: number) => {
   const alreadyOpen = commentsOpenType === type && commentsOpenId === id;
 
   if (alreadyOpen) {
@@ -926,9 +1051,11 @@ const reportMutation = useMutation({
   const handleSubmitComment = async () => {
   if (!commentsOpenId || !commentsOpenType || !commentInput.trim()) return;
 
-  const endpoint =
-    commentsOpenType === "photo"
-      ? `/api/photos/${commentsOpenId}/comments`
+ const endpoint =
+  commentsOpenType === "photo"
+    ? `/api/photos/${commentsOpenId}/comments`
+    : commentsOpenType === "song"
+      ? `/api/songs/${commentsOpenId}/comments`
       : `/api/videos/${commentsOpenId}/comments`;
 
   await apiRequest("POST", endpoint, {
