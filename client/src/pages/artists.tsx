@@ -1915,6 +1915,329 @@ const reportMutation = useMutation({
     );
   }
 
+  if (item.type === "photo") {
+  return (
+    <section
+      key={item.flowKey}
+      className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
+    >
+      <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
+        <img
+          src={item.imageUrl || item.mediaUrl}
+          alt={item.title || "Foto"}
+          className="absolute inset-0 w-full h-full object-cover"
+          loading={index === activeIndex ? "eager" : "lazy"}
+        />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-black/20 pointer-events-none" />
+
+        <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-black/50 text-white text-xs font-semibold border border-white/10">
+          FOTO
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
+          <Link href={`/artist/${item.artist.id}`}>
+            <div className="flex items-end gap-2 min-w-0 max-w-[75%] cursor-pointer">
+              <Avatar className="w-11 h-11 border-2 border-white/70">
+                {item.artist.avatarUrl && (
+                  <AvatarImage
+                    src={item.artist.avatarUrl}
+                    alt={item.artist.displayName}
+                  />
+                )}
+
+                <AvatarFallback className="bg-primary/20 text-white">
+                  {item.artist.displayName?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="min-w-0">
+                <p className="text-white text-lg font-semibold leading-tight truncate">
+                  {item.artist.displayName}
+                </p>
+
+                <p className="text-white/90 text-sm leading-tight truncate">
+                  {item.title || "Foto"}
+                </p>
+
+                {item.description && (
+                  <p className="text-white/70 text-xs leading-tight truncate mt-1">
+                    {item.description}
+                  </p>
+                )}
+
+                <p className="text-white/60 text-xs truncate mt-1">
+                  @{item.artist.username}
+                </p>
+              </div>
+            </div>
+          </Link>
+
+          <div className="flex flex-col items-center gap-4 text-white">
+            <button
+              type="button"
+              className={`flex flex-col items-center gap-1 ${
+                Number(item.artist.id) === Number(currentUserId)
+                  ? "opacity-50 cursor-not-allowed"
+                  : photoLikedMap[item.id]
+                    ? "text-red-500"
+                    : "text-white"
+              }`}
+              disabled={
+                Number(item.artist.id) === Number(currentUserId) ||
+                !photoLikeReadyMap[item.id] ||
+                photoLikePendingMap[item.id]
+              }
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handlePhotoLike(item);
+              }}
+            >
+              <Heart
+                className={`w-7 h-7 ${
+                  photoLikedMap[item.id] ? "fill-red-500 text-red-500" : ""
+                }`}
+              />
+              <span className="text-[11px]">
+                {photoLikeCounts[item.id] ?? item.likesCount ?? 0}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              className={`flex flex-col items-center gap-1 ${
+                commentsOpenType === "photo" && commentsOpenId === item.id
+                  ? "text-primary"
+                  : "text-white opacity-80"
+              }`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFlowComments("photo", item.id);
+              }}
+            >
+              <MessageCircle className="w-7 h-7" />
+              <span className="text-[11px]">
+                {commentsOpenType === "photo" && commentsOpenId === item.id
+                  ? comments.length
+                  : Number((item as any).commentsCount ?? 0)}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {commentsOpenType === "photo" && commentsOpenId === item.id && (
+          <div className="absolute inset-x-0 bottom-0 h-[72%] rounded-t-3xl bg-black/95 border-t border-white/10 backdrop-blur z-50 flex flex-col overflow-hidden shadow-2xl">
+            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+              <p className="text-white text-sm font-semibold">
+                Commenti
+              </p>
+
+              <button
+                type="button"
+                className="text-white/60 text-sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCommentsOpenType(null);
+                  setCommentsOpenId(null);
+                  setCommentInput("");
+                  closeMentions();
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-3">
+              {comments.length === 0 ? (
+                <p className="text-white/55 text-sm text-center py-4">
+                  {t.noComments}
+                </p>
+              ) : (
+                comments.map((comment: any) => (
+                  <div key={comment.id} className="flex items-start gap-3">
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      {comment.avatar_url && (
+                        <AvatarImage
+                          src={comment.avatar_url}
+                          alt={comment.display_name || "Profilo"}
+                        />
+                      )}
+
+                      <AvatarFallback className="bg-primary/20 text-white text-xs">
+                        {(comment.display_name || comment.username || "P").charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="flex-1 min-w-0 bg-white/10 rounded-2xl px-3 py-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-white text-sm font-semibold truncate">
+                          {comment.display_name || comment.username || "Profilo"}
+                        </p>
+
+                        {Number(comment.author_id) !== Number(currentUserId) && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-full text-white/60 hover:text-white hover:bg-white/10 shrink-0"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+
+                              openReport({
+                                targetType: "comment",
+                                targetId: String(comment.id),
+                                targetOwnerId: Number(comment.author_id),
+                                title: t.reportComment,
+                                description: t.reportContentDescription,
+                              });
+                            }}
+                            aria-label={t.reportComment}
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <p className="text-white/90 text-sm whitespace-pre-wrap break-words">
+                        <MentionText text={comment.content} />
+                      </p>
+
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-white/45 text-xs">
+                          {comment.created_at &&
+                            new Date(comment.created_at).toLocaleDateString("it-IT", {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          {(Number(comment.author_id) === Number(currentUserId) ||
+                            Number(item.artist.id) === Number(currentUserId)) && (
+                            <button
+                              type="button"
+                              className="text-xs text-red-400 hover:text-red-500"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                await apiRequest(
+                                  "DELETE",
+                                  `/api/photos/${item.id}/comments/${comment.id}`
+                                );
+
+                                await refetchComments();
+
+                                await queryClient.invalidateQueries({
+                                  queryKey: ["/api/flow/client"],
+                                  exact: false,
+                                });
+                              }}
+                            >
+                              🗑️
+                            </button>
+                          )}
+
+                          {Number(comment.author_id) !== Number(currentUserId) && (
+                            <button
+                              type="button"
+                              className={`flex items-center gap-1 text-xs ${
+                                comment.likedByMe
+                                  ? "text-red-500"
+                                  : "text-white/55 hover:text-red-500"
+                              }`}
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                if (comment.likedByMe) {
+                                  await apiRequest(
+                                    "POST",
+                                    `/api/photos/${item.id}/comments/${comment.id}/unlike/${currentUserId}`
+                                  );
+                                } else {
+                                  await apiRequest(
+                                    "POST",
+                                    `/api/photos/${item.id}/comments/${comment.id}/like/${currentUserId}`
+                                  );
+                                }
+
+                                await refetchComments();
+                              }}
+                            >
+                              <Heart
+                                className={`w-3 h-3 ${
+                                  comment.likedByMe ? "fill-red-500 text-red-500" : ""
+                                }`}
+                              />
+                              <span>{comment.likes_count ?? 0}</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="border-t border-white/10 px-3 py-3 shrink-0 bg-black/80">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    value={commentInput}
+                    placeholder={t.commentPlaceholder}
+                    className="w-full bg-white/10 border-white/10 text-white placeholder:text-white/40"
+                    onChange={(e) => {
+                      setCommentInput(e.target.value);
+                      handleTextChange(e.target.value, e.target.selectionStart || 0);
+                    }}
+                    onKeyDown={async (e) => {
+                      if (e.key !== "Enter") return;
+
+                      e.preventDefault();
+                      e.stopPropagation();
+
+                      await handleSubmitComment();
+                    }}
+                  />
+
+                  <MentionDropdown
+                    query={mentionQuery}
+                    visible={showMentions}
+                    onSelect={(username) => {
+                      setCommentInput(insertMention(commentInput, username));
+                      closeMentions();
+                    }}
+                  />
+                </div>
+
+                <Button
+                  size="icon"
+                  disabled={!commentInput.trim()}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    await handleSubmitComment();
+                  }}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+  
   const video = item;
           const isActive = index === activeIndex;
           const isMuted = flowMuted;
