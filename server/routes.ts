@@ -1165,7 +1165,11 @@ app.get("/api/flow/client", async (req, res) => {
           NULL::text AS "coverUrl",
           NULL::integer AS duration,
           NULL::text AS description,
-          COALESCE(av.likes_count, 0) AS "likesCount",
+          COALESCE((
+  SELECT COUNT(DISTINCT vl.user_id)::int
+  FROM video_likes vl
+  WHERE vl.video_id = av.id
+), 0) AS "likesCount",
 (
   SELECT COUNT(*)::int
   FROM video_comments vc
@@ -3442,14 +3446,19 @@ app.get("/api/videos/:videoId/liked/:userId", async (req, res) => {
     }
 
     const result = await db.execute(sql`
-      SELECT id
-      FROM video_likes
-      WHERE video_id = ${videoId}
-        AND user_id = ${userId}
-      LIMIT 1
-    `);
+  SELECT id
+  FROM video_likes
+  WHERE video_id = ${videoId}
+    AND user_id = ${userId}
+  LIMIT 1
+`);
 
-    res.json({ liked: result.rows.length > 0 });
+const likesCount = await syncVideoLikesCount(videoId);
+
+res.json({
+  liked: result.rows.length > 0,
+  likesCount,
+});
   } catch (err: any) {
     console.error("[video-liked] error:", err?.message || err);
     res.status(400).json({
