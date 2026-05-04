@@ -2339,26 +2339,6 @@ const reportMutation = useMutation({
                       </button>
 
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleSave(video.id);
-                        }}
-                        className="flex flex-col items-center gap-2"
-                      >
-                        <Bookmark className={`w-7 h-7 ${isSaved ? "fill-white" : ""}`} />
-                      </button>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleShare(video);
-                        }}
-                        className="flex flex-col items-center gap-2"
-                      >
-                        <Share2 className="w-7 h-7" />
-                      </button>
-
-                      <button
   type="button"
   className={`flex flex-col items-center gap-1 ${
     commentsOpenType === "video" && commentsOpenId === video.id
