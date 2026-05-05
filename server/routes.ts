@@ -590,6 +590,19 @@ const syncVideoLikesCount = async (videoId: number) => {
   return likesCount;
 };
 
+// Risincronizza tutti i contatori video all'avvio
+(async () => {
+  try {
+    const videos = await db.execute(sql`SELECT id FROM artist_videos`);
+    for (const video of videos.rows) {
+      await syncVideoLikesCount(Number((video as any).id));
+    }
+    console.log("[startup] Video likes counts synced");
+  } catch (err: any) {
+    console.error("[startup] Error syncing video likes:", err?.message);
+  }
+})();
+  
 app.get("/api/videos/:videoId/liked/:userId", async (req, res) => {
   try {
     const videoId = Number(req.params.videoId);
