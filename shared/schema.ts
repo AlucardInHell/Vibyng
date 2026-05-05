@@ -35,7 +35,7 @@ export const users = pgTable("users", {
 // === POSTS TABLE ===
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
-  authorId: integer("author_id").notNull().references(() => users.id),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   content: text("content").notNull(),
   mediaUrl: text("media_url"),
   isExclusive: boolean("is_exclusive").notNull().default(false),
@@ -46,7 +46,7 @@ export const posts = pgTable("posts", {
 // === ARTIST GOALS TABLE ===
 export const artistGoals = pgTable("artist_goals", {
   id: serial("id").primaryKey(),
-  artistId: integer("artist_id").notNull().references(() => users.id),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description"),
   targetAmount: decimal("target_amount", { precision: 10, scale: 2 }).notNull(),
@@ -97,7 +97,7 @@ export const artistVideos = pgTable("artist_videos", {
 // === ARTIST SONGS TABLE ===
 export const artistSongs = pgTable("artist_songs", {
   id: serial("id").primaryKey(),
-  artistId: integer("artist_id").notNull().references(() => users.id),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   audioUrl: text("audio_url").notNull(),
   coverUrl: text("cover_url"),
@@ -108,16 +108,16 @@ export const artistSongs = pgTable("artist_songs", {
 // === FOLLOWERS TABLE ===
 export const followers = pgTable("followers", {
   id: serial("id").primaryKey(),
-  fanId: integer("fan_id").notNull().references(() => users.id),
-  artistId: integer("artist_id").notNull().references(() => users.id),
+  fanId: integer("fan_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // === MESSAGES TABLE ===
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull().references(() => users.id),
-  receiverId: integer("receiver_id").notNull().references(() => users.id),
+  senderId: integer("sender_id").references(() => users.id, { onDelete: "set null" }),
+  receiverId: integer("receiver_id").references(() => users.id, { onDelete: "set null" }),
   content: text("content").notNull(),
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -136,7 +136,7 @@ export const comments = pgTable("comments", {
 // === STORIES TABLE ===
 export const stories = pgTable("stories", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   imageUrl: text("image_url").notNull(),
   content: text("content"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -319,7 +319,7 @@ export type InsertAvailabilitySlot = z.infer<typeof insertAvailabilitySlotSchema
 // === SERVICES ===
 export const services = pgTable("services", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
   price: numeric("price"),
@@ -349,7 +349,7 @@ export type InsertRosterArtist = z.infer<typeof insertRosterArtistSchema>;
 // === NOTIFICATIONS ===
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   type: text("type").notNull(),
   message: text("message").notNull(),
   isRead: boolean("is_read").default(false),
@@ -382,7 +382,7 @@ export const liveStreams = pgTable("live_streams", {
 // === EVENTS ===
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
-  artistId: integer("artist_id").notNull().references(() => users.id),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   eventDate: timestamp("event_date").notNull(),
   city: text("city"),
@@ -409,8 +409,8 @@ export type InsertEvent = z.infer<typeof insertEventSchema>;
 // === EVENT ATTENDEES ===
 export const eventAttendees = pgTable("event_attendees", {
   id: serial("id").primaryKey(),
-  eventId: integer("event_id").notNull().references(() => events.id),
-  userId: integer("user_id").notNull().references(() => users.id),
+  eventId: integer("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
