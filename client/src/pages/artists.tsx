@@ -410,9 +410,11 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
  useEffect(() => {
     if (!activeLiveStreams.length) return;
 
-    // Join tutte le live attive
+    // Join solo se non sei il broadcaster
     activeLiveStreams.forEach(live => {
-      apiRequest("POST", `/api/lives/${live.id}/join`).catch(() => {});
+      if (live.artist.id !== currentUserId) {
+        apiRequest("POST", `/api/lives/${live.id}/join`).catch(() => {});
+      }
     });
 
     const fetchLiveData = async () => {
@@ -442,7 +444,9 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
       clearInterval(interval);
       // Leave tutte le live attive
       activeLiveStreams.forEach(live => {
-        apiRequest("POST", `/api/lives/${live.id}/leave`).catch(() => {});
+        if (live.artist.id !== currentUserId) {
+          apiRequest("POST", `/api/lives/${live.id}/leave`).catch(() => {});
+        }
       });
     };
   }, [activeLiveStreams]);
