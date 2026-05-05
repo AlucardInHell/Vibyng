@@ -509,3 +509,75 @@ export const videoLikes = pgTable("video_likes", {
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
 });
+// === VIDEO COMMENT LIKES ===
+export const videoCommentLikes = pgTable("video_comment_likes", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").notNull().references(() => videoComments.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  commentUserUnique: unique().on(table.commentId, table.userId),
+}));
+
+// === SONG LIKES ===
+export const songLikes = pgTable("song_likes", {
+  id: serial("id").primaryKey(),
+  songId: integer("song_id").notNull().references(() => artistSongs.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  songUserUnique: unique().on(table.songId, table.userId),
+}));
+
+// === SONG COMMENTS ===
+export const songComments = pgTable("song_comments", {
+  id: serial("id").primaryKey(),
+  songId: integer("song_id").notNull().references(() => artistSongs.id, { onDelete: "cascade" }),
+  authorId: integer("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  likesCount: integer("likes_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// === SONG COMMENT LIKES ===
+export const songCommentLikes = pgTable("song_comment_likes", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").notNull().references(() => songComments.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  commentUserUnique: unique().on(table.commentId, table.userId),
+}));
+
+// === STORY LIKES ===
+export const storyLikes = pgTable("story_likes", {
+  id: serial("id").primaryKey(),
+  storyId: integer("story_id").notNull().references(() => stories.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  storyUserUnique: unique().on(table.storyId, table.userId),
+}));
+
+// === USER BLOCKS ===
+export const userBlocks = pgTable("user_blocks", {
+  id: serial("id").primaryKey(),
+  blockerId: integer("blocker_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  blockedId: integer("blocked_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  blockerBlockedUnique: unique().on(table.blockerId, table.blockedId),
+}));
+
+// === CONTENT REPORTS ===
+export const contentReports = pgTable("content_reports", {
+  id: serial("id").primaryKey(),
+  reporterId: integer("reporter_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  targetType: text("target_type").notNull(),
+  targetId: text("target_id").notNull(),
+  targetOwnerId: integer("target_owner_id").references(() => users.id, { onDelete: "set null" }),
+  reason: text("reason").notNull(),
+  details: text("details"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
