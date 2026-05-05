@@ -1343,10 +1343,6 @@ const reportMutation = useMutation({
                       {live.artist.displayName}
                     </p>
 
-                    <p className="text-white text-sm font-semibold leading-tight truncate">
-                      {live.title || t.live}
-                    </p>
-
                     <p className="text-white/70 text-sm truncate">
                       @{live.artist.username}
                     </p>
