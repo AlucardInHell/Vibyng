@@ -55,6 +55,7 @@
     "drizzle-orm": "^0.39.3",
     "resend": "^4.0.0",
     "stripe": "^17.7.0",
+    "livekit-server-sdk": "^2.6.0",
     "drizzle-zod": "^0.7.0",
     "embla-carousel-react": "^8.6.0",
     "express": "^5.0.1",
