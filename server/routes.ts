@@ -10,6 +10,8 @@ import { registerObjectStorageRoutes } from "./replit_integrations/object_storag
 import crypto from "crypto";
 import { Resend } from "resend";
 import Stripe from "stripe";
+import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
+
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
@@ -1347,37 +1349,42 @@ app.post("/api/lives/start", async (req, res) => {
     }
 
     const artist = await storage.getUser(artistId);
-
     if (!artist || (artist as any).isDeleted) {
       return res.status(404).json({ message: "Profilo non trovato" });
     }
 
+    // Termina live precedenti
     await db.execute(sql`
       UPDATE live_streams
-      SET status = 'ended',
-          ended_at = now()
-      WHERE artist_id = ${artistId}
-        AND status = 'live'
+      SET status = 'ended', ended_at = now()
+      WHERE artist_id = ${artistId} AND status = 'live'
     `);
 
     const roomName = `vibyng-live-${artistId}-${Date.now()}`;
 
+    // Crea token LiveKit per il broadcaster
+    const livekitUrl = process.env.LIVEKIT_URL || "";
+    const apiKey = process.env.LIVEKIT_API_KEY || "";
+    const apiSecret = process.env.LIVEKIT_API_SECRET || "";
+
+    const at = new AccessToken(apiKey, apiSecret, {
+      identity: `user-${artistId}`,
+      name: artist.displayName,
+    });
+    at.addGrant({
+      room: roomName,
+      roomJoin: true,
+      canPublish: true,
+      canSubscribe: true,
+    });
+    const token = await at.toJwt();
+
     const result = await db.execute(sql`
       INSERT INTO live_streams (
-        artist_id,
-        title,
-        status,
-        provider,
-        room_name,
-        viewer_count
+        artist_id, title, status, provider, room_name, viewer_count
       )
       VALUES (
-        ${artistId},
-        ${title},
-        'live',
-        'mock',
-        ${roomName},
-        0
+        ${artistId}, ${title}, 'live', 'livekit', ${roomName}, 0
       )
       RETURNING *
     `);
@@ -1385,6 +1392,9 @@ app.post("/api/lives/start", async (req, res) => {
     res.status(201).json({
       success: true,
       live: result.rows[0],
+      token,
+      roomName,
+      livekitUrl,
     });
   } catch (err: any) {
     console.error("[live-start] error:", err?.message || err);
@@ -1433,6 +1443,45 @@ app.post("/api/lives/:id/end", async (req, res) => {
   }
 });
 
+app.post("/api/lives/:id/token", async (req, res) => {
+  try {
+    const liveId = Number(req.params.id);
+    const { userId } = req.body;
+
+    const liveResult = await db.execute(sql`
+      SELECT room_name FROM live_streams WHERE id = ${liveId} AND status = 'live'
+    `);
+
+    if (!liveResult.rows.length) {
+      return res.status(404).json({ message: "Live non trovata" });
+    }
+
+    const roomName = (liveResult.rows[0] as any).room_name;
+    const user = await storage.getUser(Number(userId));
+
+    const apiKey = process.env.LIVEKIT_API_KEY || "";
+    const apiSecret = process.env.LIVEKIT_API_SECRET || "";
+    const livekitUrl = process.env.LIVEKIT_URL || "";
+
+    const at = new AccessToken(apiKey, apiSecret, {
+      identity: `user-${userId}`,
+      name: user?.displayName || `User ${userId}`,
+    });
+    at.addGrant({
+      room: roomName,
+      roomJoin: true,
+      canPublish: false,
+      canSubscribe: true,
+    });
+    const token = await at.toJwt();
+
+    res.json({ token, roomName, livekitUrl });
+  } catch (err: any) {
+    console.error("[live-token] error:", err?.message || err);
+    res.status(400).json({ message: "Errore nella generazione del token" });
+  }
+});
+  
 app.post("/api/lives/:id/join", async (req, res) => {
   try {
     const liveId = Number(req.params.id);
