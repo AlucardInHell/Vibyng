@@ -1432,6 +1432,77 @@ app.post("/api/lives/:id/end", async (req, res) => {
     });
   }
 });
+
+// === LIVE COMMENTS & LIKES ===
+app.post("/api/lives/:id/comments", async (req, res) => {
+  try {
+    const liveId = Number(req.params.id);
+    const { userId, content } = req.body;
+    if (!liveId || !userId || !content?.trim()) {
+      return res.status(400).json({ message: "Dati commento non validi" });
+    }
+    const result = await db.execute(sql`
+      INSERT INTO live_comments (live_id, user_id, content)
+      VALUES (${liveId}, ${userId}, ${content.trim()})
+      RETURNING id, content, created_at
+    `);
+    const user = await db.execute(sql`SELECT display_name, avatar_url, username FROM users WHERE id = ${userId}`);
+    res.json({ ...result.rows[0], user: user.rows[0] });
+  } catch (err: any) {
+    console.error("[live-comment] error:", err?.message);
+    res.status(400).json({ message: "Errore nel commento" });
+  }
+});
+
+app.get("/api/lives/:id/comments", async (req, res) => {
+  try {
+    const liveId = Number(req.params.id);
+    const result = await db.execute(sql`
+      SELECT lc.id, lc.content, lc.created_at,
+             u.display_name, u.avatar_url, u.username
+      FROM live_comments lc
+      JOIN users u ON lc.user_id = u.id
+      WHERE lc.live_id = ${liveId}
+      ORDER BY lc.created_at ASC
+      LIMIT 100
+    `);
+    res.json(result.rows);
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore nel recupero commenti" });
+  }
+});
+
+app.post("/api/lives/:id/like", async (req, res) => {
+  try {
+    const liveId = Number(req.params.id);
+    const { userId } = req.body;
+    if (!liveId || !userId) {
+      return res.status(400).json({ message: "Dati like non validi" });
+    }
+    await db.execute(sql`
+      INSERT INTO live_likes (live_id, user_id)
+      VALUES (${liveId}, ${userId})
+    `);
+    const count = await db.execute(sql`
+      SELECT COUNT(*)::int AS total FROM live_likes WHERE live_id = ${liveId}
+    `);
+    res.json({ success: true, likesCount: count.rows[0]?.total ?? 0 });
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore nel like" });
+  }
+});
+
+app.get("/api/lives/:id/likes", async (req, res) => {
+  try {
+    const liveId = Number(req.params.id);
+    const count = await db.execute(sql`
+      SELECT COUNT(*)::int AS total FROM live_likes WHERE live_id = ${liveId}
+    `);
+    res.json({ likesCount: count.rows[0]?.total ?? 0 });
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore nel recupero like" });
+  }
+});
   
 // === BLOCKS & REPORTS ===
   app.post("/api/users/:blockerId/block/:blockedId", async (req, res) => {
