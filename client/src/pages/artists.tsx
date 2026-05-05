@@ -1339,11 +1339,11 @@ const reportMutation = useMutation({
                   </Avatar>
 
                   <div className="min-w-0">
-                    <p className="text-white text-lg font-semibold leading-tight truncate">
+                    <p className="text-white text-sm font-semibold leading-tight truncate">
                       {live.artist.displayName}
                     </p>
 
-                    <p className="text-white text-lg font-semibold leading-tight truncate">
+                    <p className="text-white text-sm font-semibold leading-tight truncate">
                       {live.title || t.live}
                     </p>
 
@@ -1425,17 +1425,6 @@ const reportMutation = useMutation({
                       }
                     }}
                   />
-                  <button
-                    className="text-white bg-primary rounded-full px-2 py-1 text-xs"
-                    onClick={async () => {
-                      if (liveChatInput[live.id]?.trim()) {
-                        await apiRequest("POST", `/api/lives/${live.id}/comments`, { userId: currentUserId, content: liveChatInput[live.id] });
-                        setLiveChatInput(prev => ({ ...prev, [live.id]: "" }));
-                      }
-                    }}
-                  >
-                    Invia
-                  </button>
                 </div>
               </div>
             )}
