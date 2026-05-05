@@ -657,7 +657,18 @@ useEffect(() => {
     enabled: !!artist && artist.role === "artist",
   });
 
- const { data: photos } = useQuery<ArtistPhoto[]>({
+  const { data: activeLives = [] } = useQuery<any[]>({
+    queryKey: ["/api/lives/active"],
+    queryFn: async () => {
+      const res = await fetch("/api/lives/active");
+      return res.json();
+    },
+    refetchInterval: 10000,
+    staleTime: 0,
+  });
+  const isArtistLive = activeLives.some((l: any) => (l.artistId ?? l.artist_id ?? l.artist?.id) === artistId);
+  
+  const { data: photos } = useQuery<ArtistPhoto[]>({
     queryKey: ["/api/users", artistId, "photos"],
     queryFn: async () => {
       const res = await fetch(`/api/users/${artistId}/photos?t=${Date.now()}`);
@@ -1269,12 +1280,17 @@ return (
 )}    
           <div className="flex flex-col items-center text-center">
             <div className="relative mb-3">
-              <Avatar className="w-20 h-20">
-                {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                  {artist.displayName.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+              <div
+                className={`rounded-full p-[3px] ${isArtistLive ? "bg-red-500 animate-pulse cursor-pointer" : "bg-transparent"}`}
+                onClick={() => { if (isArtistLive) window.location.href = "/artists?tab=live"; }}
+              >
+                <Avatar className="w-20 h-20">
+                  {artist.avatarUrl && <AvatarImage src={artist.avatarUrl} alt={artist.displayName} />}
+                  <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+                    {artist.displayName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
               {isOwnProfile && (
                 <>
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
