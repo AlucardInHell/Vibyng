@@ -676,13 +676,25 @@ function Stories() {
           <span className="text-xs text-muted-foreground">{t.yourStory}</span>
         </button>
 
-        {storiesData.map((story) => {
+        {[
+          ...activeLives
+            .filter((live: any) => !storiesData.find(s => s.userId === (live.artistId ?? live.artist_id ?? live.artist?.id)))
+            .map((live: any) => ({
+              userId: live.artistId ?? live.artist_id ?? live.artist?.id,
+              username: live.artist?.username ?? "",
+              displayName: live.artist?.displayName ?? "",
+              avatarUrl: live.artist?.avatarUrl ?? null,
+              isLiveOnly: true,
+            })),
+          ...storiesData,
+        ].map((story: any) => {
+          const isLive = activeLiveUserIds.has(story.userId);
           const hasUnseen = story.hasUnseenStory && !viewedStories.has(story.userId);
           return (
             <button
               key={story.userId}
               onClick={() => {
-                if (activeLiveUserIds.has(story.userId)) {
+                if (isLive) {
                   window.location.href = "/artists?tab=live";
                 } else {
                   openStory(story);
@@ -693,7 +705,7 @@ function Stories() {
             >
               <div
                 className={`w-16 h-16 rounded-full p-[2px] ${
-                  activeLiveUserIds.has(story.userId)
+                  isLive
                     ? "bg-red-500 animate-pulse"
                     : hasUnseen
                     ? "bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-400"
@@ -709,7 +721,8 @@ function Stories() {
                   </Avatar>
                 </div>
               </div>
-              <span className="text-xs truncate w-16 text-center">{story.username.split("_")[0]}</span>
+              {isLive && <span className="text-[10px] text-red-500 font-semibold">🔴 LIVE</span>}
+              {!isLive && <span className="text-xs truncate w-16 text-center">{story.username?.split("_")[0]}</span>}
             </button>
           );
         })}
