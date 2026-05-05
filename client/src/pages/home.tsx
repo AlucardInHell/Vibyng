@@ -333,6 +333,17 @@ function Stories() {
   useEffect(() => {
   if (!activeStory) return;
 
+  const { data: activeLives = [] } = useQuery<any[]>({
+    queryKey: ["/api/lives/active"],
+    queryFn: async () => {
+      const res = await fetch("/api/lives/active");
+      return res.json();
+    },
+    refetchInterval: 10000,
+    staleTime: 0,
+  });
+  const activeLiveUserIds = new Set(activeLives.map((l: any) => l.artistId ?? l.artist_id ?? l.artist?.id)); 
+
   const currentStoryId = activeStory.stories[activeStoryIndex]?.id;
   if (!currentStoryId) return;
 
@@ -669,13 +680,21 @@ function Stories() {
           return (
             <button
               key={story.userId}
-              onClick={() => openStory(story)}
+              onClick={() => {
+                if (activeLiveUserIds.has(story.userId)) {
+                  window.location.href = "/artists?tab=live";
+                } else {
+                  openStory(story);
+                }
+              }}
               className="flex flex-col items-center gap-1 flex-shrink-0"
               data-testid={`story-${story.userId}`}
             >
               <div
                 className={`w-16 h-16 rounded-full p-[2px] ${
-                  hasUnseen
+                  activeLiveUserIds.has(story.userId)
+                    ? "bg-red-500 animate-pulse"
+                    : hasUnseen
                     ? "bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-400"
                     : "bg-muted-foreground/30"
                 }`}
