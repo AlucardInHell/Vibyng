@@ -748,7 +748,7 @@ const { data: blockStatus, refetch: refetchBlockStatus } = useQuery<{
     return res.json();
   },
   enabled: !isOwnProfile,
-  refetchInterval: !isOwnProfile ? 1000 : false,
+  refetchInterval: !isOwnProfile ? 60000 : false,
   refetchOnWindowFocus: true,
   staleTime: 0,
 });
