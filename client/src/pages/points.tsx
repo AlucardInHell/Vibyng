@@ -22,6 +22,7 @@ import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { MentionDropdown } from "@/components/mention-dropdown";
 import { MentionText } from "@/components/mention-text";
 import { shareVibyngContent, buildContentShareUrl } from "@/lib/share-content";
+import { Room, RoomEvent, Track, LocalTrack, createLocalTracks } from "livekit-client";
 import type { User, ArtistPhoto, ArtistVideo, ArtistGoal, Post } from "@shared/schema";
 
 function getCurrentUserId(): number {
@@ -654,6 +655,9 @@ export default function Points() {
   const [reportDetails, setReportDetails] = useState("");
   const [postText, setPostText] = useState("");
   const [startingLive, setStartingLive] = useState(false);
+  const [liveRoom, setLiveRoom] = useState<Room | null>(null);
+  const [liveToken, setLiveToken] = useState<string | null>(null);
+  const [livekitUrl, setLivekitUrl] = useState<string | null>(null);
   const [endingLive, setEndingLive] = useState(false);
   const [showLiveSetup, setShowLiveSetup] = useState(false);
   const [liveTitle, setLiveTitle] = useState("");
@@ -888,40 +892,46 @@ const handleCloseLiveSetup = () => {
 };
   
   const handleStartLive = async () => {
-  if (startingLive) return;
+    if (startingLive) return;
+    setStartingLive(true);
 
-  setStartingLive(true);
+    try {
+      const finalLiveTitle =
+        liveTitle.trim() ||
+        `Live di ${currentUser?.displayName || (profileData as any)?.displayName || "Vibyng"}`;
 
-  try {
-    const finalLiveTitle =
-      liveTitle.trim() ||
-      `Live di ${currentUser?.displayName || (profileData as any)?.displayName || "Vibyng"}`;
+      const res = await apiRequest("POST", "/api/lives/start", {
+        artistId: currentUserId,
+        title: finalLiveTitle,
+      });
+      const data = await res.json();
 
-    await apiRequest("POST", "/api/lives/start", {
-      artistId: currentUserId,
-      title: finalLiveTitle,
-    });
+      setLiveToken(data.token);
+      setLivekitUrl(data.livekitUrl);
 
-    await queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
-    await refetchActiveLiveStreams();
+      await queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
+      await refetchActiveLiveStreams();
 
-    toast({
-      title: t.liveStartedTitle,
-      description: t.liveStartedDescription,
-    });
-    
-    stopLivePreview();
-    setShowLiveSetup(false);
-  } catch (err: any) {
-    toast({
-      title: t.error,
-      description: err?.message || t.liveStartError,
-      variant: "destructive",
-    });
-  } finally {
-    setStartingLive(false);
-  }
-};
+      toast({
+        title: t.liveStartedTitle,
+        description: t.liveStartedDescription,
+      });
+
+      stopLivePreview();
+      setShowLiveSetup(false);
+
+      // Porta automaticamente alla tab Live del Flow
+      window.location.href = "/artists?tab=live";
+    } catch (err: any) {
+      toast({
+        title: t.error,
+        description: err?.message || t.liveStartError,
+        variant: "destructive",
+      });
+    } finally {
+      setStartingLive(false);
+    }
+  };
 
 const handleEndLive = async () => {
   if (endingLive || !myActiveLive?.id) return;
