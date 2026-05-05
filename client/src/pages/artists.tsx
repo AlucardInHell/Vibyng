@@ -235,7 +235,11 @@ export default function Artists() {
 } | null>(null);
   const [reportReason, setReportReason] = useState("offensive");
   const [reportDetails, setReportDetails] = useState("");
-  
+  const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
+  const [liveChatInput, setLiveChatInput] = useState<Record<number, string>>({});
+  const [liveComments, setLiveComments] = useState<Record<number, any[]>>({});
+  const [liveLikeCounts, setLiveLikeCounts] = useState<Record<number, number>>({});
+  const [liveHearts, setLiveHearts] = useState<Record<number, { id: number; x: number }[]>>({});
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const flowAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -402,6 +406,25 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
     return res.json();
   },
 });
+
+  useEffect(() => {
+    if (!activeLiveStreams.length) return;
+    const fetchLiveData = async () => {
+      for (const live of activeLiveStreams) {
+        const [commentsRes, likesRes] = await Promise.all([
+          fetch(`/api/lives/${live.id}/comments`),
+          fetch(`/api/lives/${live.id}/likes`),
+        ]);
+        const comments = await commentsRes.json();
+        const likes = await likesRes.json();
+        setLiveComments(prev => ({ ...prev, [live.id]: comments }));
+        setLiveLikeCounts(prev => ({ ...prev, [live.id]: likes.likesCount ?? 0 }));
+      }
+    };
+    fetchLiveData();
+    const interval = setInterval(fetchLiveData, 3000);
+    return () => clearInterval(interval);
+  }, [activeLiveStreams]);
   
   useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
@@ -1306,22 +1329,91 @@ const reportMutation = useMutation({
                 </div>
               </Link>
 
-              <div className="flex flex-col items-center gap-3 text-white">
+              <div className="flex flex-col items-center gap-4 text-white">
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-lg">👥</span>
-                  <span className="text-[11px]">
-                    {live.viewerCount ?? 0}
-                  </span>
+                  <span className="text-[11px]">{live.viewerCount ?? 0}</span>
                 </div>
-
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-lg">🔴</span>
-                  <span className="text-[11px]">
-                    {t.liveOnAir}
-                  </span>
-                </div>
+                <button
+                  className="flex flex-col items-center gap-1"
+                  onClick={async () => {
+                    await apiRequest("POST", `/api/lives/${live.id}/like`, { userId: currentUserId });
+                    const heartId = Date.now();
+                    const x = Math.random() * 60 - 30;
+                    setLiveHearts(prev => ({
+                      ...prev,
+                      [live.id]: [...(prev[live.id] ?? []), { id: heartId, x }],
+                    }));
+                    setTimeout(() => {
+                      setLiveHearts(prev => ({
+                        ...prev,
+                        [live.id]: (prev[live.id] ?? []).filter(h => h.id !== heartId),
+                      }));
+                    }, 2000);
+                    setLiveLikeCounts(prev => ({ ...prev, [live.id]: (prev[live.id] ?? 0) + 1 }));
+                  }}
+                >
+                  <Heart className="w-7 h-7 fill-red-500 text-red-500" />
+                  <span className="text-[11px]">{liveLikeCounts[live.id] ?? 0}</span>
+                </button>
+                <button
+                  className="flex flex-col items-center gap-1"
+                  onClick={() => setShowLiveChat(prev => ({ ...prev, [live.id]: !prev[live.id] }))}
+                >
+                  <MessageCircle className="w-7 h-7" />
+                  <span className="text-[11px]">Chat</span>
+                </button>
               </div>
             </div>
+            {/* Cuori animati */}
+            {(liveHearts[live.id] ?? []).map(heart => (
+              <div
+                key={heart.id}
+                className="absolute bottom-24 pointer-events-none animate-bounce"
+                style={{ right: `${60 + heart.x}px`, animationDuration: "1s" }}
+              >
+                <Heart className="w-8 h-8 fill-red-500 text-red-500 opacity-90" />
+              </div>
+            ))}
+
+            {/* Chat live */}
+            {showLiveChat[live.id] && (
+              <div className="absolute bottom-20 left-4 w-64 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+                <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
+                  {(liveComments[live.id] ?? []).slice(-6).map((c: any) => (
+                    <div key={c.id} className="bg-black/50 rounded-lg px-2 py-1">
+                      <span className="text-white text-xs font-semibold">{c.display_name}: </span>
+                      <span className="text-white/90 text-xs">{c.content}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 text-xs bg-black/50 text-white rounded-full px-3 py-1 border border-white/20 outline-none"
+                    placeholder="Scrivi un commento..."
+                    value={liveChatInput[live.id] ?? ""}
+                    onChange={e => setLiveChatInput(prev => ({ ...prev, [live.id]: e.target.value }))}
+                    onKeyDown={async e => {
+                      if (e.key === "Enter" && liveChatInput[live.id]?.trim()) {
+                        await apiRequest("POST", `/api/lives/${live.id}/comments`, { userId: currentUserId, content: liveChatInput[live.id] });
+                        setLiveChatInput(prev => ({ ...prev, [live.id]: "" }));
+                      }
+                    }}
+                  />
+                  <button
+                    className="text-white bg-primary rounded-full px-2 py-1 text-xs"
+                    onClick={async () => {
+                      if (liveChatInput[live.id]?.trim()) {
+                        await apiRequest("POST", `/api/lives/${live.id}/comments`, { userId: currentUserId, content: liveChatInput[live.id] });
+                        setLiveChatInput(prev => ({ ...prev, [live.id]: "" }));
+                      }
+                    }}
+                  >
+                    Invia
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       ))
