@@ -449,10 +449,13 @@ async likePost(postId: number, userId: number): Promise<void> {
       av.title,
       av.video_url AS "videoUrl",
       av.thumbnail_url AS "thumbnailUrl",
-      COALESCE(vl.likes_count, 0)::int AS "likesCount",
+      GREATEST(
+  COALESCE(av.likes_count, 0),
+  COALESCE(vl.likes_count, 0)
+)::int AS "likesCount",
       av.created_at AS "createdAt"
-    FROM artist_videos av
-    LEFT JOIN (
+      FROM artist_videos av
+      LEFT JOIN (
       SELECT
         video_id,
         COUNT(DISTINCT user_id)::int AS likes_count
@@ -771,7 +774,10 @@ async deleteVideo(videoId: number): Promise<void> {
       av.title,
       av.video_url AS "videoUrl",
       av.thumbnail_url AS "thumbnailUrl",
-      COALESCE(vl.likes_count, 0)::int AS "likesCount",
+      GREATEST(
+  COALESCE(av.likes_count, 0),
+  COALESCE(vl.likes_count, 0)
+)::int AS "likesCount",
       av.created_at AS "createdAt"
     FROM artist_videos av
     LEFT JOIN (
