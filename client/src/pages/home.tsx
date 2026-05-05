@@ -329,9 +329,7 @@ function Stories() {
   refetchOnWindowFocus: true,
 });
   
-  const storiesData = useMemo(() => groupStoriesByUser(storiesFromDb, t), [storiesFromDb, t]);
-  useEffect(() => {
-  if (!activeStory) return;
+ const storiesData = useMemo(() => groupStoriesByUser(storiesFromDb, t), [storiesFromDb, t]);
 
   const { data: activeLives = [] } = useQuery<any[]>({
     queryKey: ["/api/lives/active"],
@@ -342,19 +340,22 @@ function Stories() {
     refetchInterval: 10000,
     staleTime: 0,
   });
-  const activeLiveUserIds = new Set(activeLives.map((l: any) => l.artistId ?? l.artist_id ?? l.artist?.id)); 
+  const activeLiveUserIds = new Set(activeLives.map((l: any) => l.artistId ?? l.artist_id ?? l.artist?.id));
 
-  const currentStoryId = activeStory.stories[activeStoryIndex]?.id;
-  if (!currentStoryId) return;
+  useEffect(() => {
+    if (!activeStory) return;
 
-  const refreshedStoryGroup = storiesData.find(
-    (story) => story.userId === activeStory.userId
-  );
+    const currentStoryId = activeStory.stories[activeStoryIndex]?.id;
+    if (!currentStoryId) return;
 
-  if (!refreshedStoryGroup) {
-    closeStory();
-    return;
-  }
+    const refreshedStoryGroup = storiesData.find(
+      (story) => story.userId === activeStory.userId
+    );
+
+    if (!refreshedStoryGroup) {
+      closeStory();
+      return;
+    }
 
   const refreshedIndex = refreshedStoryGroup.stories.findIndex(
     (story) => story.id === currentStoryId
