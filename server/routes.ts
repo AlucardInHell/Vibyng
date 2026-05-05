@@ -220,15 +220,14 @@ await db.execute(sql`
 
 await db.execute(sql`
   UPDATE artist_videos av
-  SET likes_count = COALESCE(vl.likes_count, 0)
-  FROM (
-    SELECT
-      video_id,
-      COUNT(DISTINCT user_id)::int AS likes_count
-    FROM video_likes
-    GROUP BY video_id
-  ) vl
-  WHERE av.id = vl.video_id
+  SET likes_count = GREATEST(
+    COALESCE(av.likes_count, 0),
+    COALESCE((
+      SELECT COUNT(DISTINCT vl.user_id)::int
+      FROM video_likes vl
+      WHERE vl.video_id = av.id
+    ), 0)
+  )
 `);
   
 await db.execute(sql`
