@@ -1433,6 +1433,33 @@ app.post("/api/lives/:id/end", async (req, res) => {
   }
 });
 
+app.post("/api/lives/:id/join", async (req, res) => {
+  try {
+    const liveId = Number(req.params.id);
+    await db.execute(sql`
+      UPDATE live_streams SET viewer_count = GREATEST(viewer_count + 1, 0)
+      WHERE id = ${liveId} AND status = 'live'
+    `);
+    const result = await db.execute(sql`SELECT viewer_count FROM live_streams WHERE id = ${liveId}`);
+    res.json({ viewerCount: result.rows[0]?.viewer_count ?? 0 });
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore" });
+  }
+});
+
+app.post("/api/lives/:id/leave", async (req, res) => {
+  try {
+    const liveId = Number(req.params.id);
+    await db.execute(sql`
+      UPDATE live_streams SET viewer_count = GREATEST(viewer_count - 1, 0)
+      WHERE id = ${liveId} AND status = 'live'
+    `);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(400).json({ message: "Errore" });
+  }
+});
+  
 // === LIVE COMMENTS & LIKES ===
 app.post("/api/lives/:id/comments", async (req, res) => {
   try {
