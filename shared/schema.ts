@@ -581,3 +581,19 @@ export const contentReports = pgTable("content_reports", {
   status: text("status").notNull().default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+// === LIVE COMMENTS ===
+export const liveComments = pgTable("live_comments", {
+  id: serial("id").primaryKey(),
+  liveId: integer("live_id").notNull().references(() => liveStreams.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// === LIVE LIKES ===
+export const liveLikes = pgTable("live_likes", {
+  id: serial("id").primaryKey(),
+  liveId: integer("live_id").notNull().references(() => liveStreams.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
