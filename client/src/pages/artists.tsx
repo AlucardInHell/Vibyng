@@ -199,6 +199,12 @@ export default function Artists() {
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
 
   const [activeTab, setActiveTab] = useState<FlowTab>("for-you");
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "live") {
+      setActiveTab("live");
+    }
+  }, []);
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentsOpenId, setCommentsOpenId] = useState<number | null>(null);
   const [commentInput, setCommentInput] = useState("");
