@@ -822,8 +822,8 @@ const handlePhotoLike = async (photo: FlowPhoto) => {
     const isLiked = photoLikedMap[photoId] ?? false;
 
     const res = isLiked
-      ? await apiRequest("POST", `/api/photos/${photoId}/unlike/${currentUserId}`)
-      : await apiRequest("POST", `/api/photos/${photoId}/like/${currentUserId}`);
+      ? await apiRequest("POST", `/api/photos/${photoId}/unlike`, { userId: currentUserId })
+      : await apiRequest("POST", `/api/photos/${photoId}/like`, { userId: currentUserId });
 
     const data = await res.json().catch(() => null);
 
