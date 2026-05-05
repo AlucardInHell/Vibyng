@@ -86,7 +86,7 @@ export const artistPhotos = pgTable("artist_photos", {
 // === ARTIST VIDEOS TABLE ===
 export const artistVideos = pgTable("artist_videos", {
   id: serial("id").primaryKey(),
-  artistId: integer("artist_id").notNull().references(() => users.id),
+  artistId: integer("artist_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   videoUrl: text("video_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
