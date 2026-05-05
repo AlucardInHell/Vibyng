@@ -407,23 +407,44 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
   },
 });
 
-  useEffect(() => {
+ useEffect(() => {
     if (!activeLiveStreams.length) return;
+
+    // Join tutte le live attive
+    activeLiveStreams.forEach(live => {
+      apiRequest("POST", `/api/lives/${live.id}/join`).catch(() => {});
+    });
+
     const fetchLiveData = async () => {
       for (const live of activeLiveStreams) {
-        const [commentsRes, likesRes] = await Promise.all([
+        const [commentsRes, likesRes, liveRes] = await Promise.all([
           fetch(`/api/lives/${live.id}/comments`),
           fetch(`/api/lives/${live.id}/likes`),
+          fetch(`/api/lives/active`),
         ]);
         const comments = await commentsRes.json();
         const likes = await likesRes.json();
+        const lives = await liveRes.json();
         setLiveComments(prev => ({ ...prev, [live.id]: comments }));
         setLiveLikeCounts(prev => ({ ...prev, [live.id]: likes.likesCount ?? 0 }));
+        // Aggiorna viewerCount
+        const updatedLive = Array.isArray(lives) ? lives.find((l: any) => l.id === live.id) : null;
+        if (updatedLive) {
+          live.viewerCount = updatedLive.viewerCount;
+        }
       }
     };
+
     fetchLiveData();
     const interval = setInterval(fetchLiveData, 3000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(interval);
+      // Leave tutte le live attive
+      activeLiveStreams.forEach(live => {
+        apiRequest("POST", `/api/lives/${live.id}/leave`).catch(() => {});
+      });
+    };
   }, [activeLiveStreams]);
   
   useEffect(() => {
