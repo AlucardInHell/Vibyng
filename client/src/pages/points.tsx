@@ -1429,13 +1429,18 @@ const reportMutation = useMutation({
       <Card data-testid="card-my-profile">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center">
-            <div className="relative mb-3">
-              <Avatar className="w-20 h-20" data-testid="avatar-me">
-                {profileData.avatarUrl && <AvatarImage src={profileData.avatarUrl} alt={profileData.displayName} />}
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                  {profileData.displayName.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+           <div className="relative mb-3">
+              <div className={`rounded-full p-[3px] ${myActiveLive ? "bg-red-500 animate-pulse" : "bg-transparent"}`}
+                onClick={() => { if (myActiveLive) window.location.href = "/artists?tab=live"; }}
+                style={{ cursor: myActiveLive ? "pointer" : "default" }}
+              >
+                <Avatar className="w-20 h-20" data-testid="avatar-me">
+                  {profileData.avatarUrl && <AvatarImage src={profileData.avatarUrl} alt={profileData.displayName} />}
+                  <AvatarFallback className="bg-primary/10 text-primary text-2xl">
+                    {profileData.displayName.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
