@@ -597,7 +597,6 @@ const syncVideoLikesCount = async (videoId: number) => {
     for (const video of videos.rows) {
       await syncVideoLikesCount(Number((video as any).id));
     }
-    console.log("[startup] Video likes counts synced");
   } catch (err: any) {
     console.error("[startup] Error syncing video likes:", err?.message);
   }
@@ -4067,7 +4066,6 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
   app.post("/api/artists/:artistId/events", async (req, res) => {
     try {
       const artistId = Number(req.params.artistId);
-      console.log(`[create-event] body:`, JSON.stringify(req.body));
       const eventData = { ...req.body, artistId, eventDate: new Date(req.body.eventDate) };
       const event = await storage.createEvent(eventData);
       res.status(201).json(event);
