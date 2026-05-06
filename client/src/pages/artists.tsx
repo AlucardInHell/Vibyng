@@ -189,11 +189,10 @@ type ActiveLiveStream = {
     username: string;
     displayName: string;
     avatarUrl?: string | null;
-    role: string;
+ role: string;
   };
 };
-
-  function LiveVideoPlayer() {
+function LiveVideoPlayer() {
   const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
