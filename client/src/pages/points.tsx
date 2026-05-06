@@ -656,6 +656,31 @@ export default function Points() {
   const [postText, setPostText] = useState("");
   const [startingLive, setStartingLive] = useState(false);
   const [liveRoom, setLiveRoom] = useState<Room | null>(null);
+  useEffect(() => {
+    if (!liveToken || !livekitUrl) return;
+
+    const room = new Room();
+    setLiveRoom(room);
+
+    const connect = async () => {
+      try {
+        await room.connect(livekitUrl, liveToken);
+        const tracks = await createLocalTracks({ audio: true, video: true });
+        for (const track of tracks) {
+          await room.localParticipant.publishTrack(track);
+        }
+      } catch (err: any) {
+        console.error("[livekit-connect]", err?.message);
+      }
+    };
+
+    connect();
+
+    return () => {
+      room.disconnect();
+      setLiveRoom(null);
+    };
+  }, [liveToken, livekitUrl]);
   const [liveToken, setLiveToken] = useState<string | null>(null);
   const [livekitUrl, setLivekitUrl] = useState<string | null>(null);
   const [endingLive, setEndingLive] = useState(false);
@@ -937,6 +962,13 @@ const handleEndLive = async () => {
   if (endingLive || !myActiveLive?.id) return;
 
   setEndingLive(true);
+
+  if (liveRoom) {
+    liveRoom.disconnect();
+    setLiveRoom(null);
+    setLiveToken(null);
+    setLivekitUrl(null);
+  }
 
   try {
     await apiRequest("POST", `/api/lives/${myActiveLive.id}/end`, {
