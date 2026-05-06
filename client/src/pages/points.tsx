@@ -658,32 +658,6 @@ export default function Points() {
   const [liveRoom, setLiveRoom] = useState<Room | null>(null);
   const [liveToken, setLiveToken] = useState<string | null>(null);
   const [livekitUrl, setLivekitUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!liveToken || !livekitUrl) return;
-
-    const room = new Room();
-    setLiveRoom(room);
-
-    const connect = async () => {
-      try {
-        await room.connect(livekitUrl, liveToken);
-        const tracks = await createLocalTracks({ audio: true, video: true });
-        for (const track of tracks) {
-          await room.localParticipant.publishTrack(track);
-        }
-      } catch (err: any) {
-        console.error("[livekit-connect]", err?.message);
-      }
-    };
-
-    connect();
-
-    return () => {
-      room.disconnect();
-      setLiveRoom(null);
-    };
-  }, [liveToken, livekitUrl]);
-
   const [endingLive, setEndingLive] = useState(false);
   const [showLiveSetup, setShowLiveSetup] = useState(false);
   const [liveTitle, setLiveTitle] = useState("");
