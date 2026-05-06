@@ -934,6 +934,9 @@ const handleCloseLiveSetup = () => {
 
       setLiveToken(data.token);
       setLivekitUrl(data.livekitUrl);
+      localStorage.setItem("vibyng-live-token", data.token);
+      localStorage.setItem("vibyng-live-url", data.livekitUrl);
+      localStorage.setItem("vibyng-live-id", String(data.live?.id ?? ""));
 
       await queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
       await refetchActiveLiveStreams();
