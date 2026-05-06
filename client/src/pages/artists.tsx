@@ -1361,6 +1361,14 @@ const reportMutation = useMutation({
                   video={true}
                   audio={true}
                   className="w-full h-full"
+                  options={{
+                    publishDefaults: {
+                      videoEncoding: {
+                        maxBitrate: 1_500_000,
+                        maxFramerate: 30,
+                      },
+                    },
+                  }}
                 >
                   <LiveVideoPlayer />
                 </LiveKitRoom>
