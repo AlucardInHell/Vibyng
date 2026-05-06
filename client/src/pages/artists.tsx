@@ -14,6 +14,8 @@ import { buildContentShareUrl, shareVibyngContent } from "@/lib/share-content";
 import type { ArtistVideo, User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { LiveKitRoom, VideoTrack, AudioTrack, useTracks, useRoomContext, TrackLoop } from "@livekit/components-react";
+import { Track } from "livekit-client";
 
 function getCurrentUserId(): number {
   try {
@@ -242,6 +244,8 @@ export default function Artists() {
   const [reportReason, setReportReason] = useState("offensive");
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
+  const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
+  const [liveKitUrls, setLiveKitUrls] = useState<Record<number, string>>({});
   const [liveChatInput, setLiveChatInput] = useState<Record<number, string>>({});
   const [liveComments, setLiveComments] = useState<Record<number, any[]>>({});
   const [liveLikeCounts, setLiveLikeCounts] = useState<Record<number, number>>({});
@@ -423,7 +427,7 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
       }
     });
 
-    const fetchLiveData = async () => {
+  const fetchLiveData = async () => {
       for (const live of activeLiveStreams) {
         const [commentsRes, likesRes, liveRes] = await Promise.all([
           fetch(`/api/lives/${live.id}/comments`),
@@ -439,6 +443,15 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
         const updatedLive = Array.isArray(lives) ? lives.find((l: any) => l.id === live.id) : null;
         if (updatedLive) {
           live.viewerCount = updatedLive.viewerCount;
+        }
+        // Richiedi token spettatore
+        if (live.artist.id !== currentUserId && !liveTokens[live.id]) {
+          try {
+            const tokenRes = await apiRequest("POST", `/api/lives/${live.id}/token`, { userId: currentUserId });
+            const tokenData = await tokenRes.json();
+            setLiveTokens(prev => ({ ...prev, [live.id]: tokenData.token }));
+            setLiveKitUrls(prev => ({ ...prev, [live.id]: tokenData.livekitUrl }));
+          } catch {}
         }
       }
     };
