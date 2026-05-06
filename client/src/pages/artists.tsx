@@ -193,7 +193,27 @@ type ActiveLiveStream = {
   };
 };
 
+  function LiveVideoPlayer() {
+  const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
+  return (
+    <div className="w-full h-full bg-black flex items-center justify-center">
+      {tracks.length > 0 ? (
+        <TrackLoop tracks={tracks}>
+          <VideoTrack className="w-full h-full object-cover" />
+        </TrackLoop>
+      ) : (
+        <div className="text-center text-white/60">
+          <div className="text-4xl mb-2">📡</div>
+          <p className="text-sm">In attesa del video...</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Artists() {
+
+  export default function Artists() {
   const currentUserId = getCurrentUserId();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = flowTranslations[language];
@@ -1288,7 +1308,6 @@ const reportMutation = useMutation({
           <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4 animate-pulse">
             <span className="text-2xl">🔴</span>
           </div>
-
           <p className="text-sm text-muted-foreground">
             Caricamento live...
           </p>
@@ -1300,11 +1319,9 @@ const reportMutation = useMutation({
           <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
             <span className="text-2xl">🔴</span>
           </div>
-
           <h2 className="text-xl font-semibold mb-2">
             {t.liveEmpty}
           </h2>
-
           <p className="text-sm text-muted-foreground max-w-xs">
             {t.liveEmptyDescription}
           </p>
@@ -1318,17 +1335,30 @@ const reportMutation = useMutation({
         >
           <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center px-6">
-                <div className="text-6xl mb-4">🎥</div>
-
-                <p className="text-white text-xl font-semibold">
-                  {live.title || t.live}
-                </p>
-
-                <p className="text-white/60 text-sm mt-2 max-w-xs">
-                  {t.liveMockNotice}
-                </p>
-              </div>
+              {liveTokens[live.id] && liveKitUrls[live.id] ? (
+                <LiveKitRoom
+                  token={liveTokens[live.id]}
+                  serverUrl={liveKitUrls[live.id]}
+                  connect={true}
+                  video={false}
+                  audio={false}
+                  className="w-full h-full"
+                >
+                  <LiveVideoPlayer />
+                </LiveKitRoom>
+              ) : live.artist.id === currentUserId ? (
+                <div className="text-center px-6">
+                  <div className="text-6xl mb-4">🎥</div>
+                  <p className="text-white text-xl font-semibold">{live.title || t.live}</p>
+                  <p className="text-white/60 text-sm mt-2 max-w-xs">Stai trasmettendo in live</p>
+                </div>
+              ) : (
+                <div className="text-center px-6">
+                  <div className="text-6xl mb-4">⏳</div>
+                  <p className="text-white text-xl font-semibold">{live.title || t.live}</p>
+                  <p className="text-white/60 text-sm mt-2 max-w-xs">Connessione in corso...</p>
+                </div>
+              )}
             </div>
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/20 pointer-events-none" />
