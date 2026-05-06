@@ -656,6 +656,8 @@ export default function Points() {
   const [postText, setPostText] = useState("");
   const [startingLive, setStartingLive] = useState(false);
   const [liveRoom, setLiveRoom] = useState<Room | null>(null);
+  const [liveToken, setLiveToken] = useState<string | null>(null);
+  const [livekitUrl, setLivekitUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!liveToken || !livekitUrl) return;
 
@@ -681,8 +683,7 @@ export default function Points() {
       setLiveRoom(null);
     };
   }, [liveToken, livekitUrl]);
-  const [liveToken, setLiveToken] = useState<string | null>(null);
-  const [livekitUrl, setLivekitUrl] = useState<string | null>(null);
+
   const [endingLive, setEndingLive] = useState(false);
   const [showLiveSetup, setShowLiveSetup] = useState(false);
   const [liveTitle, setLiveTitle] = useState("");
