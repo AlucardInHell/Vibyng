@@ -193,11 +193,15 @@ type ActiveLiveStream = {
   };
 };
 function LiveVideoPlayer() {
-  const tracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
+  const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
+  const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
+  
+  const allTracks = [...remoteTracks, ...localTracks];
+  
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
-      {tracks.length > 0 ? (
-        <TrackLoop tracks={tracks}>
+      {allTracks.length > 0 ? (
+        <TrackLoop tracks={allTracks}>
           <VideoTrack className="w-full h-full object-cover" />
         </TrackLoop>
       ) : (
