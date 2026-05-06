@@ -192,18 +192,26 @@ type ActiveLiveStream = {
  role: string;
   };
 };
-function LiveVideoPlayer() {
+function LiveVideoPlayer({ isBroadcaster }: { isBroadcaster: boolean }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
-  const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
+
+  const remoteTracks = useTracks(
+    [Track.Source.Camera, Track.Source.ScreenShare],
+    { onlySubscribed: true }
+  );
 
   useEffect(() => {
+    if (!isBroadcaster) return;
     if (!room || !localParticipant) return;
-    if (localParticipant.permissions?.canPublish === false) return;
 
     const publish = async () => {
       try {
-        const tracks = await createLocalTracks({ audio: true, video: true });
+        const tracks = await createLocalTracks({
+          audio: true,
+          video: true,
+        });
+
         for (const track of tracks) {
           await localParticipant.publishTrack(track);
         }
@@ -215,7 +223,31 @@ function LiveVideoPlayer() {
     if (!localParticipant.isCameraEnabled && !localParticipant.isMicrophoneEnabled) {
       publish();
     }
-  }, [room, localParticipant]);
+  }, [isBroadcaster, room, localParticipant]);
+
+  const localVideoTrack = useTracks([Track.Source.Camera], {
+    onlySubscribed: false,
+  }).filter((trackRef) => trackRef.participant === localParticipant);
+
+  const allTracks = isBroadcaster
+    ? [...remoteTracks, ...localVideoTrack]
+    : remoteTracks;
+
+  return (
+    <div className="w-full h-full bg-black flex items-center justify-center">
+      {allTracks.length > 0 ? (
+        <TrackLoop tracks={allTracks}>
+          <VideoTrack className="w-full h-full object-cover" />
+        </TrackLoop>
+      ) : (
+        <div className="text-center text-white/60">
+          <div className="text-4xl mb-2">📡</div>
+          <p className="text-sm">In attesa del video...</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
   const localVideoTrack = useTracks([Track.Source.Camera], { onlySubscribed: false })
     .filter(t => t.participant === localParticipant);
