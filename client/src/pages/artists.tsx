@@ -14,8 +14,8 @@ import { buildContentShareUrl, shareVibyngContent } from "@/lib/share-content";
 import type { ArtistVideo, User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { LiveKitRoom, VideoTrack, AudioTrack, useTracks, useRoomContext, TrackLoop } from "@livekit/components-react";
-import { Track } from "livekit-client";
+import { LiveKitRoom, VideoTrack, useTracks, useRoomContext, TrackLoop, useLocalParticipant } from "@livekit/components-react";
+import { Track, createLocalTracks } from "livekit-client";
 
 function getCurrentUserId(): number {
   try {
@@ -193,11 +193,35 @@ type ActiveLiveStream = {
   };
 };
 function LiveVideoPlayer() {
+  const room = useRoomContext();
+  const { localParticipant } = useLocalParticipant();
   const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
-  const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false });
-  
-  const allTracks = [...remoteTracks, ...localTracks];
-  
+
+  useEffect(() => {
+    if (!room || !localParticipant) return;
+    if (localParticipant.permissions?.canPublish === false) return;
+
+    const publish = async () => {
+      try {
+        const tracks = await createLocalTracks({ audio: true, video: true });
+        for (const track of tracks) {
+          await localParticipant.publishTrack(track);
+        }
+      } catch (err: any) {
+        console.error("[livekit-publish]", err?.message);
+      }
+    };
+
+    if (!localParticipant.isCameraEnabled && !localParticipant.isMicrophoneEnabled) {
+      publish();
+    }
+  }, [room, localParticipant]);
+
+  const localVideoTrack = useTracks([Track.Source.Camera], { onlySubscribed: false })
+    .filter(t => t.participant === localParticipant);
+
+  const allTracks = [...remoteTracks, ...localVideoTrack];
+
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
       {allTracks.length > 0 ? (
