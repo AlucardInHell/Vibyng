@@ -262,6 +262,12 @@ export default function Artists() {
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
   const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
+  const [broadcasterToken, setBroadcasterToken] = useState<string | null>(
+    () => localStorage.getItem("vibyng-live-token")
+  );
+  const [broadcasterUrl, setBroadcasterUrl] = useState<string | null>(
+    () => localStorage.getItem("vibyng-live-url")
+  );
   const [liveKitUrls, setLiveKitUrls] = useState<Record<number, string>>({});
   const [liveChatInput, setLiveChatInput] = useState<Record<number, string>>({});
   const [liveComments, setLiveComments] = useState<Record<number, any[]>>({});
@@ -1339,6 +1345,17 @@ const reportMutation = useMutation({
                   connect={true}
                   video={false}
                   audio={false}
+                  className="w-full h-full"
+                >
+                  <LiveVideoPlayer />
+                </LiveKitRoom>
+              ) : live.artist.id === currentUserId && broadcasterToken && broadcasterUrl ? (
+                <LiveKitRoom
+                  token={broadcasterToken}
+                  serverUrl={broadcasterUrl}
+                  connect={true}
+                  video={true}
+                  audio={true}
                   className="w-full h-full"
                 >
                   <LiveVideoPlayer />
