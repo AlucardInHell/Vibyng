@@ -212,8 +212,6 @@ type ActiveLiveStream = {
 }
 
 export default function Artists() {
-
-  export default function Artists() {
   const currentUserId = getCurrentUserId();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = flowTranslations[language];
