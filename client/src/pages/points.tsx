@@ -974,6 +974,10 @@ const handleEndLive = async () => {
     setLivekitUrl(null);
   }
 
+  localStorage.removeItem("vibyng-live-token");
+  localStorage.removeItem("vibyng-live-url");
+  localStorage.removeItem("vibyng-live-id");
+
   try {
     await apiRequest("POST", `/api/lives/${myActiveLive.id}/end`, {
       artistId: currentUserId,
