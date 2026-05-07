@@ -192,26 +192,18 @@ type ActiveLiveStream = {
  role: string;
   };
 };
-function LiveVideoPlayer({ isBroadcaster }: { isBroadcaster: boolean }) {
+function LiveVideoPlayer() {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
-
-  const remoteTracks = useTracks(
-    [Track.Source.Camera, Track.Source.ScreenShare],
-    { onlySubscribed: true }
-  );
+  const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
 
   useEffect(() => {
-    if (!isBroadcaster) return;
     if (!room || !localParticipant) return;
+    if (localParticipant.permissions?.canPublish === false) return;
 
     const publish = async () => {
       try {
-        const tracks = await createLocalTracks({
-          audio: true,
-          video: true,
-        });
-
+        const tracks = await createLocalTracks({ audio: true, video: true });
         for (const track of tracks) {
           await localParticipant.publishTrack(track);
         }
@@ -220,21 +212,15 @@ function LiveVideoPlayer({ isBroadcaster }: { isBroadcaster: boolean }) {
       }
     };
 
-    if (
-      !localParticipant.isCameraEnabled &&
-      !localParticipant.isMicrophoneEnabled
-    ) {
+    if (!localParticipant.isCameraEnabled && !localParticipant.isMicrophoneEnabled) {
       publish();
     }
-  }, [isBroadcaster, room, localParticipant]);
+  }, [room, localParticipant]);
 
-  const localVideoTrack = useTracks([Track.Source.Camera], {
-    onlySubscribed: false,
-  }).filter((trackRef) => trackRef.participant === localParticipant);
+  const localVideoTrack = useTracks([Track.Source.Camera], { onlySubscribed: false })
+    .filter(t => t.participant === localParticipant);
 
-  const allTracks = isBroadcaster
-    ? [...remoteTracks, ...localVideoTrack]
-    : remoteTracks;
+  const allTracks = [...remoteTracks, ...localVideoTrack];
 
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
@@ -1389,7 +1375,7 @@ const reportMutation = useMutation({
                   audio={false}
                   className="w-full h-full"
                 >
-                  <LiveVideoPlayer isBroadcaster={false} />
+                  <LiveVideoPlayer />
                 </LiveKitRoom>
               ) : live.artist.id === currentUserId && broadcasterToken && broadcasterUrl ? (
                 <LiveKitRoom
@@ -1408,7 +1394,7 @@ const reportMutation = useMutation({
                     },
                   }}
                 >
-                  <LiveVideoPlayer isBroadcaster={true} />
+                  <LiveVideoPlayer />
                 </LiveKitRoom>
               ) : live.artist.id === currentUserId ? (
                 <div className="text-center px-6">
