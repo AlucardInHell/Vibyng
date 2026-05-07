@@ -1455,7 +1455,8 @@ const reportMutation = useMutation({
                   <span className="text-[11px]">{live.viewerCount ?? 0}</span>
                 </div>
                 <button
-                  className="flex flex-col items-center gap-1"
+                  className={`flex flex-col items-center gap-1 ${live.artist.id === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
+                  disabled={live.artist.id === currentUserId}
                   onClick={async () => {
                     await apiRequest("POST", `/api/lives/${live.id}/like`, { userId: currentUserId });
                     const heartId = Date.now();
