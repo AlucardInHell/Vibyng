@@ -596,4 +596,6 @@ export const liveLikes = pgTable("live_likes", {
   liveId: integer("live_id").notNull().references(() => liveStreams.id, { onDelete: "cascade" }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  liveUserUnique: unique().on(table.liveId, table.userId),
+}));
