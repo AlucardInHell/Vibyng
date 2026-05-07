@@ -1555,9 +1555,10 @@ app.post("/api/lives/:id/like", async (req, res) => {
     if (!liveId || !userId) {
       return res.status(400).json({ message: "Dati like non validi" });
     }
-    await db.execute(sql`
+   await db.execute(sql`
       INSERT INTO live_likes (live_id, user_id)
       VALUES (${liveId}, ${userId})
+      ON CONFLICT DO NOTHING
     `);
     const count = await db.execute(sql`
       SELECT COUNT(*)::int AS total FROM live_likes WHERE live_id = ${liveId}
