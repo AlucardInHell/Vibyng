@@ -301,6 +301,7 @@ export default function Artists() {
   const [liveComments, setLiveComments] = useState<Record<number, any[]>>({});
   const [liveLikeCounts, setLiveLikeCounts] = useState<Record<number, number>>({});
   const [liveHearts, setLiveHearts] = useState<Record<number, { id: number; x: number }[]>>({});
+  const [likedLives, setLikedLives] = useState<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const flowAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -1454,10 +1455,12 @@ const reportMutation = useMutation({
                   <span className="text-lg">👥</span>
                   <span className="text-[11px]">{live.viewerCount ?? 0}</span>
                 </div>
-                <button
-                  className={`flex flex-col items-center gap-1 ${live.artist.id === currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
-                  disabled={live.artist.id === currentUserId}
+           <button
+                  className={`flex flex-col items-center gap-1 ${live.artist.id === currentUserId || likedLives.has(live.id) ? "opacity-50 cursor-not-allowed" : ""}`}
+                  disabled={live.artist.id === currentUserId || likedLives.has(live.id)}
                   onClick={async () => {
+                    if (live.artist.id === currentUserId || likedLives.has(live.id)) return;
+                    setLikedLives(prev => new Set(prev).add(live.id));
                     await apiRequest("POST", `/api/lives/${live.id}/like`, { userId: currentUserId });
                     const heartId = Date.now();
                     const x = Math.random() * 60 - 30;
@@ -1474,7 +1477,7 @@ const reportMutation = useMutation({
                     setLiveLikeCounts(prev => ({ ...prev, [live.id]: (prev[live.id] ?? 0) + 1 }));
                   }}
                 >
-                  <Heart className="w-7 h-7 fill-red-500 text-red-500" />
+                  <Heart className={`w-7 h-7 ${likedLives.has(live.id) ? "fill-red-500 text-red-500" : "fill-red-500 text-red-500"}`} />
                   <span className="text-[11px]">{liveLikeCounts[live.id] ?? 0}</span>
                 </button>
                 <button
