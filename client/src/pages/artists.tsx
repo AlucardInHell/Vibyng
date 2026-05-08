@@ -209,8 +209,9 @@ class LiveErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
-const [liveError, setLiveError] = useState<string | null>(null);
+
 function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean }) {
+  const [liveError, setLiveError] = useState<string | null>(null);
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
