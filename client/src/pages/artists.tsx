@@ -334,9 +334,21 @@ export default function Artists() {
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
   const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
-  const isBroadcastMode = 
-    new URLSearchParams(window.location.search).get("broadcast") === "1" ||
-    !!sessionStorage.getItem("vibyng-live-token");
+  const params = new URLSearchParams(window.location.search);
+  const broadcastParam = params.get("broadcast") === "1";
+  const liveIdParam = params.get("liveId");
+  const storedLiveId = sessionStorage.getItem("vibyng-live-id");
+  const storedToken = sessionStorage.getItem("vibyng-live-token");
+  const storedUrl = sessionStorage.getItem("vibyng-live-url");
+
+  // Pulisci sessionStorage se i dati non coincidono
+  if (broadcastParam && liveIdParam && liveIdParam !== storedLiveId) {
+    sessionStorage.removeItem("vibyng-live-token");
+    sessionStorage.removeItem("vibyng-live-url");
+    sessionStorage.removeItem("vibyng-live-id");
+  }
+
+  const isBroadcastMode = broadcastParam && !!liveIdParam && liveIdParam === storedLiveId && !!storedToken && !!storedUrl;
   const [broadcasterToken] = useState<string | null>(
     () => sessionStorage.getItem("vibyng-live-token")
   );
