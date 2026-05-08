@@ -278,9 +278,9 @@ useEffect(() => {
           <VideoTrack className="w-full h-full object-cover" />
         </TrackLoop>
       ) : (
-        <div className="text-center text-white/60">
+      <div className="text-center text-white/60">
           <div className="text-4xl mb-2">📡</div>
-          <p className="text-sm">{isBroadcaster ? "Connessione camera..." : "In attesa del video..."}</p>
+          <p className="text-sm">{liveError || (isBroadcaster ? "Connessione camera..." : "In attesa del video...")}</p>
         </div>
       )}
     </div>
