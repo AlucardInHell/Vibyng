@@ -911,7 +911,6 @@ const handleCloseLiveSetup = () => {
       sessionStorage.setItem("vibyng-live-token", data.token);
       sessionStorage.setItem("vibyng-live-url", data.livekitUrl);
       sessionStorage.setItem("vibyng-live-id", String(data.live?.id ?? ""));
-      ...
       window.location.href = `/artists?tab=live&broadcast=1&liveId=${data.live?.id ?? ""}`;
     } catch (err: any) {
       toast({
