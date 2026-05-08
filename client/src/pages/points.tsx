@@ -887,8 +887,9 @@ const handleOpenLiveSetup = async () => {
 const handleCloseLiveSetup = () => {
   if (startingLive) return;
 
-  stopLivePreview();
-  setShowLiveSetup(false);
+  livePreviewStream?.getTracks().forEach(track => track.stop());
+      setLivePreviewStream(null);
+      setShowLiveSetup(false);
 };
   
   const handleStartLive = async () => {
