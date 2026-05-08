@@ -1372,42 +1372,44 @@ const reportMutation = useMutation({
         >
           <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
             <div className="absolute inset-0 flex items-center justify-center">
-              {liveTokens[live.id] && liveKitUrls[live.id] ? (
-                <LiveKitRoom
-                  token={liveTokens[live.id]}
-                  serverUrl={liveKitUrls[live.id]}
-                  connect={true}
-                  video={false}
-                  audio={false}
-                  className="w-full h-full"
-                >
-                  <LiveVideoPlayer />
-                </LiveKitRoom>
-              ) : isBroadcastMode && broadcasterToken && broadcasterUrl ? (
-                <LiveKitRoom
-                  token={broadcasterToken}
-                  serverUrl={broadcasterUrl}
-                  connect={true}
-                  video={false}
-                  audio={false}
-                  className="w-full h-full"
-                >
-                  <LiveVideoPlayer isBroadcaster={true} />
-                </LiveKitRoom>
-              ) : live.artist.id === currentUserId ? (
-                <div className="text-center px-6">
-                  <div className="text-6xl mb-4">🎥</div>
-                  <p className="text-white text-xl font-semibold">{live.title || t.live}</p>
-                  <p className="text-white/60 text-sm mt-2 max-w-xs">Stai trasmettendo in live</p>
-                </div>
-              ) : (
-                <div className="text-center px-6">
-                  <div className="text-6xl mb-4">⏳</div>
-                  <p className="text-white text-xl font-semibold">{live.title || t.live}</p>
-                  <p className="text-white/60 text-sm mt-2 max-w-xs">Connessione in corso...</p>
-                </div>
-              )}
-            </div>
+              {(() => {
+                const isHost = isBroadcastMode && live.artist.id === currentUserId;
+                const token = isHost ? broadcasterToken : liveTokens[live.id];
+                const url = isHost ? broadcasterUrl : liveKitUrls[live.id];
+
+                if (token && url) {
+                  return (
+                    <LiveKitRoom
+                      token={token}
+                      serverUrl={url}
+                      connect={activeTab === "live"}
+                      video={false}
+                      audio={false}
+                      className="w-full h-full"
+                    >
+                      <LiveVideoPlayer isBroadcaster={isHost} />
+                    </LiveKitRoom>
+                  );
+                }
+
+                if (isHost) {
+                  return (
+                    <div className="text-center px-6">
+                      <div className="text-6xl mb-4">🎥</div>
+                      <p className="text-white text-xl font-semibold">{live.title || t.live}</p>
+                      <p className="text-white/60 text-sm mt-2 max-w-xs">Connessione in corso...</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="text-center px-6">
+                    <div className="text-6xl mb-4">⏳</div>
+                    <p className="text-white text-xl font-semibold">{live.title || t.live}</p>
+                    <p className="text-white/60 text-sm mt-2 max-w-xs">Connessione in corso...</p>
+                  </div>
+                );
+              })()}
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/20 pointer-events-none" />
 
