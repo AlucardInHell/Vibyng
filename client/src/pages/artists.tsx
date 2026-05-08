@@ -192,6 +192,23 @@ type ActiveLiveStream = {
  role: string;
   };
 };
+
+class LiveErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
 function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
@@ -1398,15 +1415,19 @@ const reportMutation = useMutation({
 
                 if (token && url) {
                   return (
-                    <LiveKitRoom
-                      token={token}
-                      serverUrl={url}
-                      connect={true}
-                      video={false}
-                      audio={false}
-                      className="w-full h-full"
-                      onDisconnected={() => {}}
-                    >
+                    <LiveErrorBoundary>
+                      <LiveKitRoom
+                        token={token}
+                        serverUrl={url}
+                        connect={true}
+                        video={false}
+                        audio={false}
+                        className="w-full h-full"
+                        onDisconnected={() => {}}
+                      >
+                        <LiveVideoPlayer isBroadcaster={isHost} />
+                      </LiveKitRoom>
+                    </LiveErrorBoundary>
                       <LiveVideoPlayer isBroadcaster={isHost} />
                     </LiveKitRoom>
                   );
