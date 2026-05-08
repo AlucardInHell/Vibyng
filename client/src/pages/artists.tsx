@@ -192,14 +192,13 @@ type ActiveLiveStream = {
  role: string;
   };
 };
-function LiveVideoPlayer() {
+function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
   const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
 
   useEffect(() => {
-    if (!room || !localParticipant) return;
-    if (localParticipant.permissions?.canPublish === false) return;
+    if (!isBroadcaster || !room || !localParticipant) return;
     if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
 
     createLocalTracks({ audio: true, video: true })
@@ -208,13 +207,23 @@ function LiveVideoPlayer() {
           await localParticipant.publishTrack(track);
         }
       })
-      .catch(() => {});
-  }, [room, localParticipant?.identity]);
+      .catch((err) => {
+        console.error("[livekit-publish]", err?.message);
+      });
+
+    return () => {
+      localParticipant.tracks.forEach((pub) => {
+        if (pub.track) pub.track.stop();
+      });
+    };
+  }, [isBroadcaster, room, localParticipant?.identity]);
 
   const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
     .filter(t => t.participant.isLocal);
 
-  const allTracks = [...remoteTracks, ...localTracks];
+  const allTracks = isBroadcaster
+    ? [...remoteTracks, ...localTracks]
+    : remoteTracks;
 
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
@@ -225,7 +234,7 @@ function LiveVideoPlayer() {
       ) : (
         <div className="text-center text-white/60">
           <div className="text-4xl mb-2">📡</div>
-          <p className="text-sm">In attesa del video...</p>
+          <p className="text-sm">{isBroadcaster ? "Connessione camera..." : "In attesa del video..."}</p>
         </div>
       )}
     </div>
@@ -283,11 +292,12 @@ export default function Artists() {
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
   const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
-  const [broadcasterToken, setBroadcasterToken] = useState<string | null>(
-    () => localStorage.getItem("vibyng-live-token")
+  const isBroadcastMode = new URLSearchParams(window.location.search).get("broadcast") === "1";
+  const [broadcasterToken] = useState<string | null>(
+    () => sessionStorage.getItem("vibyng-live-token")
   );
-  const [broadcasterUrl, setBroadcasterUrl] = useState<string | null>(
-    () => localStorage.getItem("vibyng-live-url")
+  const [broadcasterUrl] = useState<string | null>(
+    () => sessionStorage.getItem("vibyng-live-url")
   );
   const [liveKitUrls, setLiveKitUrls] = useState<Record<number, string>>({});
   const [liveChatInput, setLiveChatInput] = useState<Record<number, string>>({});
@@ -1371,24 +1381,16 @@ const reportMutation = useMutation({
                 >
                   <LiveVideoPlayer />
                 </LiveKitRoom>
-              ) : live.artist.id === currentUserId && broadcasterToken && broadcasterUrl ? (
+              ) : isBroadcastMode && broadcasterToken && broadcasterUrl ? (
                 <LiveKitRoom
                   token={broadcasterToken}
                   serverUrl={broadcasterUrl}
                   connect={true}
-                  video={true}
-                  audio={true}
+                  video={false}
+                  audio={false}
                   className="w-full h-full"
-                  options={{
-                    publishDefaults: {
-                      videoEncoding: {
-                        maxBitrate: 1_500_000,
-                        maxFramerate: 30,
-                      },
-                    },
-                  }}
                 >
-                  <LiveVideoPlayer />
+                  <LiveVideoPlayer isBroadcaster={true} />
                 </LiveKitRoom>
               ) : live.artist.id === currentUserId ? (
                 <div className="text-center px-6">
