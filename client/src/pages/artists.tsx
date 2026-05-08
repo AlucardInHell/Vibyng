@@ -16,6 +16,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { LiveKitRoom, VideoTrack, useTracks, useRoomContext, TrackLoop, useLocalParticipant } from "@livekit/components-react";
 import { Track, createLocalTracks } from "livekit-client";
+useEffect(() => {
+    if (!isBroadcaster || !room || !localParticipant) return;
+    if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
+
+    createLocalTracks({ audio: true, video: true })
+      .then(async (tracks) => {
+        for (const track of tracks) {
+          await localParticipant.publishTrack(track);
+        }
+      })
+      .catch((err) => {
+        console.error("[livekit-publish]", err?.message);
+      });
+
+    return () => {
+      localParticipant.tracks.forEach((pub) => {
+        if (pub.track) pub.track.stop();
+      });
+    };
+  }, [isBroadcaster, room, localParticipant?.identity]);
 
 function getCurrentUserId(): number {
   try {
@@ -292,7 +312,9 @@ export default function Artists() {
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
   const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
-  const isBroadcastMode = new URLSearchParams(window.location.search).get("broadcast") === "1";
+  const isBroadcastMode = 
+    new URLSearchParams(window.location.search).get("broadcast") === "1" ||
+    !!sessionStorage.getItem("vibyng-live-token");
   const [broadcasterToken] = useState<string | null>(
     () => sessionStorage.getItem("vibyng-live-token")
   );
