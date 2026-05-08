@@ -209,6 +209,7 @@ class LiveErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
+const [liveError, setLiveError] = useState<string | null>(null);
 function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean }) {
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
@@ -243,7 +244,10 @@ useEffect(() => {
           publishedTracks.push(track);
         }
       } catch (err: any) {
-        if (!stopped) console.error("[livekit-publish]", err?.message);
+        if (!stopped) {
+          console.error("[livekit-publish]", err?.message);
+          setLiveError(err?.message || "Errore camera");
+        }
       }
     };
 
