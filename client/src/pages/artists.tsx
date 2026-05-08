@@ -1399,7 +1399,6 @@ const reportMutation = useMutation({
                 if (token && url) {
                   return (
                     <LiveKitRoom
-                      key={`${live.id}-${isHost ? "host" : "viewer"}`}
                       token={token}
                       serverUrl={url}
                       connect={true}
