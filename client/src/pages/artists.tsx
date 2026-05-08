@@ -15,7 +15,7 @@ import type { ArtistVideo, User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { LiveKitRoom, VideoTrack, useTracks, useRoomContext, TrackLoop, useLocalParticipant } from "@livekit/components-react";
-import { Track, createLocalTracks } from "livekit-client";
+import { Track, createLocalTracks, ConnectionState } from "livekit-client";
 
 function getCurrentUserId(): number {
   try {
@@ -197,14 +197,20 @@ function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean })
   const { localParticipant } = useLocalParticipant();
   const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
 
-  useEffect(() => {
+ useEffect(() => {
     if (!isBroadcaster || !room || !localParticipant) return;
+    if (room.state !== "connected") return;
     if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
+
+    let stopped = false;
+    const publishedTracks: any[] = [];
 
     createLocalTracks({ audio: true, video: true })
       .then(async (tracks) => {
         for (const track of tracks) {
+          if (stopped) { track.stop(); return; }
           await localParticipant.publishTrack(track);
+          publishedTracks.push(track);
         }
       })
       .catch((err) => {
@@ -212,11 +218,13 @@ function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean })
       });
 
     return () => {
+      stopped = true;
+      publishedTracks.forEach(t => t.stop());
       localParticipant.tracks.forEach((pub) => {
         if (pub.track) pub.track.stop();
       });
     };
-  }, [isBroadcaster, room, localParticipant?.identity]);
+  }, [isBroadcaster, room?.state, localParticipant?.identity]);
 
   const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
     .filter(t => t.participant.isLocal);
@@ -1380,12 +1388,14 @@ const reportMutation = useMutation({
                 if (token && url) {
                   return (
                     <LiveKitRoom
+                      key={`${live.id}-${isHost ? "host" : "viewer"}`}
                       token={token}
                       serverUrl={url}
-                      connect={activeTab === "live"}
+                      connect={true}
                       video={false}
                       audio={false}
                       className="w-full h-full"
+                      onDisconnected={() => {}}
                     >
                       <LiveVideoPlayer isBroadcaster={isHost} />
                     </LiveKitRoom>
