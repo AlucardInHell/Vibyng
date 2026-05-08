@@ -908,23 +908,11 @@ const handleCloseLiveSetup = () => {
 
       setLiveToken(data.token);
       setLivekitUrl(data.livekitUrl);
-      localStorage.setItem("vibyng-live-token", data.token);
-      localStorage.setItem("vibyng-live-url", data.livekitUrl);
-      localStorage.setItem("vibyng-live-id", String(data.live?.id ?? ""));
-
-      await queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
-      await refetchActiveLiveStreams();
-
-      toast({
-        title: t.liveStartedTitle,
-        description: t.liveStartedDescription,
-      });
-
-      stopLivePreview();
-      setShowLiveSetup(false);
-
-      // Porta automaticamente alla tab Live del Flow
-      window.location.href = "/artists?tab=live";
+      sessionStorage.setItem("vibyng-live-token", data.token);
+      sessionStorage.setItem("vibyng-live-url", data.livekitUrl);
+      sessionStorage.setItem("vibyng-live-id", String(data.live?.id ?? ""));
+      ...
+      window.location.href = `/artists?tab=live&broadcast=1&liveId=${data.live?.id ?? ""}`;
     } catch (err: any) {
       toast({
         title: t.error,
@@ -948,9 +936,9 @@ const handleEndLive = async () => {
     setLivekitUrl(null);
   }
 
-  localStorage.removeItem("vibyng-live-token");
-  localStorage.removeItem("vibyng-live-url");
-  localStorage.removeItem("vibyng-live-id");
+    sessionStorage.removeItem("vibyng-live-token");
+    sessionStorage.removeItem("vibyng-live-url");
+    sessionStorage.removeItem("vibyng-live-id");
 
   try {
     await apiRequest("POST", `/api/lives/${myActiveLive.id}/end`, {
