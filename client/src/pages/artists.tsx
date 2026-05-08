@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Zap, Heart, Bookmark, Share2, MessageCircle, Volume2, VolumeX, Sparkles, MoreVertical } from "lucide-react";
