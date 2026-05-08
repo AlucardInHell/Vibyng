@@ -15,7 +15,7 @@ import type { ArtistVideo, User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { LiveKitRoom, VideoTrack, useTracks, useRoomContext, TrackLoop, useLocalParticipant } from "@livekit/components-react";
-import { Track, createLocalTracks, ConnectionState } from "livekit-client";
+import { Track, createLocalTracks, ConnectionState, RoomEvent } from "livekit-client";
 
 function getCurrentUserId(): number {
   try {
@@ -222,15 +222,15 @@ useEffect(() => {
 
     const publish = async () => {
       try {
-        if (room.state !== "connected") {
+        if (room.state !== ConnectionState.Connected) {
           await new Promise<void>((resolve, reject) => {
             const timeout = setTimeout(() => reject(new Error("timeout")), 10000);
             const handler = () => {
               clearTimeout(timeout);
-              room.off("connected", handler);
+              room.off(RoomEvent.Connected, handler);
               resolve();
             };
-            room.on("connected", handler);
+            room.on(RoomEvent.Connected, handler);
           });
         }
         if (stopped) return;
