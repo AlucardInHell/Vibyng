@@ -197,25 +197,36 @@ function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean })
   const { localParticipant } = useLocalParticipant();
   const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
 
- useEffect(() => {
+useEffect(() => {
     if (!isBroadcaster || !room || !localParticipant) return;
-    if (room.state !== "connected") return;
-    if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
 
     let stopped = false;
     const publishedTracks: any[] = [];
 
-    createLocalTracks({ audio: true, video: true })
-      .then(async (tracks) => {
+    const publish = async () => {
+      try {
+        // Aspetta che la room sia connessa
+        if (room.state !== "connected") {
+          await new Promise<void>((resolve) => {
+            const handler = () => { room.off("connected", handler); resolve(); };
+            room.on("connected", handler);
+          });
+        }
+        if (stopped) return;
+        if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
+
+        const tracks = await createLocalTracks({ audio: true, video: true });
         for (const track of tracks) {
           if (stopped) { track.stop(); return; }
           await localParticipant.publishTrack(track);
           publishedTracks.push(track);
         }
-      })
-      .catch((err) => {
+      } catch (err: any) {
         console.error("[livekit-publish]", err?.message);
-      });
+      }
+    };
+
+    publish();
 
     return () => {
       stopped = true;
@@ -224,8 +235,8 @@ function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean })
         if (pub.track) pub.track.stop();
       });
     };
-  }, [isBroadcaster, room?.state, localParticipant?.identity]);
-
+  }, [isBroadcaster, room, localParticipant?.identity]);
+  
   const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
     .filter(t => t.participant.isLocal);
 
