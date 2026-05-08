@@ -222,10 +222,14 @@ useEffect(() => {
 
     const publish = async () => {
       try {
-        // Aspetta che la room sia connessa
         if (room.state !== "connected") {
-          await new Promise<void>((resolve) => {
-            const handler = () => { room.off("connected", handler); resolve(); };
+          await new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error("timeout")), 10000);
+            const handler = () => {
+              clearTimeout(timeout);
+              room.off("connected", handler);
+              resolve();
+            };
             room.on("connected", handler);
           });
         }
@@ -239,7 +243,7 @@ useEffect(() => {
           publishedTracks.push(track);
         }
       } catch (err: any) {
-        console.error("[livekit-publish]", err?.message);
+        if (!stopped) console.error("[livekit-publish]", err?.message);
       }
     };
 
@@ -247,10 +251,12 @@ useEffect(() => {
 
     return () => {
       stopped = true;
-      publishedTracks.forEach(t => t.stop());
-      localParticipant.tracks.forEach((pub) => {
-        if (pub.track) pub.track.stop();
-      });
+      try {
+        publishedTracks.forEach(t => { try { t.stop(); } catch {} });
+        localParticipant?.tracks?.forEach((pub: any) => {
+          try { if (pub.track) pub.track.stop(); } catch {}
+        });
+      } catch {}
     };
   }, [isBroadcaster, room, localParticipant?.identity]);
   
