@@ -857,7 +857,7 @@ const startLivePreview = async () => {
 
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
-      audio: false,
+      audio: true,
     });
 
     setLivePreviewStream((previousStream) => {
