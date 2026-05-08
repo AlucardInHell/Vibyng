@@ -1413,7 +1413,7 @@ const reportMutation = useMutation({
                 const token = isHost ? broadcasterToken : liveTokens[live.id];
                 const url = isHost ? broadcasterUrl : liveKitUrls[live.id];
 
-                if (token && url) {
+               if (token && url) {
                   return (
                     <LiveErrorBoundary>
                       <LiveKitRoom
@@ -1428,8 +1428,6 @@ const reportMutation = useMutation({
                         <LiveVideoPlayer isBroadcaster={isHost} />
                       </LiveKitRoom>
                     </LiveErrorBoundary>
-                      <LiveVideoPlayer isBroadcaster={isHost} />
-                    </LiveKitRoom>
                   );
                 }
 
