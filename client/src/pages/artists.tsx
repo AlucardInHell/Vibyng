@@ -309,29 +309,7 @@ function LiveVideoPlayer({
     </div>
   );
 }
-  
-  const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
-    .filter(t => t.participant.isLocal);
 
-  const allTracks = isBroadcaster
-    ? [...remoteTracks, ...localTracks]
-    : remoteTracks;
-
-  return (
-    <div className="w-full h-full bg-black flex items-center justify-center">
-      {allTracks.length > 0 ? (
-        <TrackLoop tracks={allTracks}>
-          <VideoTrack className="w-full h-full object-cover" />
-        </TrackLoop>
-      ) : (
-      <div className="text-center text-white/60">
-          <div className="text-4xl mb-2">📡</div>
-          <p className="text-sm">{liveError || (isBroadcaster ? "Connessione camera..." : "In attesa del video...")}</p>
-        </div>
-      )}
-    </div>
-  );
-}
 export default function Artists() {
   const currentUserId = getCurrentUserId();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
