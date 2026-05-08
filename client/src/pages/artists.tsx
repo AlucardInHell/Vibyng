@@ -210,44 +210,50 @@ class LiveErrorBoundary extends React.Component<
   }
 }
 
-function LiveVideoPlayer({ isBroadcaster = false }: { isBroadcaster?: boolean }) {
+function LiveVideoPlayer({
+  isBroadcaster = false,
+  isRoomConnected = false,
+}: {
+  isBroadcaster?: boolean;
+  isRoomConnected?: boolean;
+}) {
   const [liveError, setLiveError] = useState<string | null>(null);
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
-  const remoteTracks = useTracks([Track.Source.Camera, Track.Source.ScreenShare], { onlySubscribed: true });
+  const remoteTracks = useTracks(
+    [Track.Source.Camera, Track.Source.ScreenShare],
+    { onlySubscribed: true }
+  );
 
-useEffect(() => {
-    if (!isBroadcaster || !room || !localParticipant) return;
+  useEffect(() => {
+    if (!isBroadcaster) return;
+    if (!isRoomConnected) return;
+    if (!room || !localParticipant) return;
+    if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
 
     let stopped = false;
     const publishedTracks: any[] = [];
 
     const publish = async () => {
       try {
-        if (room.state !== ConnectionState.Connected) {
-          await new Promise<void>((resolve, reject) => {
-            const timeout = setTimeout(() => reject(new Error("timeout")), 10000);
-            const handler = () => {
-              clearTimeout(timeout);
-              room.off(RoomEvent.Connected, handler);
-              resolve();
-            };
-            room.on(RoomEvent.Connected, handler);
-          });
-        }
-        if (stopped) return;
-        if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
-
         const tracks = await createLocalTracks({ audio: true, video: true });
+
         for (const track of tracks) {
-          if (stopped) { track.stop(); return; }
+          if (stopped) {
+            track.stop();
+            return;
+          }
+
           await localParticipant.publishTrack(track);
           publishedTracks.push(track);
         }
       } catch (err: any) {
         if (!stopped) {
-          console.error("[livekit-publish]", err?.message);
-          setLiveError(err?.message || "Errore camera");
+          console.error("[livekit-publish]", err);
+          setLiveError(
+            err?.message ||
+              "Non riesco ad accedere a camera e microfono. Controlla i permessi del browser."
+          );
         }
       }
     };
@@ -256,14 +262,53 @@ useEffect(() => {
 
     return () => {
       stopped = true;
+
       try {
-        publishedTracks.forEach(t => { try { t.stop(); } catch {} });
+        publishedTracks.forEach((track) => {
+          try {
+            track.stop();
+          } catch {}
+        });
+
         localParticipant?.tracks?.forEach((pub: any) => {
-          try { if (pub.track) pub.track.stop(); } catch {}
+          try {
+            if (pub.track) pub.track.stop();
+          } catch {}
         });
       } catch {}
     };
-  }, [isBroadcaster, room, localParticipant?.identity]);
+  }, [isBroadcaster, isRoomConnected, room, localParticipant?.identity]);
+
+  const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false }).filter(
+    (trackRef) => trackRef.participant.isLocal
+  );
+
+  const allTracks = isBroadcaster
+    ? [...remoteTracks, ...localTracks]
+    : remoteTracks;
+
+  return (
+    <div className="w-full h-full bg-black flex items-center justify-center">
+      {allTracks.length > 0 ? (
+        <TrackLoop tracks={allTracks}>
+          <VideoTrack className="w-full h-full object-cover" />
+        </TrackLoop>
+      ) : (
+        <div className="text-center text-white/60">
+          <div className="text-4xl mb-2">📡</div>
+          <p className="text-sm">
+            {liveError ||
+              (isBroadcaster
+                ? isRoomConnected
+                  ? "Connessione camera..."
+                  : "Connessione alla live..."
+                : "In attesa del video...")}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
   
   const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
     .filter(t => t.participant.isLocal);
@@ -339,6 +384,7 @@ export default function Artists() {
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
   const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
+  const [connectedLiveIds, setConnectedLiveIds] = useState<Record<number, boolean>>({});
   const params = new URLSearchParams(window.location.search);
   const broadcastParam = params.get("broadcast") === "1";
   const liveIdParam = params.get("liveId");
@@ -1439,20 +1485,35 @@ const reportMutation = useMutation({
                if (token && url) {
                   return (
                     <LiveErrorBoundary>
-                      <LiveKitRoom
-                        token={token}
-                        serverUrl={url}
-                        connect={true}
-                        video={false}
-                        audio={false}
-                        className="w-full h-full"
-                        onDisconnected={() => {}}
-                      >
-                        <LiveVideoPlayer isBroadcaster={isHost} />
-                      </LiveKitRoom>
-                    </LiveErrorBoundary>
-                  );
-                }
+  <LiveKitRoom
+    key={`${live.id}-${isHost ? "host" : "viewer"}-${token?.slice(-8) ?? "no-token"}`}
+    token={token}
+    serverUrl={url}
+    connect={true}
+    video={false}
+    audio={false}
+    className="w-full h-full"
+    onConnected={() => {
+      setConnectedLiveIds((prev) => ({
+        ...prev,
+        [live.id]: true,
+      }));
+    }}
+    onDisconnected={() => {
+      setConnectedLiveIds((prev) => ({
+        ...prev,
+        [live.id]: false,
+      }));
+    }}
+  >
+    <LiveVideoPlayer
+      isBroadcaster={isHost}
+      isRoomConnected={!!connectedLiveIds[live.id]}
+    />
+  </LiveKitRoom>
+</LiveErrorBoundary>
+);
+}
 
                 if (isHost) {
                   return (
