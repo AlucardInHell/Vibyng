@@ -1525,7 +1525,8 @@ const reportMutation = useMutation({
                   />
                 </div>
               </div>
-            )}
+           )}
+            </div>
           </div>
         </section>
       ))
