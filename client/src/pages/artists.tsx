@@ -200,27 +200,21 @@ function LiveVideoPlayer() {
   useEffect(() => {
     if (!room || !localParticipant) return;
     if (localParticipant.permissions?.canPublish === false) return;
+    if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
 
-    const publish = async () => {
-      try {
-        const tracks = await createLocalTracks({ audio: true, video: true });
+    createLocalTracks({ audio: true, video: true })
+      .then(async (tracks) => {
         for (const track of tracks) {
           await localParticipant.publishTrack(track);
         }
-      } catch (err: any) {
-        console.error("[livekit-publish]", err?.message);
-      }
-    };
+      })
+      .catch(() => {});
+  }, [room, localParticipant?.identity]);
 
-    if (!localParticipant.isCameraEnabled && !localParticipant.isMicrophoneEnabled) {
-      publish();
-    }
-  }, [room, localParticipant]);
+  const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false })
+    .filter(t => t.participant.isLocal);
 
-  const localVideoTrack = useTracks([Track.Source.Camera], { onlySubscribed: false })
-    .filter(t => t.participant === localParticipant);
-
-  const allTracks = [...remoteTracks, ...localVideoTrack];
+  const allTracks = [...remoteTracks, ...localTracks];
 
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
@@ -237,7 +231,6 @@ function LiveVideoPlayer() {
     </div>
   );
 }
-
 export default function Artists() {
   const currentUserId = getCurrentUserId();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
