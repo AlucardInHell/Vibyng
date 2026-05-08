@@ -17,13 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { LiveKitRoom, VideoTrack, useTracks, useRoomContext, TrackLoop, useLocalParticipant } from "@livekit/components-react";
 import { Track, createLocalTracks } from "livekit-client";
 
-    return () => {
-      localParticipant.tracks.forEach((pub) => {
-        if (pub.track) pub.track.stop();
-      });
-    };
-  }, [isBroadcaster, room, localParticipant?.identity]);
-
 function getCurrentUserId(): number {
   try {
     const stored = localStorage.getItem("vibyng-user");
