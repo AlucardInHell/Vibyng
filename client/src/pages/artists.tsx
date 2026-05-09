@@ -215,164 +215,50 @@ function LiveVideoPlayer({
 }: {
   isBroadcaster?: boolean;
 }) {
-  const [liveError, setLiveError] = useState<string | null>(null);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-
-  const localVideoRef = useRef<HTMLVideoElement | null>(null);
-
   const room = useRoomContext();
-  const { localParticipant } = useLocalParticipant();
-  const [roomState, setRoomState] = useState(room?.state);
-  useEffect(() => {
-  if (!room) return;
 
-  setRoomState(room.state);
-
-  const handleConnected = () => {
-    console.log("[livekit] connected");
-    setRoomState(room.state);
-  };
-
-  const handleDisconnected = () => {
-    console.log("[livekit] disconnected");
-    setRoomState(room.state);
-  };
-
-  const handleReconnecting = () => {
-    console.log("[livekit] reconnecting");
-    setRoomState(room.state);
-  };
-
-  const handleReconnected = () => {
-    console.log("[livekit] reconnected");
-    setRoomState(room.state);
-  };
-
-  room.on(RoomEvent.Connected, handleConnected);
-  room.on(RoomEvent.Disconnected, handleDisconnected);
-  room.on(RoomEvent.Reconnecting, handleReconnecting);
-  room.on(RoomEvent.Reconnected, handleReconnected);
-
-  return () => {
-    room.off(RoomEvent.Connected, handleConnected);
-    room.off(RoomEvent.Disconnected, handleDisconnected);
-    room.off(RoomEvent.Reconnecting, handleReconnecting);
-    room.off(RoomEvent.Reconnected, handleReconnected);
-  };
-}, [room]);
-
-  const isRoomConnected = roomState === ConnectionState.Connected;
-
-  const remoteTracks = useTracks(
+  const tracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
-    { onlySubscribed: true }
+    { onlySubscribed: false }
   );
 
   useEffect(() => {
-    if (!localVideoRef.current || !localStream) return;
+    if (!room) return;
 
-    localVideoRef.current.srcObject = localStream;
+    console.log("[livekit-room-state]", {
+      state: room.state,
+      isBroadcaster,
+      tracksCount: tracks.length,
+      tracks: tracks.map((trackRef: any) => ({
+        source: trackRef.source,
+        isLocal: trackRef.participant?.isLocal,
+        participant: trackRef.participant?.identity,
+        muted: trackRef.publication?.isMuted,
+        subscribed: trackRef.publication?.isSubscribed,
+      })),
+    });
+  }, [room, room?.state, isBroadcaster, tracks.length]);
 
-    const playPromise = localVideoRef.current.play();
-    if (playPromise) {
-      playPromise.catch(() => {});
-    }
-
-    return () => {
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = null;
-      }
-    };
-  }, [localStream]);
-
-  useEffect(() => {
-    if (!isBroadcaster) return;
-    if (!isRoomConnected) return;
-    if (!room || !localParticipant) return;
-    if (localParticipant.isCameraEnabled || localParticipant.isMicrophoneEnabled) return;
-
-    let stopped = false;
-    const publishedTracks: any[] = [];
-
-    const publish = async () => {
-      try {
-        const tracks = await createLocalTracks({ audio: true, video: true });
-
-        if (stopped) {
-          tracks.forEach((track) => track.stop());
-          return;
-        }
-
-        const mediaStream = new MediaStream();
-
-        for (const track of tracks) {
-          await localParticipant.publishTrack(track);
-          publishedTracks.push(track);
-
-          if (track.mediaStreamTrack) {
-            mediaStream.addTrack(track.mediaStreamTrack);
-          }
-        }
-
-        setLocalStream(mediaStream);
-      } catch (err: any) {
-        if (!stopped) {
-          console.error("[livekit-publish]", err);
-          setLiveError(
-            err?.message ||
-              "Non riesco ad accedere a camera e microfono. Controlla i permessi del browser."
-          );
-        }
-      }
-    };
-
-    publish();
-
-    return () => {
-      stopped = true;
-
-      try {
-        publishedTracks.forEach((track) => {
-          try {
-            track.stop();
-          } catch {}
-        });
-
-        localParticipant?.tracks?.forEach((pub: any) => {
-          try {
-            if (pub.track) pub.track.stop();
-          } catch {}
-        });
-
-        setLocalStream(null);
-      } catch {}
-    };
-  }, [isBroadcaster, isRoomConnected, room, localParticipant?.identity]);
+  const videoTracks = tracks.filter((trackRef: any) => {
+    return (
+      trackRef.source === Track.Source.Camera ||
+      trackRef.source === Track.Source.ScreenShare
+    );
+  });
 
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
-      {isBroadcaster && localStream ? (
-        <video
-          ref={localVideoRef}
-          className="w-full h-full object-cover"
-          autoPlay
-          muted
-          playsInline
-        />
-      ) : !isBroadcaster && remoteTracks.length > 0 ? (
-        <TrackLoop tracks={remoteTracks}>
+      {videoTracks.length > 0 ? (
+        <TrackLoop tracks={videoTracks}>
           <VideoTrack className="w-full h-full object-cover" />
         </TrackLoop>
       ) : (
         <div className="text-center text-white/60">
           <div className="text-4xl mb-2">📡</div>
           <p className="text-sm">
-            {liveError ||
-              (isBroadcaster
-                ? isRoomConnected
-                  ? "Connessione camera..."
-                  : "Connessione alla live..."
-                : "In attesa del video...")}
+            {isBroadcaster
+              ? "Camera collegata alla live..."
+              : "In attesa del video..."}
           </p>
         </div>
       )}
@@ -1618,8 +1504,8 @@ console.log("[live-render-debug]", {
         token={token}
         serverUrl={url}
         connect={true}
-        video={false}
-        audio={false}
+        video={isHost}
+        audio={isHost}
         className="w-full h-full"
         onConnected={() => {
           console.log("[livekit-room] connected", {
