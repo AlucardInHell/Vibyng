@@ -691,7 +691,12 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
           live.viewerCount = updatedLive.viewerCount;
         }
         // Richiedi token spettatore
-        if (live.artist.id !== currentUserId && !liveTokens[live.id]) {
+        const isLiveOwner = Number(live.artist.id) === Number(currentUserId);
+        const shouldFetchFallbackToken =
+          !liveTokens[live.id] &&
+          (!isLiveOwner || !isBroadcastMode || !broadcasterToken || !broadcasterUrl);
+
+        if (shouldFetchFallbackToken) {
           try {
             const tokenRes = await apiRequest("POST", `/api/lives/${live.id}/token`, { userId: currentUserId });
             const tokenData = await tokenRes.json();
@@ -1569,9 +1574,26 @@ const reportMutation = useMutation({
           <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
             <div className="absolute inset-0 flex items-center justify-center">
               {(() => {
-                const isHost = isBroadcastMode && Number(live.artist.id) === Number(currentUserId);
+                const isLiveOwner = Number(live.artist.id) === Number(currentUserId);
+                const isHost = isLiveOwner && isBroadcastMode;
                 const token = isHost ? broadcasterToken : liveTokens[live.id];
                 const url = isHost ? broadcasterUrl : liveKitUrls[live.id];
+
+console.log("[live-render-debug]", {
+  liveId: live.id,
+  roomName: live.roomName,
+  currentUserId,
+  liveOwnerId: live.artist.id,
+  isLiveOwner,
+  isBroadcastMode,
+  isHost,
+  hasBroadcasterToken: !!broadcasterToken,
+  hasBroadcasterUrl: !!broadcasterUrl,
+  hasViewerToken: !!liveTokens[live.id],
+  hasViewerUrl: !!liveKitUrls[live.id],
+  tokenTail: token?.slice(-8),
+  url,
+});
 
                 if (token && url) {
   return (
