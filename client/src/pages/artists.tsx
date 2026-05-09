@@ -445,7 +445,7 @@ export default function Artists() {
     sessionStorage.removeItem("vibyng-live-id");
   }
 
-  const isBroadcastMode = broadcastParam && !!liveIdParam && liveIdParam === storedLiveId && !!storedToken && !!storedUrl;
+  const isBroadcastMode = broadcastParam && !!liveIdParam && String(liveIdParam) === String(storedLiveId) && !!storedToken && !!storedUrl;
   const [broadcasterToken] = useState<string | null>(
     () => sessionStorage.getItem("vibyng-live-token")
   );
@@ -1527,7 +1527,7 @@ const reportMutation = useMutation({
           <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
             <div className="absolute inset-0 flex items-center justify-center">
               {(() => {
-                const isHost = isBroadcastMode && live.artist.id === currentUserId;
+                const isHost = isBroadcastMode && Number(live.artist.id) === Number(currentUserId);
                 const token = isHost ? broadcasterToken : liveTokens[live.id];
                 const url = isHost ? broadcasterUrl : liveKitUrls[live.id];
 
