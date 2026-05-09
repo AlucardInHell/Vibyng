@@ -1473,12 +1473,11 @@ app.post("/api/lives/:id/token", async (req, res) => {
     const { userId } = req.body;
 
     const liveResult = await db.execute(sql`
-      const liveResult = await db.execute(sql`
-  SELECT room_name, artist_id
-  FROM live_streams
-  WHERE id = ${liveId}
-    AND status = 'live'
-  LIMIT 1
+      SELECT room_name, artist_id
+      FROM live_streams
+      WHERE id = ${liveId}
+      AND status = 'live'
+      LIMIT 1
 `);
 
     if (!liveResult.rows.length) {
