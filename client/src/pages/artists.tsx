@@ -446,8 +446,6 @@ export default function Artists() {
   }
 
   const isBroadcastMode = broadcastParam && !!liveIdParam && !!storedToken && !!storedUrl;
-
-  const isBroadcastMode = broadcastParam && !!liveIdParam && String(liveIdParam) === String(storedLiveId) && !!storedToken && !!storedUrl;
   const [broadcasterToken] = useState<string | null>(
     () => sessionStorage.getItem("vibyng-live-token")
   );
