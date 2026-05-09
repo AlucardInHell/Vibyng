@@ -1339,6 +1339,30 @@ app.get("/api/lives/active", async (_req, res) => {
   }
 });
 
+app.get("/api/lives/test-token", async (req, res) => {
+  try {
+    const { AccessToken } = await import("livekit-server-sdk");
+    const apiKey = process.env.LIVEKIT_API_KEY || "";
+    const apiSecret = process.env.LIVEKIT_API_SECRET || "";
+    const livekitUrl = process.env.LIVEKIT_URL || "";
+    
+    const at = new AccessToken(apiKey, apiSecret, {
+      identity: "test-user",
+      name: "Test",
+    });
+    at.addGrant({
+      room: "test-room",
+      roomJoin: true,
+      canPublish: true,
+      canSubscribe: true,
+    });
+    const token = await at.toJwt();
+    res.json({ token, livekitUrl, apiKey: apiKey.substring(0, 6) });
+  } catch (err: any) {
+    res.status(500).json({ error: err?.message });
+  }
+});
+  
 app.post("/api/lives/start", async (req, res) => {
   try {
     const artistId = Number(req.body.artistId);
