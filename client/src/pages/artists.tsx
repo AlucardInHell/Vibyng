@@ -439,11 +439,13 @@ export default function Artists() {
   const storedUrl = sessionStorage.getItem("vibyng-live-url");
 
   // Pulisci sessionStorage se i dati non coincidono
-  if (broadcastParam && liveIdParam && liveIdParam !== storedLiveId) {
+  if (broadcastParam && liveIdParam && storedLiveId && String(liveIdParam).trim() !== String(storedLiveId).trim()) {
     sessionStorage.removeItem("vibyng-live-token");
     sessionStorage.removeItem("vibyng-live-url");
     sessionStorage.removeItem("vibyng-live-id");
   }
+
+  const isBroadcastMode = broadcastParam && !!liveIdParam && !!storedToken && !!storedUrl;
 
   const isBroadcastMode = broadcastParam && !!liveIdParam && String(liveIdParam) === String(storedLiveId) && !!storedToken && !!storedUrl;
   const [broadcasterToken] = useState<string | null>(
