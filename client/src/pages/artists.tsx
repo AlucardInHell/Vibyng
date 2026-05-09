@@ -431,19 +431,65 @@ export default function Artists() {
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
   const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
-  const isBroadcastMode = !!(
-    sessionStorage.getItem("vibyng-live-token") &&
-    sessionStorage.getItem("vibyng-live-url") &&
-    sessionStorage.getItem("vibyng-live-id")
-  );
-  const [broadcasterToken] = useState<string | null>(
-    () => sessionStorage.getItem("vibyng-live-token")
-  );
-  const [broadcasterUrl] = useState<string | null>(() => {
-    const url = sessionStorage.getItem("vibyng-live-url");
-    if (!url) return null;
-    return url;
+  const params = new URLSearchParams(window.location.search);
+  const broadcastParam = params.get("broadcast") === "1";
+  const liveIdParam = params.get("liveId");
+
+  const [broadcastSession, setBroadcastSession] = useState<{
+  liveId: string | null;
+  token: string | null;
+  url: string | null;
+}>(() => ({
+  liveId: sessionStorage.getItem("vibyng-live-id"),
+  token: sessionStorage.getItem("vibyng-live-token"),
+  url: sessionStorage.getItem("vibyng-live-url"),
+}));
+
+useEffect(() => {
+  const currentStoredLiveId = sessionStorage.getItem("vibyng-live-id");
+  const currentStoredToken = sessionStorage.getItem("vibyng-live-token");
+  const currentStoredUrl = sessionStorage.getItem("vibyng-live-url");
+
+  const invalidBroadcastSession =
+    broadcastParam &&
+    !!liveIdParam &&
+    (
+      !currentStoredLiveId ||
+      String(currentStoredLiveId).trim() !== String(liveIdParam).trim() ||
+      !currentStoredToken ||
+      !currentStoredUrl
+    );
+
+  if (invalidBroadcastSession) {
+    sessionStorage.removeItem("vibyng-live-token");
+    sessionStorage.removeItem("vibyng-live-url");
+    sessionStorage.removeItem("vibyng-live-id");
+
+    setBroadcastSession({
+      liveId: null,
+      token: null,
+      url: null,
+    });
+
+    return;
+  }
+
+  setBroadcastSession({
+    liveId: currentStoredLiveId,
+    token: currentStoredToken,
+    url: currentStoredUrl,
   });
+}, [broadcastParam, liveIdParam]);
+
+const isBroadcastMode =
+  broadcastParam &&
+  !!liveIdParam &&
+  !!broadcastSession.liveId &&
+  String(liveIdParam).trim() === String(broadcastSession.liveId).trim() &&
+  !!broadcastSession.token &&
+  !!broadcastSession.url;
+  const broadcasterToken = broadcastSession.token;
+  const broadcasterUrl = broadcastSession.url;
   const [liveKitUrls, setLiveKitUrls] = useState<Record<number, string>>({});
   const [liveChatInput, setLiveChatInput] = useState<Record<number, string>>({});
   const [liveComments, setLiveComments] = useState<Record<number, any[]>>({});
@@ -652,7 +698,13 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
             setLiveTokens(prev => ({ ...prev, [live.id]: tokenData.token }));
             const lkUrl = tokenData.livekitUrl || "";
             setLiveKitUrls(prev => ({ ...prev, [live.id]: lkUrl }));
-          } catch {}
+          } catch (err) {
+  console.error("[live-token-viewer] error", {
+    liveId: live.id,
+    userId: currentUserId,
+    err,
+  });
+}
         }
       }
     };
@@ -1521,22 +1573,48 @@ const reportMutation = useMutation({
                 const token = isHost ? broadcasterToken : liveTokens[live.id];
                 const url = isHost ? broadcasterUrl : liveKitUrls[live.id];
 
-               if (token && url) {
-                  return (
-                    <LiveErrorBoundary>
-  <LiveKitRoom
-    key={`${live.id}-${isHost ? "host" : "viewer"}-${token?.slice(-8) ?? "no-token"}`}
-    token={token}
-    serverUrl={url}
-    connect={true}
-    video={false}
-    audio={false}
-    className="w-full h-full"
-  >
- <LiveVideoPlayer isBroadcaster={isHost} />
-  </LiveKitRoom>
-</LiveErrorBoundary>
-);
+                if (token && url) {
+  return (
+    <LiveErrorBoundary>
+      <LiveKitRoom
+        key={`${live.id}-${isHost ? "host" : "viewer"}-${token.slice(-8)}-${url}`}
+        token={token}
+        serverUrl={url}
+        connect={true}
+        video={false}
+        audio={false}
+        className="w-full h-full"
+        onConnected={() => {
+          console.log("[livekit-room] connected", {
+            liveId: live.id,
+            roomName: live.roomName,
+            isHost,
+            url,
+            tokenTail: token.slice(-8),
+          });
+        }}
+        onDisconnected={() => {
+          console.log("[livekit-room] disconnected", {
+            liveId: live.id,
+            roomName: live.roomName,
+            isHost,
+          });
+        }}
+        onError={(error) => {
+          console.error("[livekit-room] error", {
+            liveId: live.id,
+            roomName: live.roomName,
+            isHost,
+            url,
+            tokenTail: token.slice(-8),
+            error,
+          });
+        }}
+      >
+        <LiveVideoPlayer isBroadcaster={isHost} />
+      </LiveKitRoom>
+    </LiveErrorBoundary>
+  );
 }
 
                 if (isHost) {
