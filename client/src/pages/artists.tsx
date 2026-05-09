@@ -449,9 +449,11 @@ export default function Artists() {
   const [broadcasterToken] = useState<string | null>(
     () => sessionStorage.getItem("vibyng-live-token")
   );
-  const [broadcasterUrl] = useState<string | null>(
-    () => sessionStorage.getItem("vibyng-live-url")
-  );
+  const [broadcasterUrl] = useState<string | null>(() => {
+    const url = sessionStorage.getItem("vibyng-live-url");
+    if (!url) return null;
+    return url.replace("https://", "wss://").replace("http://", "ws://");
+  });
   const [liveKitUrls, setLiveKitUrls] = useState<Record<number, string>>({});
   const [liveChatInput, setLiveChatInput] = useState<Record<number, string>>({});
   const [liveComments, setLiveComments] = useState<Record<number, any[]>>({});
@@ -658,7 +660,8 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
             const tokenRes = await apiRequest("POST", `/api/lives/${live.id}/token`, { userId: currentUserId });
             const tokenData = await tokenRes.json();
             setLiveTokens(prev => ({ ...prev, [live.id]: tokenData.token }));
-            setLiveKitUrls(prev => ({ ...prev, [live.id]: tokenData.livekitUrl }));
+            const lkUrl = (tokenData.livekitUrl || "").replace("https://", "wss://").replace("http://", "ws://");
+            setLiveKitUrls(prev => ({ ...prev, [live.id]: lkUrl }));
           } catch {}
         }
       }
