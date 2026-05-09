@@ -17,6 +17,91 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY?.trim();
 const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
+function cleanEnv(value?: string): string {
+  return String(value || "")
+    .trim()
+    .replace(/^["']|["']$/g, "");
+}
+
+function getLiveKitConfig() {
+  const apiKey = cleanEnv(process.env.LIVEKIT_API_KEY);
+  const apiSecret = cleanEnv(process.env.LIVEKIT_API_SECRET);
+  const rawUrl = cleanEnv(process.env.LIVEKIT_URL);
+
+  const livekitUrl = rawUrl
+    .replace(/^https:\/\//i, "wss://")
+    .replace(/^http:\/\//i, "ws://");
+
+  if (!apiKey) {
+    throw new Error("LIVEKIT_API_KEY mancante");
+  }
+
+  if (!apiSecret) {
+    throw new Error("LIVEKIT_API_SECRET mancante");
+  }
+
+  if (!livekitUrl || !/^wss?:\/\//i.test(livekitUrl)) {
+    throw new Error("LIVEKIT_URL mancante o non valido");
+  }
+
+  console.log("[livekit-config]", {
+    livekitUrl,
+    apiKeyPrefix: apiKey.slice(0, 6),
+    apiKeyLength: apiKey.length,
+    apiSecretLength: apiSecret.length,
+  });
+
+  return {
+    apiKey,
+    apiSecret,
+    livekitUrl,
+  };
+}
+
+function logLiveKitTokenClaims(label: string, token: string) {
+  try {
+    const payloadPart = token.split(".")[1];
+
+    if (!payloadPart) {
+      console.warn("[livekit-token-claims] payload mancante", { label });
+      return;
+    }
+
+    const normalizedPayload = payloadPart
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      "="
+    );
+
+    const payload = JSON.parse(
+      Buffer.from(paddedPayload, "base64").toString("utf8")
+    );
+
+    console.log(label, {
+      iss: payload.iss,
+      sub: payload.sub,
+      name: payload.name,
+      exp: payload.exp,
+      nbf: payload.nbf,
+      video: {
+        room: payload.video?.room,
+        roomJoin: payload.video?.roomJoin,
+        canPublish: payload.video?.canPublish,
+        canSubscribe: payload.video?.canSubscribe,
+        canPublishData: payload.video?.canPublishData,
+      },
+    });
+  } catch (err: any) {
+    console.error("[livekit-token-claims] decode error", {
+      label,
+      error: err?.message || err,
+    });
+  }
+}
+
 function getAppUrl(req: any): string {
   return (
     process.env.APP_URL ||
@@ -1377,7 +1462,7 @@ app.post("/api/lives/start", async (req, res) => {
       return res.status(404).json({ message: "Profilo non trovato" });
     }
 
-    // Termina live precedenti
+   // Termina live precedenti
     await db.execute(sql`
       UPDATE live_streams
       SET status = 'ended', ended_at = now()
@@ -1387,21 +1472,24 @@ app.post("/api/lives/start", async (req, res) => {
     const roomName = `vibyng-live-${artistId}-${Date.now()}`;
 
     // Crea token LiveKit per il broadcaster
-    const livekitUrl = process.env.LIVEKIT_URL || "";
-    const apiKey = process.env.LIVEKIT_API_KEY || "";
-    const apiSecret = process.env.LIVEKIT_API_SECRET || "";
+    const { apiKey, apiSecret, livekitUrl } = getLiveKitConfig();
 
     const at = new AccessToken(apiKey, apiSecret, {
       identity: `user-${artistId}`,
-      name: artist.displayName,
+      name: artist.displayName || `User ${artistId}`,
     });
+
     at.addGrant({
       room: roomName,
       roomJoin: true,
       canPublish: true,
       canSubscribe: true,
+      canPublishData: true,
     });
+
     const token = await at.toJwt();
+
+    logLiveKitTokenClaims("[live-start-token-claims]", token);
 
     const result = await db.execute(sql`
       INSERT INTO live_streams (
@@ -1414,13 +1502,13 @@ app.post("/api/lives/start", async (req, res) => {
     `);
 
     console.log("[live-start-token]", {
-    liveId: result.rows[0]?.id,
-    artistId,
-    roomName,
-    livekitUrl,
-    tokenTail: token.slice(-8),
-});
-    
+      liveId: result.rows[0]?.id,
+      artistId,
+      roomName,
+      livekitUrl,
+      tokenTail: token.slice(-8),
+    });
+
     res.status(201).json({
       success: true,
       live: result.rows[0],
@@ -1490,7 +1578,7 @@ app.post("/api/lives/:id/token", async (req, res) => {
       SELECT room_name, artist_id
       FROM live_streams
       WHERE id = ${liveId}
-        AND status = 'live'
+      AND status = 'live'
       LIMIT 1
     `);
 
@@ -1512,10 +1600,7 @@ app.post("/api/lives/:id/token", async (req, res) => {
       });
     }
 
-    const apiKey = process.env.LIVEKIT_API_KEY || "";
-    const apiSecret = process.env.LIVEKIT_API_SECRET || "";
-    const livekitUrl = process.env.LIVEKIT_URL || "";
-
+    const { apiKey, apiSecret, livekitUrl } = getLiveKitConfig();
     const at = new AccessToken(apiKey, apiSecret, {
       identity: `user-${userId}`,
       name: user?.displayName || `User ${userId}`,
@@ -1530,6 +1615,8 @@ app.post("/api/lives/:id/token", async (req, res) => {
     });
 
     const token = await at.toJwt();
+
+    logLiveKitTokenClaims("[live-token-claims]", token);
 
     console.log("[live-token]", {
       liveId,
@@ -1547,6 +1634,7 @@ app.post("/api/lives/:id/token", async (req, res) => {
       livekitUrl,
       isHost,
     });
+    
   } catch (err: any) {
     console.error("[live-token] error:", err?.message || err);
 
