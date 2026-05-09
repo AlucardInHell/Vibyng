@@ -212,10 +212,8 @@ class LiveErrorBoundary extends React.Component<
 
 function LiveVideoPlayer({
   isBroadcaster = false,
-  isRoomConnected = false,
 }: {
   isBroadcaster?: boolean;
-  isRoomConnected?: boolean;
 }) {
   const [liveError, setLiveError] = useState<string | null>(null);
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -224,6 +222,46 @@ function LiveVideoPlayer({
 
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
+  const [roomState, setRoomState] = useState(room?.state);
+  useEffect(() => {
+  if (!room) return;
+
+  setRoomState(room.state);
+
+  const handleConnected = () => {
+    console.log("[livekit] connected");
+    setRoomState(room.state);
+  };
+
+  const handleDisconnected = () => {
+    console.log("[livekit] disconnected");
+    setRoomState(room.state);
+  };
+
+  const handleReconnecting = () => {
+    console.log("[livekit] reconnecting");
+    setRoomState(room.state);
+  };
+
+  const handleReconnected = () => {
+    console.log("[livekit] reconnected");
+    setRoomState(room.state);
+  };
+
+  room.on(RoomEvent.Connected, handleConnected);
+  room.on(RoomEvent.Disconnected, handleDisconnected);
+  room.on(RoomEvent.Reconnecting, handleReconnecting);
+  room.on(RoomEvent.Reconnected, handleReconnected);
+
+  return () => {
+    room.off(RoomEvent.Connected, handleConnected);
+    room.off(RoomEvent.Disconnected, handleDisconnected);
+    room.off(RoomEvent.Reconnecting, handleReconnecting);
+    room.off(RoomEvent.Reconnected, handleReconnected);
+  };
+}, [room]);
+
+  const isRoomConnected = roomState === ConnectionState.Connected;
 
   const remoteTracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
@@ -393,7 +431,6 @@ export default function Artists() {
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
   const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
-  const [connectedLiveIds, setConnectedLiveIds] = useState<Record<number, boolean>>({});
   const params = new URLSearchParams(window.location.search);
   const broadcastParam = params.get("broadcast") === "1";
   const liveIdParam = params.get("liveId");
@@ -1502,23 +1539,8 @@ const reportMutation = useMutation({
     video={false}
     audio={false}
     className="w-full h-full"
-    onConnected={() => {
-      setConnectedLiveIds((prev) => ({
-        ...prev,
-        [live.id]: true,
-      }));
-    }}
-    onDisconnected={() => {
-      setConnectedLiveIds((prev) => ({
-        ...prev,
-        [live.id]: false,
-      }));
-    }}
   >
-    <LiveVideoPlayer
-      isBroadcaster={isHost}
-      isRoomConnected={!!connectedLiveIds[live.id]}
-    />
+ <LiveVideoPlayer isBroadcaster={isHost} />
   </LiveKitRoom>
 </LiveErrorBoundary>
 );
