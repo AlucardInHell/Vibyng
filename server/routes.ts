@@ -1413,6 +1413,14 @@ app.post("/api/lives/start", async (req, res) => {
       RETURNING *
     `);
 
+    console.log("[live-start-token]", {
+    liveId: result.rows[0]?.id,
+    artistId,
+    roomName,
+    livekitUrl,
+    tokenTail: token.slice(-8),
+});
+    
     res.status(201).json({
       success: true,
       live: result.rows[0],
@@ -1470,25 +1478,40 @@ app.post("/api/lives/:id/end", async (req, res) => {
 app.post("/api/lives/:id/token", async (req, res) => {
   try {
     const liveId = Number(req.params.id);
-    const { userId } = req.body;
+    const userId = Number(req.body?.userId);
+
+    if (!liveId || !userId) {
+      return res.status(400).json({
+        message: "Dati token live non validi",
+      });
+    }
 
     const liveResult = await db.execute(sql`
       SELECT room_name, artist_id
       FROM live_streams
       WHERE id = ${liveId}
-      AND status = 'live'
+        AND status = 'live'
       LIMIT 1
-`);
+    `);
 
     if (!liveResult.rows.length) {
-      return res.status(404).json({ message: "Live non trovata" });
+      return res.status(404).json({
+        message: "Live non trovata",
+      });
     }
 
     const roomName = (liveResult.rows[0] as any).room_name;
-    
-    const user = await storage.getUser(Number(userId));
     const liveOwnerId = Number((liveResult.rows[0] as any).artist_id);
-    const isHost = Number(userId) === liveOwnerId;
+    const isHost = Number(userId) === Number(liveOwnerId);
+
+    const user = await storage.getUser(userId);
+
+    if (!user || (user as any).isDeleted) {
+      return res.status(404).json({
+        message: "Utente non trovato",
+      });
+    }
+
     const apiKey = process.env.LIVEKIT_API_KEY || "";
     const apiSecret = process.env.LIVEKIT_API_SECRET || "";
     const livekitUrl = process.env.LIVEKIT_URL || "";
@@ -1497,24 +1520,40 @@ app.post("/api/lives/:id/token", async (req, res) => {
       identity: `user-${userId}`,
       name: user?.displayName || `User ${userId}`,
     });
+
     at.addGrant({
-    room: roomName,
-    roomJoin: true,
-    canPublish: isHost,
-    canSubscribe: true,
-    canPublishData: true,
-});
+      room: roomName,
+      roomJoin: true,
+      canPublish: isHost,
+      canSubscribe: true,
+      canPublishData: true,
+    });
+
     const token = await at.toJwt();
 
+    console.log("[live-token]", {
+      liveId,
+      userId,
+      roomName,
+      livekitUrl,
+      isHost,
+      canPublish: isHost,
+      tokenTail: token.slice(-8),
+    });
+
     res.json({
-    token,
-    roomName,
-    livekitUrl,
-    isHost,
-});
+      token,
+      roomName,
+      livekitUrl,
+      isHost,
+    });
   } catch (err: any) {
     console.error("[live-token] error:", err?.message || err);
-    res.status(400).json({ message: "Errore nella generazione del token" });
+
+    res.status(400).json({
+      message: "Errore nella generazione del token",
+      detail: err?.message,
+    });
   }
 });
   
