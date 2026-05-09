@@ -690,7 +690,9 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
         if (updatedLive) {
           live.viewerCount = updatedLive.viewerCount;
         }
-        // Richiedi token spettatore
+        // Richiedi token LiveKit fallback:
+        // - viewer: sempre necessario per guardare la live
+        // - host: necessario se la sessione broadcaster in sessionStorage manca o non è valida
         const isLiveOwner = Number(live.artist.id) === Number(currentUserId);
         const shouldFetchFallbackToken =
           !liveTokens[live.id] &&
@@ -1575,9 +1577,21 @@ const reportMutation = useMutation({
             <div className="absolute inset-0 flex items-center justify-center">
               {(() => {
                 const isLiveOwner = Number(live.artist.id) === Number(currentUserId);
-                const isHost = isLiveOwner && isBroadcastMode;
-                const token = isHost ? broadcasterToken : liveTokens[live.id];
-                const url = isHost ? broadcasterUrl : liveKitUrls[live.id];
+const hasBroadcastSession =
+  isBroadcastMode &&
+  !!broadcasterToken &&
+  !!broadcasterUrl &&
+  String(live.id).trim() === String(broadcastSession.liveId).trim();
+
+const isHost = isLiveOwner;
+
+const token = hasBroadcastSession
+  ? broadcasterToken
+  : liveTokens[live.id];
+
+const url = hasBroadcastSession
+  ? broadcasterUrl
+  : liveKitUrls[live.id];
 
 console.log("[live-render-debug]", {
   liveId: live.id,
@@ -1586,16 +1600,17 @@ console.log("[live-render-debug]", {
   liveOwnerId: live.artist.id,
   isLiveOwner,
   isBroadcastMode,
+  hasBroadcastSession,
   isHost,
   hasBroadcasterToken: !!broadcasterToken,
   hasBroadcasterUrl: !!broadcasterUrl,
-  hasViewerToken: !!liveTokens[live.id],
-  hasViewerUrl: !!liveKitUrls[live.id],
+  hasFallbackToken: !!liveTokens[live.id],
+  hasFallbackUrl: !!liveKitUrls[live.id],
   tokenTail: token?.slice(-8),
   url,
 });
 
-                if (token && url) {
+  if (token && url) {
   return (
     <LiveErrorBoundary>
       <LiveKitRoom
@@ -1639,6 +1654,30 @@ console.log("[live-render-debug]", {
   );
 }
 
+         console.warn("[live-render-missing-token-url]", {
+  liveId: live.id,
+  roomName: live.roomName,
+  currentUserId,
+  liveOwnerId: live.artist.id,
+  isHost,
+  tokenPresent: !!token,
+  urlPresent: !!url,
+  broadcasterTokenPresent: !!broadcasterToken,
+  broadcasterUrlPresent: !!broadcasterUrl,
+  fallbackTokenPresent: !!liveTokens[live.id],
+  fallbackUrlPresent: !!liveKitUrls[live.id],
+});
+
+return (
+  <div className="text-center text-white/60 px-4">
+    <div className="text-4xl mb-2">📡</div>
+    <p className="text-sm">Preparazione connessione live...</p>
+    <p className="text-[11px] text-white/40 mt-2">
+      {isHost ? "Host" : "Viewer"} · token: {token ? "ok" : "mancante"} · url: {url ? "ok" : "mancante"}
+    </p>
+  </div>
+);
+          
                 if (isHost) {
                   return (
                     <div className="text-center px-6">
