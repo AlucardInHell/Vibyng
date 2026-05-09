@@ -218,12 +218,34 @@ function LiveVideoPlayer({
   isRoomConnected?: boolean;
 }) {
   const [liveError, setLiveError] = useState<string | null>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+
   const room = useRoomContext();
   const { localParticipant } = useLocalParticipant();
+
   const remoteTracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
     { onlySubscribed: true }
   );
+
+  useEffect(() => {
+    if (!localVideoRef.current || !localStream) return;
+
+    localVideoRef.current.srcObject = localStream;
+
+    const playPromise = localVideoRef.current.play();
+    if (playPromise) {
+      playPromise.catch(() => {});
+    }
+
+    return () => {
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = null;
+      }
+    };
+  }, [localStream]);
 
   useEffect(() => {
     if (!isBroadcaster) return;
@@ -238,15 +260,23 @@ function LiveVideoPlayer({
       try {
         const tracks = await createLocalTracks({ audio: true, video: true });
 
-        for (const track of tracks) {
-          if (stopped) {
-            track.stop();
-            return;
-          }
+        if (stopped) {
+          tracks.forEach((track) => track.stop());
+          return;
+        }
 
+        const mediaStream = new MediaStream();
+
+        for (const track of tracks) {
           await localParticipant.publishTrack(track);
           publishedTracks.push(track);
+
+          if (track.mediaStreamTrack) {
+            mediaStream.addTrack(track.mediaStreamTrack);
+          }
         }
+
+        setLocalStream(mediaStream);
       } catch (err: any) {
         if (!stopped) {
           console.error("[livekit-publish]", err);
@@ -275,22 +305,24 @@ function LiveVideoPlayer({
             if (pub.track) pub.track.stop();
           } catch {}
         });
+
+        setLocalStream(null);
       } catch {}
     };
   }, [isBroadcaster, isRoomConnected, room, localParticipant?.identity]);
 
-  const localTracks = useTracks([Track.Source.Camera], { onlySubscribed: false }).filter(
-    (trackRef) => trackRef.participant.isLocal
-  );
-
-  const allTracks = isBroadcaster
-    ? [...remoteTracks, ...localTracks]
-    : remoteTracks;
-
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
-      {allTracks.length > 0 ? (
-        <TrackLoop tracks={allTracks}>
+      {isBroadcaster && localStream ? (
+        <video
+          ref={localVideoRef}
+          className="w-full h-full object-cover"
+          autoPlay
+          muted
+          playsInline
+        />
+      ) : !isBroadcaster && remoteTracks.length > 0 ? (
+        <TrackLoop tracks={remoteTracks}>
           <VideoTrack className="w-full h-full object-cover" />
         </TrackLoop>
       ) : (
@@ -309,7 +341,6 @@ function LiveVideoPlayer({
     </div>
   );
 }
-
 export default function Artists() {
   const currentUserId = getCurrentUserId();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
