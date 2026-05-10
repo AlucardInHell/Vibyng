@@ -271,37 +271,109 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
     return;
   }
 
-  videoElement.muted = true;
-  videoElement.playsInline = true;
-  videoElement.autoplay = true;
+  let stopped = false;
+  let lastCurrentTime = -1;
+  let stuckTicks = 0;
+  let watchdog: number | undefined;
 
-  try {
-    livekitTrack.attach(videoElement);
+  const playVideo = async () => {
+    try {
+      videoElement.muted = true;
+      videoElement.defaultMuted = true;
+      videoElement.playsInline = true;
+      videoElement.autoplay = true;
 
-    const playPromise = videoElement.play();
-
-    if (playPromise) {
-      playPromise.catch((err) => {
-        console.warn("[live-local-preview] autoplay bloccato", err);
-      });
+      await videoElement.play();
+    } catch (err) {
+      console.warn("[live-local-preview] play bloccato", err);
     }
+  };
 
-    console.log("[live-local-preview] attached via LiveKit", {
-      source: mainVideoTrack.source,
-      participant: mainVideoTrack.participant?.identity,
-      publicationSid: mainVideoTrack.publication?.trackSid,
-    });
-  } catch (err) {
-    console.warn("[live-local-preview] attach error", err);
-  }
+  const attachPreview = async () => {
+    if (stopped) return;
 
-  return () => {
     try {
       if (typeof livekitTrack.detach === "function") {
         livekitTrack.detach(videoElement);
       }
     } catch {}
 
+    try {
+      livekitTrack.attach(videoElement);
+
+      // Fallback utile su alcuni browser mobile: se attach non popola bene srcObject,
+      // usiamo direttamente la mediaStreamTrack già pubblicata da LiveKit.
+      if (!videoElement.srcObject && livekitTrack.mediaStreamTrack) {
+        videoElement.srcObject = new MediaStream([
+          livekitTrack.mediaStreamTrack,
+        ]);
+      }
+
+      await playVideo();
+
+      console.log("[live-local-preview] attached/re-attached", {
+        source: mainVideoTrack.source,
+        participant: mainVideoTrack.participant?.identity,
+        publicationSid: mainVideoTrack.publication?.trackSid,
+        readyState: videoElement.readyState,
+        videoWidth: videoElement.videoWidth,
+        videoHeight: videoElement.videoHeight,
+        paused: videoElement.paused,
+        currentTime: videoElement.currentTime,
+      });
+    } catch (err) {
+      console.warn("[live-local-preview] attach error", err);
+    }
+  };
+
+  attachPreview();
+
+  watchdog = window.setInterval(() => {
+    if (stopped) return;
+
+    const currentTime = videoElement.currentTime || 0;
+
+    if (videoElement.paused) {
+      playVideo();
+    }
+
+    if (currentTime === lastCurrentTime) {
+      stuckTicks += 1;
+    } else {
+      stuckTicks = 0;
+      lastCurrentTime = currentTime;
+    }
+
+    // Se su mobile resta fermo al primo frame, riagganciamo solo la preview locale.
+    // Non tocchiamo la pubblicazione LiveKit, quindi lo spettatore non viene disturbato.
+    if (stuckTicks >= 3) {
+      console.warn("[live-local-preview] preview bloccata, riaggancio", {
+        currentTime,
+        readyState: videoElement.readyState,
+        videoWidth: videoElement.videoWidth,
+        videoHeight: videoElement.videoHeight,
+        paused: videoElement.paused,
+      });
+
+      stuckTicks = 0;
+      attachPreview();
+    }
+  }, 1000);
+
+  return () => {
+    stopped = true;
+
+    if (watchdog) {
+      window.clearInterval(watchdog);
+    }
+
+    try {
+      if (typeof livekitTrack.detach === "function") {
+        livekitTrack.detach(videoElement);
+      }
+    } catch {}
+
+    videoElement.pause();
     videoElement.srcObject = null;
   };
 }, [
