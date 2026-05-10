@@ -1801,7 +1801,7 @@ return (
               {live.viewerCount ?? 0} {t.liveViewers}
             </div>
 
-            <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
+            <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between z-50">
               <Link href={`/artist/${live.artist.id}`}>
                 <div className="flex items-end gap-2 min-w-0 max-w-[75%] cursor-pointer">
                   <Avatar className="w-11 h-11 border-2 border-red-500/80">
