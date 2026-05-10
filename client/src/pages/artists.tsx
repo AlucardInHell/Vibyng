@@ -22,7 +22,7 @@ import {
   useRoomContext,
   TrackLoop,
 } from "@livekit/components-react";
-import { Track, createLocalTracks, ConnectionState, RoomEvent } from "livekit-client";
+import { Track } from "livekit-client";
 
 function getCurrentUserId(): number {
   try {
@@ -225,23 +225,26 @@ function LiveVideoPlayer({
   const room = useRoomContext();
 
   const videoTracks = useTracks(
-  [Track.Source.Camera, Track.Source.ScreenShare],
-  { onlySubscribed: false }
-);
+    [Track.Source.Camera, Track.Source.ScreenShare],
+    { onlySubscribed: false }
+  );
 
   const audioTracks = useTracks(
-  [Track.Source.Microphone],
-  { onlySubscribed: false }
-);
+    [Track.Source.Microphone],
+    { onlySubscribed: false }
+  );
 
   useEffect(() => {
     if (!room) return;
 
+    const allTracks = [...videoTracks, ...audioTracks];
+
     console.log("[livekit-room-state]", {
       state: room.state,
       isBroadcaster,
-      tracksCount: tracks.length,
-      tracks: tracks.map((trackRef: any) => ({
+      videoTracksCount: videoTracks.length,
+      audioTracksCount: audioTracks.length,
+      tracks: allTracks.map((trackRef: any) => ({
         source: trackRef.source,
         isLocal: trackRef.participant?.isLocal,
         participant: trackRef.participant?.identity,
@@ -249,34 +252,41 @@ function LiveVideoPlayer({
         subscribed: trackRef.publication?.isSubscribed,
       })),
     });
-  }, [room, room?.state, isBroadcaster, tracks.length]);
+  }, [
+    room,
+    room?.state,
+    isBroadcaster,
+    videoTracks.length,
+    audioTracks.length,
+  ]);
 
- return (
-  <div className="w-full h-full bg-black flex items-center justify-center">
-    {videoTracks.length > 0 ? (
-      <>
-        <TrackLoop tracks={videoTracks}>
-          <VideoTrack className="w-full h-full object-cover" />
-        </TrackLoop>
-
-        {!isBroadcaster && audioTracks.length > 0 && (
-          <TrackLoop tracks={audioTracks}>
-            <AudioTrack />
+  return (
+    <div className="w-full h-full bg-black flex items-center justify-center">
+      {videoTracks.length > 0 ? (
+        <>
+          <TrackLoop tracks={videoTracks}>
+            <VideoTrack className="w-full h-full object-cover" />
           </TrackLoop>
-        )}
-      </>
-    ) : (
-      <div className="text-center text-white/60">
-        <div className="text-4xl mb-2">📡</div>
-        <p className="text-sm">
-          {isBroadcaster
-            ? "Camera collegata alla live..."
-            : "In attesa del video..."}
-        </p>
-      </div>
-    )}
-  </div>
-);
+
+          {!isBroadcaster && audioTracks.length > 0 && (
+            <TrackLoop tracks={audioTracks}>
+              <AudioTrack />
+            </TrackLoop>
+          )}
+        </>
+      ) : (
+        <div className="text-center text-white/60">
+          <div className="text-4xl mb-2">📡</div>
+          <p className="text-sm">
+            {isBroadcaster
+              ? "Camera collegata alla live..."
+              : "In attesa del video..."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 export default function Artists() {
   const currentUserId = getCurrentUserId();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
