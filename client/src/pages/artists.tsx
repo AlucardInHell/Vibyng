@@ -17,10 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   LiveKitRoom,
   VideoTrack,
-  AudioTrack,
+  RoomAudioRenderer,
   useTracks,
-  useRoomContext,
-  TrackLoop,
 } from "@livekit/components-react";
 import { Track } from "livekit-client";
 
@@ -217,76 +215,62 @@ class LiveErrorBoundary extends React.Component<
   }
 }
 
-function LiveVideoPlayer({
+const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
   isBroadcaster = false,
 }: {
   isBroadcaster?: boolean;
 }) {
-  const room = useRoomContext();
-
   const videoTracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
-    { onlySubscribed: false }
+    {
+      onlySubscribed: !isBroadcaster,
+    }
   );
 
-  const audioTracks = useTracks(
-    [Track.Source.Microphone],
-    { onlySubscribed: false }
-  );
+  const mainVideoTrack = useMemo(() => {
+    const cameraTrack = videoTracks.find((trackRef: any) => {
+      const isLocal = Boolean(trackRef.participant?.isLocal);
 
-  useEffect(() => {
-    if (!room) return;
+      if (isBroadcaster) {
+        return trackRef.source === Track.Source.Camera && isLocal;
+      }
 
-    const allTracks = [...videoTracks, ...audioTracks];
-
-    console.log("[livekit-room-state]", {
-      state: room.state,
-      isBroadcaster,
-      videoTracksCount: videoTracks.length,
-      audioTracksCount: audioTracks.length,
-      tracks: allTracks.map((trackRef: any) => ({
-        source: trackRef.source,
-        isLocal: trackRef.participant?.isLocal,
-        participant: trackRef.participant?.identity,
-        muted: trackRef.publication?.isMuted,
-        subscribed: trackRef.publication?.isSubscribed,
-      })),
+      return trackRef.source === Track.Source.Camera && !isLocal;
     });
-  }, [
-    room,
-    room?.state,
-    isBroadcaster,
-    videoTracks.length,
-    audioTracks.length,
-  ]);
+
+    const screenTrack = videoTracks.find((trackRef: any) => {
+      const isLocal = Boolean(trackRef.participant?.isLocal);
+
+      if (isBroadcaster) {
+        return trackRef.source === Track.Source.ScreenShare && isLocal;
+      }
+
+      return trackRef.source === Track.Source.ScreenShare && !isLocal;
+    });
+
+    return cameraTrack || screenTrack || videoTracks[0] || null;
+  }, [videoTracks, isBroadcaster]);
 
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
-      {videoTracks.length > 0 ? (
-        <>
-          <TrackLoop tracks={videoTracks}>
-            <VideoTrack className="w-full h-full object-cover" />
-          </TrackLoop>
-
-          {!isBroadcaster && audioTracks.length > 0 && (
-            <TrackLoop tracks={audioTracks}>
-              <AudioTrack />
-            </TrackLoop>
-          )}
-        </>
+      {mainVideoTrack ? (
+        <VideoTrack
+          trackRef={mainVideoTrack}
+          className="w-full h-full object-cover"
+        />
       ) : (
         <div className="text-center text-white/60">
           <div className="text-4xl mb-2">📡</div>
           <p className="text-sm">
             {isBroadcaster
-              ? "Camera collegata alla live..."
+              ? "Attivazione camera..."
               : "In attesa del video..."}
           </p>
         </div>
       )}
     </div>
   );
-}
+});
 export default function Artists() {
   const currentUserId = getCurrentUserId();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
@@ -625,7 +609,7 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
     };
 
     fetchLiveData();
-    const interval = setInterval(fetchLiveData, 3000);
+    const interval = window.setInterval(fetchLiveData, 10000);
 
     return () => {
       clearInterval(interval);
@@ -1522,7 +1506,7 @@ console.log("[live-render-debug]", {
   return (
     <LiveErrorBoundary>
       <LiveKitRoom
-        key={`${live.id}-${isHost ? "host" : "viewer"}-${token.slice(-8)}-${url}`}
+        key={`livekit-${live.id}-${isHost ? "host" : "viewer"}`}
         token={token}
         serverUrl={url}
         connect={true}
@@ -1533,11 +1517,20 @@ console.log("[live-render-debug]", {
           width: 640,
           height: 360,
         },
+        frameRate: 20,
         facingMode: "user",
       }
     : false
 }
-audio={isHost}
+audio={
+  isHost
+    ? {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      }
+    : false
+}
         className="w-full h-full"
         onConnected={() => {
           console.log("[livekit-room] connected", {
@@ -1567,6 +1560,7 @@ audio={isHost}
         }}
       >
         <LiveVideoPlayer isBroadcaster={isHost} />
+        {!isHost && <RoomAudioRenderer />}
       </LiveKitRoom>
     </LiveErrorBoundary>
   );
