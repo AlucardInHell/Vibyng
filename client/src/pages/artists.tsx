@@ -1797,11 +1797,11 @@ return (
               ● LIVE
             </div>
 
-            <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/50 text-white text-xs border border-white/10">
+           <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/50 text-white text-xs border border-white/10 z-[100]">
               {live.viewerCount ?? 0} {t.liveViewers}
             </div>
 
-            <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between z-50">
+            <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between z-[100]">
               <Link href={`/artist/${live.artist.id}`}>
                 <div className="flex items-end gap-2 min-w-0 max-w-[75%] cursor-pointer">
                   <Avatar className="w-11 h-11 border-2 border-red-500/80">
@@ -1881,7 +1881,7 @@ return (
 
             {/* Chat live */}
             {showLiveChat[live.id] && (
-              <div className="absolute bottom-20 left-4 w-64 flex flex-col gap-2 z-50" onClick={e => e.stopPropagation()}>
+              <div className="absolute bottom-20 left-4 w-64 flex flex-col gap-2 z-[100]" onClick={e => e.stopPropagation()}>
                 <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
                   {(liveComments[live.id] ?? []).slice(-6).map((c: any) => (
                     <div key={c.id} className="bg-black/50 rounded-lg px-2 py-1">
