@@ -1881,7 +1881,7 @@ return (
 
             {/* Chat live */}
             {showLiveChat[live.id] && (
-              <div className="absolute bottom-20 left-4 w-64 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+              <div className="absolute bottom-20 left-4 w-64 flex flex-col gap-2 z-50" onClick={e => e.stopPropagation()}>
                 <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
                   {(liveComments[live.id] ?? []).slice(-6).map((c: any) => (
                     <div key={c.id} className="bg-black/50 rounded-lg px-2 py-1">
