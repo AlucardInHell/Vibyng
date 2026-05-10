@@ -365,7 +365,6 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
       {mainVideoTrack ? (
         isBroadcaster ? (
          <video
-  key={`local-preview-${localPreviewKey}`}
   ref={localVideoRef}
   className="w-full h-full object-cover scale-x-[-1]"
   autoPlay
@@ -443,6 +442,7 @@ export default function Artists() {
   const [reportDetails, setReportDetails] = useState("");
   const [showLiveChat, setShowLiveChat] = useState<Record<number, boolean>>({});
   const [liveTokens, setLiveTokens] = useState<Record<number, string>>({});
+  const [liveRoomRemountKeys, setLiveRoomRemountKeys] = useState<Record<number, number>>({});
   const params = new URLSearchParams(window.location.search);
   const broadcastParam = params.get("broadcast") === "1";
   const liveIdParam = params.get("liveId");
@@ -502,6 +502,42 @@ const isBroadcastMode =
   !!broadcastSession.url;
   const broadcasterToken = broadcastSession.token;
   const broadcasterUrl = broadcastSession.url;
+  useEffect(() => {
+  if (!isBroadcastMode) return;
+  if (!liveIdParam) return;
+
+  const liveId = Number(liveIdParam);
+
+  if (!liveId) return;
+
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if (!isMobile) return;
+
+  const storageKey = `vibyng-live-room-remounted-${liveId}`;
+
+  if (sessionStorage.getItem(storageKey) === "1") {
+    return;
+  }
+
+  const timer = window.setTimeout(() => {
+    console.log("[livekit-room] remount automatico host mobile", {
+      liveId,
+    });
+
+    sessionStorage.setItem(storageKey, "1");
+
+    setLiveRoomRemountKeys((prev) => ({
+      ...prev,
+      [liveId]: (prev[liveId] ?? 0) + 1,
+    }));
+  }, 1800);
+
+  return () => {
+    window.clearTimeout(timer);
+  };
+}, [isBroadcastMode, liveIdParam]);
   const [liveKitUrls, setLiveKitUrls] = useState<Record<number, string>>({});
   const [liveChatInput, setLiveChatInput] = useState<Record<number, string>>({});
   const [liveComments, setLiveComments] = useState<Record<number, any[]>>({});
@@ -1675,7 +1711,7 @@ console.log("[live-render-debug]", {
   return (
     <LiveErrorBoundary>
       <LiveKitRoom
-        key={`livekit-${live.id}-${isHost ? "host" : "viewer"}`}
+        key={`livekit-${live.id}-${isHost ? "host" : "viewer"}-${liveRoomRemountKeys[live.id] ?? 0}`}
         token={token}
         serverUrl={url}
         connect={true}
