@@ -347,7 +347,7 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
         isBroadcaster ? (
          <video
   ref={localVideoRef}
-  className="w-full h-full object-cover scale-x-[-1]"
+  className="w-full h-full object-cover scale-x-[-1] pointer-events-none"
   autoPlay
   muted
   playsInline
@@ -355,7 +355,7 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
         ) : (
           <VideoTrack
             trackRef={mainVideoTrack}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover pointer-events-none"
           />
         )
       ) : (
