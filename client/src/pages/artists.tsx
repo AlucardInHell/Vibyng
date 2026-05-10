@@ -1768,7 +1768,7 @@ return (
               {live.viewerCount ?? 0} {t.liveViewers}
             </div>
 
-            <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between z-[100]">
+            <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between z-50 pointer-events-auto">
               <Link href={`/artist/${live.artist.id}`}>
                 <div className="flex items-end gap-2 min-w-0 max-w-[75%] cursor-pointer">
                   <Avatar className="w-11 h-11 border-2 border-red-500/80">
@@ -1826,13 +1826,23 @@ return (
                   <Heart className={`w-7 h-7 ${likedLives.has(live.id) ? "fill-red-500 text-red-500" : "fill-red-500 text-red-500"}`} />
                   <span className="text-[11px]">{liveLikeCounts[live.id] ?? 0}</span>
                 </button>
-                <button
-                  className="flex flex-col items-center gap-1"
-                  onClick={() => setShowLiveChat(prev => ({ ...prev, [live.id]: !prev[live.id] }))}
-                >
-                  <MessageCircle className="w-7 h-7" />
-                  <span className="text-[11px]">Chat</span>
-                </button>
+               <button
+  type="button"
+  className="flex flex-col items-center gap-1 pointer-events-auto"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    setShowLiveChat((prev) => ({
+      ...prev,
+      [live.id]: !prev[live.id],
+    }));
+  }}
+  aria-label="Apri chat live"
+>
+  <MessageCircle className="w-7 h-7" />
+  <span className="text-[11px]">Chat</span>
+</button>
               </div>
             </div>
             {/* Cuori animati */}
@@ -1848,15 +1858,28 @@ return (
 
             {/* Chat live */}
             {showLiveChat[live.id] && (
-              <div className="absolute bottom-20 left-4 w-64 flex flex-col gap-2 z-[100]" onClick={e => e.stopPropagation()}>
-                <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
-                  {(liveComments[live.id] ?? []).slice(-6).map((c: any) => (
-                    <div key={c.id} className="bg-black/50 rounded-lg px-2 py-1">
-                      <span className="text-white text-xs font-semibold">{c.display_name}: </span>
-                      <span className="text-white/90 text-xs">{c.content}</span>
-                    </div>
-                  ))}
-                </div>
+              <div
+  className="absolute bottom-20 left-4 w-64 flex flex-col gap-2 z-50 pointer-events-auto"
+  onClick={(e) => e.stopPropagation()}
+>
+               <div className="flex flex-col gap-1 max-h-40 overflow-y-auto">
+  {(liveComments[live.id] ?? []).length === 0 ? (
+    <div className="bg-black/50 rounded-lg px-2 py-2">
+      <span className="text-white/60 text-xs">
+        Ancora nessun commento.
+      </span>
+    </div>
+  ) : (
+    (liveComments[live.id] ?? []).slice(-6).map((c: any) => (
+      <div key={c.id} className="bg-black/50 rounded-lg px-2 py-1">
+        <span className="text-white text-xs font-semibold">
+          {c.display_name}:{" "}
+        </span>
+        <span className="text-white/90 text-xs">{c.content}</span>
+      </div>
+    ))
+  )}
+</div>
     {Number(live.artist.id) !== Number(currentUserId) && (
   <div className="flex gap-2">
     <input
