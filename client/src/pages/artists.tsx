@@ -14,7 +14,14 @@ import { buildContentShareUrl, shareVibyngContent } from "@/lib/share-content";
 import type { ArtistVideo, User } from "@shared/schema";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { LiveKitRoom, VideoTrack, useTracks, useRoomContext, TrackLoop, useLocalParticipant } from "@livekit/components-react";
+import {
+  LiveKitRoom,
+  VideoTrack,
+  AudioTrack,
+  useTracks,
+  useRoomContext,
+  TrackLoop,
+} from "@livekit/components-react";
 import { Track, createLocalTracks, ConnectionState, RoomEvent } from "livekit-client";
 
 function getCurrentUserId(): number {
@@ -217,10 +224,15 @@ function LiveVideoPlayer({
 }) {
   const room = useRoomContext();
 
-  const tracks = useTracks(
-    [Track.Source.Camera, Track.Source.ScreenShare],
-    { onlySubscribed: false }
-  );
+  const videoTracks = useTracks(
+  [Track.Source.Camera, Track.Source.ScreenShare],
+  { onlySubscribed: false }
+);
+
+  const audioTracks = useTracks(
+  [Track.Source.Microphone],
+  { onlySubscribed: false }
+);
 
   useEffect(() => {
     if (!room) return;
@@ -239,32 +251,32 @@ function LiveVideoPlayer({
     });
   }, [room, room?.state, isBroadcaster, tracks.length]);
 
-  const videoTracks = tracks.filter((trackRef: any) => {
-    return (
-      trackRef.source === Track.Source.Camera ||
-      trackRef.source === Track.Source.ScreenShare
-    );
-  });
-
-  return (
-    <div className="w-full h-full bg-black flex items-center justify-center">
-      {videoTracks.length > 0 ? (
+ return (
+  <div className="w-full h-full bg-black flex items-center justify-center">
+    {videoTracks.length > 0 ? (
+      <>
         <TrackLoop tracks={videoTracks}>
           <VideoTrack className="w-full h-full object-cover" />
         </TrackLoop>
-      ) : (
-        <div className="text-center text-white/60">
-          <div className="text-4xl mb-2">📡</div>
-          <p className="text-sm">
-            {isBroadcaster
-              ? "Camera collegata alla live..."
-              : "In attesa del video..."}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
+
+        {!isBroadcaster && audioTracks.length > 0 && (
+          <TrackLoop tracks={audioTracks}>
+            <AudioTrack />
+          </TrackLoop>
+        )}
+      </>
+    ) : (
+      <div className="text-center text-white/60">
+        <div className="text-4xl mb-2">📡</div>
+        <p className="text-sm">
+          {isBroadcaster
+            ? "Camera collegata alla live..."
+            : "In attesa del video..."}
+        </p>
+      </div>
+    )}
+  </div>
+);
 export default function Artists() {
   const currentUserId = getCurrentUserId();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
@@ -1504,8 +1516,18 @@ console.log("[live-render-debug]", {
         token={token}
         serverUrl={url}
         connect={true}
-        video={isHost}
-        audio={isHost}
+        video={
+  isHost
+    ? {
+        resolution: {
+          width: 640,
+          height: 360,
+        },
+        facingMode: "user",
+      }
+    : false
+}
+audio={isHost}
         className="w-full h-full"
         onConnected={() => {
           console.log("[livekit-room] connected", {
