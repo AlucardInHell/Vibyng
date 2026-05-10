@@ -1856,12 +1856,13 @@ return (
 )}
               </div>
             )}
-         </div>
+          </div>
         </div>
-        </section>
-      ))}
-    </div>
-  )}
+      </section>
+      ))
+    )}
+  </div>
+)}
 
 <div
   ref={scrollRef}
