@@ -624,61 +624,114 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
   },
 });
 
- useEffect(() => {
-    if (!activeLiveStreams.length) return;
+useEffect(() => {
+  if (!activeLiveStreams.length) return;
 
-    // Join solo se non sei il broadcaster
-    activeLiveStreams.forEach(live => {
-      if (live.artist.id !== currentUserId) {
-        apiRequest("POST", `/api/lives/${live.id}/join`).catch(() => {});
-      }
-    });
+  // Join solo se non sei il broadcaster
+  activeLiveStreams.forEach((live) => {
+    if (Number(live.artist.id) !== Number(currentUserId)) {
+      apiRequest("POST", `/api/lives/${live.id}/join`, {
+        userId: currentUserId,
+      }).catch(() => {});
+    }
+  });
 
   const fetchLiveData = async () => {
-      for (const live of activeLiveStreams) {
+    for (const live of activeLiveStreams) {
+      try {
         const [commentsRes, likesRes, liveRes] = await Promise.all([
           fetch(`/api/lives/${live.id}/comments`),
           fetch(`/api/lives/${live.id}/likes`),
           fetch(`/api/lives/active`),
         ]);
+
         const comments = await commentsRes.json();
         const likes = await likesRes.json();
         const lives = await liveRes.json();
-        setLiveComments(prev => ({ ...prev, [live.id]: comments }));
-        setLiveLikeCounts(prev => ({ ...prev, [live.id]: likes.likesCount ?? 0 }));
-        // Aggiorna viewerCount
-        const updatedLive = Array.isArray(lives) ? lives.find((l: any) => l.id === live.id) : null;
+
+        setLiveComments((prev) => ({
+          ...prev,
+          [live.id]: comments,
+        }));
+
+        setLiveLikeCounts((prev) => ({
+          ...prev,
+          [live.id]: likes.likesCount ?? 0,
+        }));
+
+        // Aggiorna viewerCount locale
+        const updatedLive = Array.isArray(lives)
+          ? lives.find((l: any) => Number(l.id) === Number(live.id))
+          : null;
+
         if (updatedLive) {
           live.viewerCount = updatedLive.viewerCount;
         }
+
         // Richiedi token LiveKit fallback:
         // - viewer: sempre necessario per guardare la live
         // - host: necessario se la sessione broadcaster in sessionStorage manca o non è valida
         const isLiveOwner = Number(live.artist.id) === Number(currentUserId);
+
         const shouldFetchFallbackToken =
           !liveTokens[live.id] &&
           (!isLiveOwner || !isBroadcastMode || !broadcasterToken || !broadcasterUrl);
 
         if (shouldFetchFallbackToken) {
           try {
-            const tokenRes = await apiRequest("POST", `/api/lives/${live.id}/token`, { userId: currentUserId });
-            const tokenData = await tokenRes.json();
-            setLiveTokens(prev => ({ ...prev, [live.id]: tokenData.token }));
-            const lkUrl = tokenData.livekitUrl || "";
-            setLiveKitUrls(prev => ({ ...prev, [live.id]: lkUrl }));
-          } catch (err) {
-  console.error("[live-token-viewer] error", {
-    liveId: live.id,
-    userId: currentUserId,
-    err,
-  });
-}
-        }
-      }
-    };
+            const tokenRes = await apiRequest(
+              "POST",
+              `/api/lives/${live.id}/token`,
+              {
+                userId: currentUserId,
+              }
+            );
 
-    fetchLiveData();
-    }, [
+            const tokenData = await tokenRes.json();
+
+            setLiveTokens((prev) => ({
+              ...prev,
+              [live.id]: tokenData.token,
+            }));
+
+            setLiveKitUrls((prev) => ({
+              ...prev,
+              [live.id]: tokenData.livekitUrl || "",
+            }));
+          } catch (err) {
+            console.error("[live-token-viewer] error", {
+              liveId: live.id,
+              userId: currentUserId,
+              err,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("[live-fetch-data] error", {
+          liveId: live.id,
+          err,
+        });
+      }
+    }
+  };
+
+  fetchLiveData();
+
+  const interval = window.setInterval(fetchLiveData, 10000);
+
+  return () => {
+    window.clearInterval(interval);
+
+    // Leave solo se non sei il broadcaster
+    activeLiveStreams.forEach((live) => {
+      if (Number(live.artist.id) !== Number(currentUserId)) {
+        apiRequest("POST", `/api/lives/${live.id}/leave`, {
+          userId: currentUserId,
+        }).catch(() => {});
+      }
+    });
+  };
+}, [
   activeLiveStreams,
   currentUserId,
   liveTokens,
@@ -686,17 +739,6 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
   broadcasterToken,
   broadcasterUrl,
 ]);
-
-    return () => {
-      clearInterval(interval);
-      // Leave tutte le live attive
-      activeLiveStreams.forEach(live => {
-        if (live.artist.id !== currentUserId) {
-          apiRequest("POST", `/api/lives/${live.id}/leave`).catch(() => {});
-        }
-      });
-    };
-  }, [activeLiveStreams]);
   
   useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
