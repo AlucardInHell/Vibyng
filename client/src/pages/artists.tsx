@@ -1713,7 +1713,7 @@ audio={
       }
     : false
 }
-        className="w-full h-full"
+        className="w-full h-full pointer-events-none"
         onConnected={() => {
           console.log("[livekit-room] connected", {
             liveId: live.id,
