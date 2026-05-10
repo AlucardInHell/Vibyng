@@ -1826,23 +1826,34 @@ return (
                     </div>
                   ))}
                 </div>
-                {!isHost && (
-                <div className="flex gap-2">
-                  <input
-                    className="flex-1 text-xs bg-black/50 text-white rounded-full px-3 py-1 border border-white/20 outline-none"
-                    placeholder="Scrivi un commento..."
-                    value={liveChatInput[live.id] ?? ""}
-                    onChange={e => setLiveChatInput(prev => ({ ...prev, [live.id]: e.target.value }))}
-                    onKeyDown={async e => {
-                      if (e.key === "Enter" && liveChatInput[live.id]?.trim()) {
-                        await apiRequest("POST", `/api/lives/${live.id}/comments`, { userId: currentUserId, content: liveChatInput[live.id] });
-                        setLiveChatInput(prev => ({ ...prev, [live.id]: "" }));
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-           )}
+    {!isHost && (
+  <div className="flex gap-2">
+    <input
+      className="flex-1 text-xs bg-black/50 text-white rounded-full px-3 py-1 border border-white/20 outline-none"
+      placeholder="Scrivi un commento..."
+      value={liveChatInput[live.id] ?? ""}
+      onChange={(e) =>
+        setLiveChatInput((prev) => ({
+          ...prev,
+          [live.id]: e.target.value,
+        }))
+      }
+      onKeyDown={async (e) => {
+        if (e.key === "Enter" && liveChatInput[live.id]?.trim()) {
+          await apiRequest("POST", `/api/lives/${live.id}/comments`, {
+            userId: currentUserId,
+            content: liveChatInput[live.id],
+          });
+
+          setLiveChatInput((prev) => ({
+            ...prev,
+            [live.id]: "",
+          }));
+        }
+      }}
+    />
+  </div>
+)}
             </div>
           </div>
         </section>
