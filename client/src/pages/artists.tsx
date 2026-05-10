@@ -1648,7 +1648,7 @@ const reportMutation = useMutation({
           className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
         >
           <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               {(() => {
                 const isLiveOwner = Number(live.artist.id) === Number(currentUserId);
 const hasBroadcastSession =
