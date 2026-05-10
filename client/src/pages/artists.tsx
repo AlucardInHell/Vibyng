@@ -254,21 +254,17 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
     return cameraTrack || screenTrack || videoTracks[0] || null;
   }, [videoTracks, isBroadcaster]);
 
-  useEffect(() => {
+ useEffect(() => {
   if (!isBroadcaster) return;
   if (!mainVideoTrack) return;
 
-  const firstRemount = window.setTimeout(() => {
+  const remountOnce = window.setTimeout(() => {
+    console.log("[live-local-preview] remount iniziale unico");
     setLocalPreviewKey((prev) => prev + 1);
-  }, 700);
-
-  const secondRemount = window.setTimeout(() => {
-    setLocalPreviewKey((prev) => prev + 1);
-  }, 1600);
+  }, 1200);
 
   return () => {
-    window.clearTimeout(firstRemount);
-    window.clearTimeout(secondRemount);
+    window.clearTimeout(remountOnce);
   };
 }, [
   isBroadcaster,
@@ -294,9 +290,6 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
   }
 
   let stopped = false;
-  let lastCurrentTime = -1;
-  let stuckTicks = 0;
-  let watchdog: number | undefined;
 
   const playVideo = async () => {
     try {
@@ -323,8 +316,6 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
     try {
       livekitTrack.attach(videoElement);
 
-      // Fallback utile su alcuni browser mobile: se attach non popola bene srcObject,
-      // usiamo direttamente la mediaStreamTrack già pubblicata da LiveKit.
       if (!videoElement.srcObject && livekitTrack.mediaStreamTrack) {
         videoElement.srcObject = new MediaStream([
           livekitTrack.mediaStreamTrack,
@@ -333,7 +324,7 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
 
       await playVideo();
 
-      console.log("[live-local-preview] attached/re-attached", {
+      console.log("[live-local-preview] attached stabile", {
         source: mainVideoTrack.source,
         participant: mainVideoTrack.participant?.identity,
         publicationSid: mainVideoTrack.publication?.trackSid,
@@ -350,44 +341,8 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
 
   attachPreview();
 
-  watchdog = window.setInterval(() => {
-    if (stopped) return;
-
-    const currentTime = videoElement.currentTime || 0;
-
-    if (videoElement.paused) {
-      playVideo();
-    }
-
-    if (currentTime === lastCurrentTime) {
-      stuckTicks += 1;
-    } else {
-      stuckTicks = 0;
-      lastCurrentTime = currentTime;
-    }
-
-    // Se su mobile resta fermo al primo frame, riagganciamo solo la preview locale.
-    // Non tocchiamo la pubblicazione LiveKit, quindi lo spettatore non viene disturbato.
-    if (stuckTicks >= 3) {
-    console.warn("[live-local-preview] preview bloccata, remount video locale", {
-    currentTime,
-    readyState: videoElement.readyState,
-    videoWidth: videoElement.videoWidth,
-    videoHeight: videoElement.videoHeight,
-    paused: videoElement.paused,
-  });
-
-  stuckTicks = 0;
-  setLocalPreviewKey((prev) => prev + 1);
-}
-  }, 1000);
-
   return () => {
     stopped = true;
-
-    if (watchdog) {
-      window.clearInterval(watchdog);
-    }
 
     try {
       if (typeof livekitTrack.detach === "function") {
