@@ -221,6 +221,7 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
   isBroadcaster?: boolean;
 }) {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [localPreviewKey, setLocalPreviewKey] = useState(0);
 
   const videoTracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
@@ -253,6 +254,27 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
     return cameraTrack || screenTrack || videoTracks[0] || null;
   }, [videoTracks, isBroadcaster]);
 
+  useEffect(() => {
+  if (!isBroadcaster) return;
+  if (!mainVideoTrack) return;
+
+  const firstRemount = window.setTimeout(() => {
+    setLocalPreviewKey((prev) => prev + 1);
+  }, 700);
+
+  const secondRemount = window.setTimeout(() => {
+    setLocalPreviewKey((prev) => prev + 1);
+  }, 1600);
+
+  return () => {
+    window.clearTimeout(firstRemount);
+    window.clearTimeout(secondRemount);
+  };
+}, [
+  isBroadcaster,
+  mainVideoTrack?.publication?.trackSid,
+]);
+  
   useEffect(() => {
   if (!isBroadcaster) return;
   if (!mainVideoTrack) return;
@@ -347,17 +369,17 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
     // Se su mobile resta fermo al primo frame, riagganciamo solo la preview locale.
     // Non tocchiamo la pubblicazione LiveKit, quindi lo spettatore non viene disturbato.
     if (stuckTicks >= 3) {
-      console.warn("[live-local-preview] preview bloccata, riaggancio", {
-        currentTime,
-        readyState: videoElement.readyState,
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight,
-        paused: videoElement.paused,
-      });
+    console.warn("[live-local-preview] preview bloccata, remount video locale", {
+    currentTime,
+    readyState: videoElement.readyState,
+    videoWidth: videoElement.videoWidth,
+    videoHeight: videoElement.videoHeight,
+    paused: videoElement.paused,
+  });
 
-      stuckTicks = 0;
-      attachPreview();
-    }
+  stuckTicks = 0;
+  setLocalPreviewKey((prev) => prev + 1);
+}
   }, 1000);
 
   return () => {
@@ -378,6 +400,7 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
   };
 }, [
   isBroadcaster,
+  localPreviewKey,
   mainVideoTrack?.publication?.trackSid,
   mainVideoTrack?.publication?.track,
 ]);
@@ -386,13 +409,14 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
     <div className="w-full h-full bg-black flex items-center justify-center">
       {mainVideoTrack ? (
         isBroadcaster ? (
-          <video
-            ref={localVideoRef}
-            className="w-full h-full object-cover scale-x-[-1]"
-            autoPlay
-            muted
-            playsInline
-          />
+         <video
+  key={`local-preview-${localPreviewKey}`}
+  ref={localVideoRef}
+  className="w-full h-full object-cover scale-x-[-1]"
+  autoPlay
+  muted
+  playsInline
+/>
         ) : (
           <VideoTrack
             trackRef={mainVideoTrack}
