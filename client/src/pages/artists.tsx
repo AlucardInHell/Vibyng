@@ -254,30 +254,29 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
   }, [videoTracks, isBroadcaster]);
 
   useEffect(() => {
-    if (!isBroadcaster) return;
-    if (!mainVideoTrack) return;
-    if (!localVideoRef.current) return;
+  if (!isBroadcaster) return;
+  if (!mainVideoTrack) return;
+  if (!localVideoRef.current) return;
 
-    const livekitTrack: any = mainVideoTrack.publication?.track;
-    const mediaStreamTrack: MediaStreamTrack | undefined =
-      livekitTrack?.mediaStreamTrack;
+  const livekitTrack: any = mainVideoTrack.publication?.track;
+  const videoElement = localVideoRef.current;
 
-    if (!mediaStreamTrack) {
-      console.warn("[live-local-preview] mediaStreamTrack mancante", {
-        source: mainVideoTrack.source,
-        participant: mainVideoTrack.participant?.identity,
-        publicationSid: mainVideoTrack.publication?.trackSid,
-      });
-      return;
-    }
+  if (!livekitTrack || typeof livekitTrack.attach !== "function") {
+    console.warn("[live-local-preview] livekitTrack non agganciabile", {
+      source: mainVideoTrack.source,
+      participant: mainVideoTrack.participant?.identity,
+      publicationSid: mainVideoTrack.publication?.trackSid,
+      hasTrack: !!livekitTrack,
+    });
+    return;
+  }
 
-    const stream = new MediaStream([mediaStreamTrack]);
-    const videoElement = localVideoRef.current;
+  videoElement.muted = true;
+  videoElement.playsInline = true;
+  videoElement.autoplay = true;
 
-    videoElement.srcObject = stream;
-    videoElement.muted = true;
-    videoElement.playsInline = true;
-    videoElement.autoplay = true;
+  try {
+    livekitTrack.attach(videoElement);
 
     const playPromise = videoElement.play();
 
@@ -287,25 +286,29 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
       });
     }
 
-    console.log("[live-local-preview] attached", {
+    console.log("[live-local-preview] attached via LiveKit", {
       source: mainVideoTrack.source,
       participant: mainVideoTrack.participant?.identity,
       publicationSid: mainVideoTrack.publication?.trackSid,
-      readyState: mediaStreamTrack.readyState,
-      muted: mediaStreamTrack.muted,
-      enabled: mediaStreamTrack.enabled,
     });
+  } catch (err) {
+    console.warn("[live-local-preview] attach error", err);
+  }
 
-    return () => {
-      if (videoElement.srcObject === stream) {
-        videoElement.srcObject = null;
+  return () => {
+    try {
+      if (typeof livekitTrack.detach === "function") {
+        livekitTrack.detach(videoElement);
       }
-    };
-  }, [
-    isBroadcaster,
-    mainVideoTrack?.publication?.trackSid,
-    mainVideoTrack?.publication?.track,
-  ]);
+    } catch {}
+
+    videoElement.srcObject = null;
+  };
+}, [
+  isBroadcaster,
+  mainVideoTrack?.publication?.trackSid,
+  mainVideoTrack?.publication?.track,
+]);
 
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
@@ -675,7 +678,14 @@ const { data: activeLiveStreams = [], isLoading: livesLoading } = useQuery<Activ
     };
 
     fetchLiveData();
-    const interval = window.setInterval(fetchLiveData, 10000);
+    }, [
+  activeLiveStreams,
+  currentUserId,
+  liveTokens,
+  isBroadcastMode,
+  broadcasterToken,
+  broadcasterUrl,
+]);
 
     return () => {
       clearInterval(interval);
@@ -1774,6 +1784,7 @@ return (
                     </div>
                   ))}
                 </div>
+                {!isHost && (
                 <div className="flex gap-2">
                   <input
                     className="flex-1 text-xs bg-black/50 text-white rounded-full px-3 py-1 border border-white/20 outline-none"
