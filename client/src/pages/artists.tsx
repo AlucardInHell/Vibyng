@@ -221,7 +221,6 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
   isBroadcaster?: boolean;
 }) {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
-  const [localPreviewKey, setLocalPreviewKey] = useState(0);
 
   const videoTracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
@@ -253,23 +252,6 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
 
     return cameraTrack || screenTrack || videoTracks[0] || null;
   }, [videoTracks, isBroadcaster]);
-
- useEffect(() => {
-  if (!isBroadcaster) return;
-  if (!mainVideoTrack) return;
-
-  const remountOnce = window.setTimeout(() => {
-    console.log("[live-local-preview] remount iniziale unico");
-    setLocalPreviewKey((prev) => prev + 1);
-  }, 1200);
-
-  return () => {
-    window.clearTimeout(remountOnce);
-  };
-}, [
-  isBroadcaster,
-  mainVideoTrack?.publication?.trackSid,
-]);
   
   useEffect(() => {
   if (!isBroadcaster) return;
@@ -355,7 +337,6 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
   };
 }, [
   isBroadcaster,
-  localPreviewKey,
   mainVideoTrack?.publication?.trackSid,
   mainVideoTrack?.publication?.track,
 ]);
@@ -502,36 +483,32 @@ const isBroadcastMode =
   !!broadcastSession.url;
   const broadcasterToken = broadcastSession.token;
   const broadcasterUrl = broadcastSession.url;
-  useEffect(() => {
+ useEffect(() => {
   if (!isBroadcastMode) return;
   if (!liveIdParam) return;
 
   const liveId = Number(liveIdParam);
-
   if (!liveId) return;
 
-  const isMobile =
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if (!isMobile) return;
 
-  const storageKey = `vibyng-live-room-remounted-${liveId}`;
+  const storageKey = `vibyng-live-tab-soft-reset-${liveId}`;
 
   if (sessionStorage.getItem(storageKey) === "1") {
     return;
   }
 
   const timer = window.setTimeout(() => {
-    console.log("[livekit-room] remount automatico host mobile", {
-      liveId,
-    });
+    console.log("[live-mobile-host] soft reset tab live", { liveId });
 
     sessionStorage.setItem(storageKey, "1");
 
-    setLiveRoomRemountKeys((prev) => ({
-      ...prev,
-      [liveId]: (prev[liveId] ?? 0) + 1,
-    }));
+    setActiveTab("for-you");
+
+    window.setTimeout(() => {
+      setActiveTab("live");
+    }, 250);
   }, 1800);
 
   return () => {
