@@ -1890,7 +1890,7 @@ return (
                     </div>
                   ))}
                 </div>
-    {!isHost && (
+    {Number(live.artist.id) !== Number(currentUserId) && (
   <div className="flex gap-2">
     <input
       className="flex-1 text-xs bg-black/50 text-white rounded-full px-3 py-1 border border-white/20 outline-none"
