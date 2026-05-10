@@ -568,6 +568,26 @@ await db.execute(sql`
   WHERE status = 'live'
 `);
 
+await db.execute(sql`
+  CREATE TABLE IF NOT EXISTS live_viewers (
+    id serial PRIMARY KEY,
+    live_id integer NOT NULL REFERENCES live_streams(id) ON DELETE CASCADE,
+    user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at timestamp DEFAULT now(),
+    last_seen_at timestamp DEFAULT now()
+  )
+`);
+
+await db.execute(sql`
+  CREATE UNIQUE INDEX IF NOT EXISTS live_viewers_live_user_idx
+  ON live_viewers (live_id, user_id)
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS live_viewers_live_id_idx
+  ON live_viewers (live_id)
+`);
+  
 // === DELETE VIDEO ===
 
 const deleteVideoHandler = async (req: any, res: any) => {
@@ -1469,6 +1489,16 @@ app.post("/api/lives/start", async (req, res) => {
       WHERE artist_id = ${artistId} AND status = 'live'
     `);
 
+    await db.execute(sql`
+    DELETE FROM live_viewers
+    WHERE live_id IN (
+    SELECT id
+    FROM live_streams
+    WHERE artist_id = ${artistId}
+    AND status = 'ended'
+  )
+`);
+    
     const roomName = `vibyng-live-${artistId}-${Date.now()}`;
 
     // Crea token LiveKit per il broadcaster
@@ -1550,6 +1580,17 @@ app.post("/api/lives/:id/end", async (req, res) => {
       });
     }
 
+    await db.execute(sql`
+  DELETE FROM live_viewers
+  WHERE live_id = ${liveId}
+`);
+
+    await db.execute(sql`
+  UPDATE live_streams
+  SET viewer_count = 0
+  WHERE id = ${liveId}
+`);
+    
     res.json({
       success: true,
       live: result.rows[0],
@@ -1644,31 +1685,109 @@ app.post("/api/lives/:id/token", async (req, res) => {
     });
   }
 });
+
+const syncLiveViewerCount = async (liveId: number) => {
+  const countResult = await db.execute(sql`
+    SELECT COUNT(DISTINCT user_id)::int AS "viewerCount"
+    FROM live_viewers
+    WHERE live_id = ${liveId}
+  `);
+
+  const viewerCount = Number(
+    (countResult.rows[0] as any)?.viewerCount ??
+    (countResult.rows[0] as any)?.viewercount ??
+    0
+  );
+
+  await db.execute(sql`
+    UPDATE live_streams
+    SET viewer_count = ${viewerCount}
+    WHERE id = ${liveId}
+  `);
+
+  return viewerCount;
+};
   
 app.post("/api/lives/:id/join", async (req, res) => {
   try {
     const liveId = Number(req.params.id);
-    await db.execute(sql`
-      UPDATE live_streams SET viewer_count = GREATEST(viewer_count + 1, 0)
-      WHERE id = ${liveId} AND status = 'live'
+    const userId = Number(req.body?.userId);
+
+    if (!liveId || !userId) {
+      return res.status(400).json({
+        message: "Dati join live non validi",
+      });
+    }
+
+    const liveResult = await db.execute(sql`
+      SELECT id, artist_id
+      FROM live_streams
+      WHERE id = ${liveId}
+        AND status = 'live'
+      LIMIT 1
     `);
-    const result = await db.execute(sql`SELECT viewer_count FROM live_streams WHERE id = ${liveId}`);
-    res.json({ viewerCount: result.rows[0]?.viewer_count ?? 0 });
+
+    if (!liveResult.rows.length) {
+      return res.status(404).json({
+        message: "Live non trovata",
+      });
+    }
+
+    const liveOwnerId = Number((liveResult.rows[0] as any).artist_id);
+
+    // L'host non va contato come spettatore
+    if (Number(userId) !== liveOwnerId) {
+      await db.execute(sql`
+        INSERT INTO live_viewers (live_id, user_id, joined_at, last_seen_at)
+        VALUES (${liveId}, ${userId}, now(), now())
+        ON CONFLICT (live_id, user_id)
+        DO UPDATE SET last_seen_at = now()
+      `);
+    }
+
+    const viewerCount = await syncLiveViewerCount(liveId);
+
+    res.json({
+      viewerCount,
+    });
   } catch (err: any) {
-    res.status(400).json({ message: "Errore" });
+    console.error("[live-join] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore ingresso live",
+      detail: err?.message,
+    });
   }
 });
-
 app.post("/api/lives/:id/leave", async (req, res) => {
   try {
     const liveId = Number(req.params.id);
+    const userId = Number(req.body?.userId);
+
+    if (!liveId || !userId) {
+      return res.status(400).json({
+        message: "Dati leave live non validi",
+      });
+    }
+
     await db.execute(sql`
-      UPDATE live_streams SET viewer_count = GREATEST(viewer_count - 1, 0)
-      WHERE id = ${liveId} AND status = 'live'
+      DELETE FROM live_viewers
+      WHERE live_id = ${liveId}
+        AND user_id = ${userId}
     `);
-    res.json({ success: true });
+
+    const viewerCount = await syncLiveViewerCount(liveId);
+
+    res.json({
+      viewerCount,
+    });
   } catch (err: any) {
-    res.status(400).json({ message: "Errore" });
+    console.error("[live-leave] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore uscita live",
+      detail: err?.message,
+    });
   }
 });
   
