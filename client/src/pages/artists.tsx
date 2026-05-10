@@ -1848,15 +1848,18 @@ return (
           setLiveChatInput((prev) => ({
             ...prev,
             [live.id]: "",
-          }));
+         }));
         }
       }}
     />
   </div>
 )}
+              </div>
+            )}
             </div>
           </section>
-      ))
+        );
+      })
     )}
   </div>
 )}
