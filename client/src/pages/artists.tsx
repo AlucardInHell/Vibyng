@@ -220,6 +220,8 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
 }: {
   isBroadcaster?: boolean;
 }) {
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+
   const videoTracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
     {
@@ -251,13 +253,77 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
     return cameraTrack || screenTrack || videoTracks[0] || null;
   }, [videoTracks, isBroadcaster]);
 
+  useEffect(() => {
+    if (!isBroadcaster) return;
+    if (!mainVideoTrack) return;
+    if (!localVideoRef.current) return;
+
+    const livekitTrack: any = mainVideoTrack.publication?.track;
+    const mediaStreamTrack: MediaStreamTrack | undefined =
+      livekitTrack?.mediaStreamTrack;
+
+    if (!mediaStreamTrack) {
+      console.warn("[live-local-preview] mediaStreamTrack mancante", {
+        source: mainVideoTrack.source,
+        participant: mainVideoTrack.participant?.identity,
+        publicationSid: mainVideoTrack.publication?.trackSid,
+      });
+      return;
+    }
+
+    const stream = new MediaStream([mediaStreamTrack]);
+    const videoElement = localVideoRef.current;
+
+    videoElement.srcObject = stream;
+    videoElement.muted = true;
+    videoElement.playsInline = true;
+    videoElement.autoplay = true;
+
+    const playPromise = videoElement.play();
+
+    if (playPromise) {
+      playPromise.catch((err) => {
+        console.warn("[live-local-preview] autoplay bloccato", err);
+      });
+    }
+
+    console.log("[live-local-preview] attached", {
+      source: mainVideoTrack.source,
+      participant: mainVideoTrack.participant?.identity,
+      publicationSid: mainVideoTrack.publication?.trackSid,
+      readyState: mediaStreamTrack.readyState,
+      muted: mediaStreamTrack.muted,
+      enabled: mediaStreamTrack.enabled,
+    });
+
+    return () => {
+      if (videoElement.srcObject === stream) {
+        videoElement.srcObject = null;
+      }
+    };
+  }, [
+    isBroadcaster,
+    mainVideoTrack?.publication?.trackSid,
+    mainVideoTrack?.publication?.track,
+  ]);
+
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
       {mainVideoTrack ? (
-        <VideoTrack
-          trackRef={mainVideoTrack}
-          className="w-full h-full object-cover"
-        />
+        isBroadcaster ? (
+          <video
+            ref={localVideoRef}
+            className="w-full h-full object-cover scale-x-[-1]"
+            autoPlay
+            muted
+            playsInline
+          />
+        ) : (
+          <VideoTrack
+            trackRef={mainVideoTrack}
+            className="w-full h-full object-cover"
+          />
+        )
       ) : (
         <div className="text-center text-white/60">
           <div className="text-4xl mb-2">📡</div>
