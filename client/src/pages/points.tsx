@@ -911,8 +911,19 @@ const handleCloseLiveSetup = () => {
       setLivekitUrl(data.livekitUrl);
       sessionStorage.setItem("vibyng-live-token", data.token);
       sessionStorage.setItem("vibyng-live-url", data.livekitUrl);
-      sessionStorage.setItem("vibyng-live-id", String(data.live?.id ?? ""));
-      window.location.href = `/artists?tab=live&broadcast=1&liveId=${data.live?.id ?? ""}`;
+      sessionStorage.setItem("vibyng-live-id", String(data.live.id));
+
+if (livePreviewStream) {
+  livePreviewStream.getTracks().forEach((track) => {
+    try {
+      track.stop();
+    } catch {}
+  });
+
+  setLivePreviewStream(null);
+}
+
+window.location.href = `/artists?tab=live&broadcast=1&liveId=${data.live.id}`;
     } catch (err: any) {
       toast({
         title: t.error,
