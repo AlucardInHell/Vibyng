@@ -800,8 +800,19 @@ app.post("/api/videos/:videoId/like", async (req, res) => {
       VALUES (${videoId}, ${userId})
       ON CONFLICT (video_id, user_id) DO NOTHING
     `);
+const likesCount = await syncVideoLikesCount(videoId);
 
-    const likesCount = await syncVideoLikesCount(videoId);
+    // Notifica like video
+    const videoOwnerId = Number((video as any).artistId ?? (video as any).artist_id);
+    if (videoOwnerId && videoOwnerId !== userId) {
+      const liker = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: videoOwnerId,
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
+        relatedUserId: userId,
+      });
+    }
 
     res.json({
       liked: true,
@@ -849,18 +860,6 @@ app.post("/api/videos/:videoId/unlike", async (req, res) => {
     });
   }
 });
-
-// Notifica like video
-    const videoOwnerId = Number((video as any).artistId ?? (video as any).artist_id);
-    if (videoOwnerId && videoOwnerId !== userId) {
-      const liker = await storage.getUser(userId);
-      await storage.createNotification({
-        userId: videoOwnerId,
-        type: "like",
-        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
-        relatedUserId: userId,
-      });
-    }
   
 // === SONG LIKES & COMMENTS ===
 
