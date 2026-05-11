@@ -19,8 +19,15 @@ import {
   VideoTrack,
   RoomAudioRenderer,
   useTracks,
+  useRoomContext,
 } from "@livekit/components-react";
-import { Track } from "livekit-client";
+
+import {
+  Track,
+  createLocalTracks,
+  RoomEvent,
+  ConnectionState,
+} from "livekit-client";
 
 function getCurrentUserId(): number {
   try {
@@ -220,7 +227,10 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
 }: {
   isBroadcaster?: boolean;
 }) {
+  const room = useRoomContext();
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const publishedRef = useRef(false);
+  const localTracksRef = useRef<any[]>([]);
 
   const videoTracks = useTracks(
     [Track.Source.Camera, Track.Source.ScreenShare],
@@ -230,142 +240,157 @@ const LiveVideoPlayer = React.memo(function LiveVideoPlayer({
   );
 
   const mainVideoTrack = useMemo(() => {
+    if (isBroadcaster) return null;
+
     const cameraTrack = videoTracks.find((trackRef: any) => {
       const isLocal = Boolean(trackRef.participant?.isLocal);
-
-      if (isBroadcaster) {
-        return trackRef.source === Track.Source.Camera && isLocal;
-      }
-
       return trackRef.source === Track.Source.Camera && !isLocal;
     });
 
     const screenTrack = videoTracks.find((trackRef: any) => {
       const isLocal = Boolean(trackRef.participant?.isLocal);
-
-      if (isBroadcaster) {
-        return trackRef.source === Track.Source.ScreenShare && isLocal;
-      }
-
       return trackRef.source === Track.Source.ScreenShare && !isLocal;
     });
 
     return cameraTrack || screenTrack || videoTracks[0] || null;
   }, [videoTracks, isBroadcaster]);
-  
+
   useEffect(() => {
-  if (!isBroadcaster) return;
-  if (!mainVideoTrack) return;
-  if (!localVideoRef.current) return;
+    if (!isBroadcaster) return;
+    if (!room) return;
+    if (publishedRef.current) return;
 
-  const livekitTrack: any = mainVideoTrack.publication?.track;
-  const videoElement = localVideoRef.current;
+    let cancelled = false;
 
-  if (!livekitTrack || typeof livekitTrack.attach !== "function") {
-    console.warn("[live-local-preview] livekitTrack non agganciabile", {
-      source: mainVideoTrack.source,
-      participant: mainVideoTrack.participant?.identity,
-      publicationSid: mainVideoTrack.publication?.trackSid,
-      hasTrack: !!livekitTrack,
-    });
-    return;
-  }
+    const waitForRoomConnection = async () => {
+      if (room.state === ConnectionState.Connected) return;
 
-  let stopped = false;
-
-  const playVideo = async () => {
-    try {
-      videoElement.muted = true;
-      videoElement.defaultMuted = true;
-      videoElement.playsInline = true;
-      videoElement.autoplay = true;
-
-      await videoElement.play();
-    } catch (err) {
-      console.warn("[live-local-preview] play bloccato", err);
-    }
-  };
-
-  const attachPreview = async () => {
-    if (stopped) return;
-
-    try {
-      if (typeof livekitTrack.detach === "function") {
-        livekitTrack.detach(videoElement);
-      }
-    } catch {}
-
-    try {
-      livekitTrack.attach(videoElement);
-
-      if (!videoElement.srcObject && livekitTrack.mediaStreamTrack) {
-        videoElement.srcObject = new MediaStream([
-          livekitTrack.mediaStreamTrack,
-        ]);
-      }
-
-      await playVideo();
-
-      console.log("[live-local-preview] attached stabile", {
-        source: mainVideoTrack.source,
-        participant: mainVideoTrack.participant?.identity,
-        publicationSid: mainVideoTrack.publication?.trackSid,
-        readyState: videoElement.readyState,
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight,
-        paused: videoElement.paused,
-        currentTime: videoElement.currentTime,
+      await new Promise<void>((resolve) => {
+        room.once(RoomEvent.Connected, () => resolve());
       });
-    } catch (err) {
-      console.warn("[live-local-preview] attach error", err);
-    }
-  };
+    };
 
-  attachPreview();
+    const startLocalBroadcast = async () => {
+      try {
+        await waitForRoomConnection();
 
-  return () => {
-    stopped = true;
+        if (cancelled || publishedRef.current) return;
 
-    try {
-      if (typeof livekitTrack.detach === "function") {
-        livekitTrack.detach(videoElement);
+        publishedRef.current = true;
+
+        const tracks = await createLocalTracks({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+          video: {
+            facingMode: "user",
+            resolution: {
+              width: 640,
+              height: 360,
+            },
+          } as any,
+        });
+
+        if (cancelled) {
+          tracks.forEach((track: any) => {
+            try {
+              track.stop();
+            } catch {}
+          });
+
+          publishedRef.current = false;
+          return;
+        }
+
+        localTracksRef.current = tracks;
+
+        const cameraTrack = tracks.find((track: any) => track.kind === "video");
+
+        if (cameraTrack && localVideoRef.current) {
+          const videoElement = localVideoRef.current;
+
+          videoElement.muted = true;
+          videoElement.defaultMuted = true;
+          videoElement.playsInline = true;
+          videoElement.autoplay = true;
+
+          try {
+            cameraTrack.attach(videoElement);
+            await videoElement.play();
+          } catch (err) {
+            console.warn("[live-local-preview] play/attach error", err);
+          }
+        }
+
+        for (const track of tracks) {
+          await room.localParticipant.publishTrack(track, {
+            source:
+              track.kind === "video"
+                ? Track.Source.Camera
+                : Track.Source.Microphone,
+          });
+        }
+
+        console.log("[live-local-broadcast] tracks pubblicate", {
+          roomName: room.name,
+          tracks: tracks.map((track: any) => track.kind),
+        });
+      } catch (err) {
+        publishedRef.current = false;
+
+        console.error("[live-local-broadcast] errore pubblicazione", err);
       }
-    } catch {}
+    };
 
-    videoElement.pause();
-    videoElement.srcObject = null;
-  };
-}, [
-  isBroadcaster,
-  mainVideoTrack?.publication?.trackSid,
-  mainVideoTrack?.publication?.track,
-]);
+    startLocalBroadcast();
+
+    return () => {
+      cancelled = true;
+
+      const tracks = localTracksRef.current;
+      localTracksRef.current = [];
+
+      tracks.forEach((track: any) => {
+        try {
+          if (localVideoRef.current && typeof track.detach === "function") {
+            track.detach(localVideoRef.current);
+          }
+        } catch {}
+
+        try {
+          room.localParticipant.unpublishTrack(track);
+        } catch {}
+
+        try {
+          track.stop();
+        } catch {}
+      });
+
+      publishedRef.current = false;
+    };
+  }, [isBroadcaster, room]);
 
   return (
     <div className="w-full h-full bg-black flex items-center justify-center">
-      {mainVideoTrack ? (
-        isBroadcaster ? (
-         <video
-  ref={localVideoRef}
-  className="w-full h-full object-cover scale-x-[-1] pointer-events-none"
-  autoPlay
-  muted
-  playsInline
-/>
-        ) : (
-          <VideoTrack
-            trackRef={mainVideoTrack}
-            className="w-full h-full object-cover pointer-events-none"
-          />
-        )
+      {isBroadcaster ? (
+        <video
+          ref={localVideoRef}
+          className="w-full h-full object-cover scale-x-[-1] pointer-events-none"
+          autoPlay
+          muted
+          playsInline
+        />
+      ) : mainVideoTrack ? (
+        <VideoTrack
+          trackRef={mainVideoTrack}
+          className="w-full h-full object-cover pointer-events-none"
+        />
       ) : (
         <div className="text-center text-white/60">
           <div className="text-4xl mb-2">📡</div>
-          <p className="text-sm">
-            {isBroadcaster
-              ? "Attivazione camera..."
-              : "In attesa del video..."}
-          </p>
+          <p className="text-sm">In attesa del video...</p>
         </div>
       )}
     </div>
@@ -770,25 +795,6 @@ useEffect(() => {
   broadcasterToken,
   broadcasterUrl,
 ]);
-
-  useEffect(() => {
-    if (!isBroadcastMode || !liveIdParam || activeTab !== "live") return;
-    const liveId = Number(liveIdParam);
-    if (!liveId) return;
-
-    const storageKey = `vibyng-live-soft-reset-${liveId}`;
-    if (sessionStorage.getItem(storageKey) === "1") return;
-
-    const timer = window.setTimeout(() => {
-      sessionStorage.setItem(storageKey, "1");
-      setActiveTab("for-you");
-      window.setTimeout(() => {
-        setActiveTab("live");
-      }, 300);
-    }, 1500);
-
-    return () => window.clearTimeout(timer);
-  }, [isBroadcastMode, liveIdParam, activeTab]);
   
   useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
@@ -1678,27 +1684,8 @@ console.log("[live-render-debug]", {
         token={token}
         serverUrl={url}
         connect={true}
-        video={
-  isHost
-    ? {
-        resolution: {
-          width: 640,
-          height: 360,
-        },
-        frameRate: 20,
-        facingMode: "user",
-      }
-    : false
-}
-audio={
-  isHost
-    ? {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      }
-    : false
-}
+        video={false}
+        audio={false}
         className="w-full h-full pointer-events-none"
         onConnected={() => {
           console.log("[livekit-room] connected", {
