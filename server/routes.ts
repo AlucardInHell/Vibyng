@@ -850,6 +850,15 @@ app.post("/api/videos/:videoId/unlike", async (req, res) => {
   }
 });
 
+// Notifica like video
+    const liker = await storage.getUser(userId);
+    await storage.createNotification({
+      userId: Number(video.artistId),
+      type: "like",
+      message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
+      relatedUserId: userId,
+    });
+  
 // === SONG LIKES & COMMENTS ===
 
 const syncSongLikesCount = async (songId: number) => {
@@ -3373,7 +3382,19 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
       console.error("[points-comment-post]", pointsErr?.message);
     }
 
-    await sendMentionNotifications(String(content ?? ""), Number(authorId));
+   await sendMentionNotifications(String(content ?? ""), Number(authorId));
+
+    // Notifica commento post
+    if (Number(authorId) !== Number(post.authorId)) {
+      const commenter = await storage.getUser(authorId);
+      await storage.createNotification({
+        userId: Number(post.authorId),
+        type: "comment",
+        message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo post`,
+        relatedUserId: authorId,
+        relatedPostId: postId,
+      });
+    }
 
     res.status(201).json(comment);
   } catch (err: any) {
@@ -4633,8 +4654,18 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
     } catch (pointsErr: any) {
       console.error("[points-comment-photo]", pointsErr?.message);
     }
+      await sendMentionNotifications(String(content ?? ""), Number(authorId));
 
-    await sendMentionNotifications(String(content ?? ""), Number(authorId));
+    // Notifica commento foto
+    if (Number(authorId) !== Number(photo.artist_id)) {
+      const commenter = await storage.getUser(authorId);
+      await storage.createNotification({
+        userId: Number(photo.artist_id),
+        type: "comment",
+        message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua foto`,
+        relatedUserId: authorId,
+      });
+    }
 
     res.status(201).json(comment);
   } catch (err: any) {
@@ -4849,8 +4880,18 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
     } catch (pointsErr: any) {
       console.error("[points-comment-video]", pointsErr?.message);
     }
+      await sendMentionNotifications(String(content ?? ""), Number(authorId));
 
-    await sendMentionNotifications(String(content ?? ""), Number(authorId));
+    // Notifica commento video
+    if (Number(authorId) !== Number(video.artist_id)) {
+      const commenter = await storage.getUser(authorId);
+      await storage.createNotification({
+        userId: Number(video.artist_id),
+        type: "comment",
+        message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo video`,
+        relatedUserId: authorId,
+      });
+    }
 
     res.status(201).json(comment);
   } catch (err: any) {
