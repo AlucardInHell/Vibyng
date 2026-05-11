@@ -851,13 +851,15 @@ app.post("/api/videos/:videoId/unlike", async (req, res) => {
 });
 
 // Notifica like video
-    const liker = await storage.getUser(userId);
-    await storage.createNotification({
-      userId: Number(video.artistId),
-      type: "like",
-      message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
-      relatedUserId: userId,
-    });
+   const liker = await storage.getUser(userId);
+    if (liker) {
+      await storage.createNotification({
+        userId: Number(video.artistId),
+        type: "like",
+        message: `${liker.displayName || "Qualcuno"} ha messo like al tuo video`,
+        relatedUserId: userId,
+      });
+    }
   
 // === SONG LIKES & COMMENTS ===
 
