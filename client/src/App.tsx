@@ -302,6 +302,8 @@ export type ProfileData = {
   email: string;
   bio: string;
   avatarUrl?: string | null;
+  role?: string;
+  genre?: string;
 };
 
 function getCurrentUserId(): number {
@@ -363,12 +365,16 @@ function ProfileProvider({ children }: { children: React.ReactNode }) {
     email: user.email || "",
     bio: user.bio || "",
     avatarUrl: user.avatarUrl,
+    role: (user as any).role || "",
+    genre: (user as any).genre || "",
   } : {
     displayName: "",
     username: "",
     email: "",
     bio: "",
     avatarUrl: null,
+    role: "",
+    genre: "",
   };
 
   const updateProfile = useCallback(async (data: Partial<ProfileData>) => {
