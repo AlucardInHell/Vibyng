@@ -2193,8 +2193,8 @@ res.status(201).json({
   app.patch("/api/users/:id", async (req, res) => {
     try {
       const id = Number(req.params.id);
-      const { displayName, username, email, bio, avatarUrl } = req.body;
-      const updated = await storage.updateUser(id, { displayName, username, email, bio, avatarUrl });
+      const { displayName, username, email, bio, avatarUrl, genre } = req.body;
+      const updated = await storage.updateUser(id, { displayName, username, email, bio, avatarUrl, genre });
       if (!updated) {
         return res.status(404).json({ message: "Utente non trovato" });
       }
