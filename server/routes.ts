@@ -960,6 +960,18 @@ const songLikeHandler = async (req: any, res: any) => {
 
     const likesCount = await syncSongLikesCount(songId);
 
+    // Notifica like song
+    const songOwnerId = Number((song as any).artistId ?? (song as any).artist_id);
+    if (songOwnerId && songOwnerId !== userId) {
+      const liker = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: songOwnerId,
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua canzone`,
+        relatedUserId: userId,
+      });
+    }
+    
     res.json({
       liked: true,
       likesCount,
@@ -1095,6 +1107,18 @@ app.post("/api/songs/:songId/comments", async (req, res) => {
 
     await sendMentionNotifications(content, authorId);
 
+    // Notifica commento song
+    const songOwnerId = Number((song as any).artistId ?? (song as any).artist_id);
+    if (songOwnerId && songOwnerId !== authorId) {
+      const commenter = await storage.getUser(authorId);
+      await storage.createNotification({
+        userId: songOwnerId,
+        type: "comment",
+        message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua canzone`,
+        relatedUserId: authorId,
+      });
+    }
+
     res.status(201).json(created.rows[0]);
   } catch (err: any) {
     console.error("[song-comment-create] error:", err?.message || err);
@@ -1206,6 +1230,17 @@ app.post("/api/songs/:songId/comments/:commentId/like/:userId", async (req, res)
       SET likes_count = ${likesCount}
       WHERE id = ${commentId}
     `);
+
+    // Notifica like commento song
+    if (Number(userId) !== Number(comment.author_id)) {
+      const liker = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: Number(comment.author_id),
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
+        relatedUserId: userId,
+      });
+    }
 
     res.json({
       liked: true,
