@@ -1601,6 +1601,19 @@ app.post("/api/lives/start", async (req, res) => {
   }
 });
 
+  // Notifica live avviata ai follower
+    try {
+      const followers = await db.execute(sql`SELECT fan_id FROM followers WHERE artist_id = ${artistId}`);
+      for (const f of followers.rows) {
+        await storage.createNotification({
+          userId: Number(f.fan_id),
+          type: "live",
+          message: `Un artista che segui è in live: ${title}`,
+          relatedUserId: artistId,
+        });
+      }
+    } catch {}
+
 app.post("/api/lives/:id/end", async (req, res) => {
   try {
     const liveId = Number(req.params.id);
@@ -3598,6 +3611,20 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
     try {
       const input = api.goals.create.input.parse(req.body);
       const goal = await storage.createGoal(input);
+
+      // Notifica nuovo obiettivo ai follower
+    try {
+      const followers = await db.execute(sql`SELECT fan_id FROM followers WHERE artist_id = ${input.artistId}`);
+      for (const f of followers.rows) {
+        await storage.createNotification({
+          userId: Number(f.fan_id),
+          type: "new_content",
+          message: `Un artista che segui ha creato un nuovo obiettivo: ${input.title || "Nuovo obiettivo"}`,
+          relatedUserId: Number(input.artistId),
+        });
+      }
+    } catch {}
+      
       res.status(201).json(goal);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -3885,6 +3912,19 @@ if (alreadyExists) {
       res.status(400).json({ message: "Errore nel salvare la canzone" });
     }
   });
+
+  // Notifica nuova canzone ai follower
+    try {
+      const followers = await db.execute(sql`SELECT fan_id FROM followers WHERE artist_id = ${artistId}`);
+      for (const f of followers.rows) {
+        await storage.createNotification({
+          userId: Number(f.fan_id),
+          type: "new_content",
+          message: `Un artista che segui ha caricato una nuova canzone: ${title || "Senza titolo"}`,
+          relatedUserId: artistId,
+        });
+      }
+    } catch {}
   
   // === SONGS ===
   app.get(api.songs.listByArtist.path, async (req, res) => {
@@ -4512,6 +4552,19 @@ app.post("/api/stories/:storyId/like", async (req, res) => {
       WHERE story_id = ${storyId}
     `);
 
+    // Notifica like story
+    const storyResult = await db.execute(sql`SELECT user_id FROM stories WHERE id = ${storyId} LIMIT 1`);
+    const storyOwnerId = Number(storyResult.rows[0]?.user_id);
+    if (storyOwnerId && storyOwnerId !== Number(userId)) {
+      const liker = await storage.getUser(Number(userId));
+      await storage.createNotification({
+        userId: storyOwnerId,
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua storia`,
+        relatedUserId: Number(userId),
+      });
+    }
+
     res.json({
       success: true,
       likesCount: Number(likesResult.rows[0]?.count ?? 0),
@@ -4567,6 +4620,20 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
       const artistId = Number(req.params.artistId);
       const eventData = { ...req.body, artistId, eventDate: new Date(req.body.eventDate) };
       const event = await storage.createEvent(eventData);
+      
+       // Notifica nuovo evento ai follower
+    try {
+      const followers = await db.execute(sql`SELECT fan_id FROM followers WHERE artist_id = ${artistId}`);
+      for (const f of followers.rows) {
+        await storage.createNotification({
+          userId: Number(f.fan_id),
+          type: "new_content",
+          message: `Un artista che segui ha pubblicato un nuovo evento: ${req.body.name || "Nuovo evento"}`,
+          relatedUserId: artistId,
+        });
+      }
+    } catch {}
+      
       res.status(201).json(event);
     } catch (err: any) {
       console.error(`[create-event] error:`, err?.message);
@@ -4584,6 +4651,7 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
       res.status(400).json({ message: "Errore nell'eliminazione evento", detail: err?.message });
     }
   });
+  
   // === EVENT ATTENDEES ===
   app.delete("/api/events/:eventId/attend", async (req, res) => {
     try {
