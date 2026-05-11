@@ -769,11 +769,12 @@ function SettingsMenu() {
   const followedProfilesCount = followingList.length;
   const legalTexts = legalDocuments[language];
 
-  const [editFormData, setEditFormData] = useState({
+ const [editFormData, setEditFormData] = useState({
     displayName: "",
     username: "",
     email: "",
     bio: "",
+    genre: "",
   });
 
   const [privacySettings, setPrivacySettings] = useState({
@@ -793,11 +794,12 @@ function SettingsMenu() {
   const [isSaving, setIsSaving] = useState(false);
 
   const handleOpenEdit = () => {
-    setEditFormData({
+   setEditFormData({
       displayName: profileData.displayName,
       username: profileData.username,
       email: profileData.email,
       bio: profileData.bio,
+      genre: (profileData as any).genre || "",
     });
     setEditMode(true);
   };
@@ -907,17 +909,7 @@ function SettingsMenu() {
                   data-testid="input-username"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">{t.email}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={editFormData.email}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
-                  data-testid="input-email"
-                />
-              </div>
-              <div className="space-y-2">
+             <div className="space-y-2">
                 <Label htmlFor="bio">{t.bio}</Label>
                 <Textarea
                   id="bio"
@@ -927,6 +919,16 @@ function SettingsMenu() {
                   data-testid="input-bio"
                 />
               </div>
+              {(profileData as any).role === "artist" && (
+                <div className="space-y-2">
+                  <Label>Genere musicale</Label>
+                  <Input
+                    placeholder="Es. Hip-hop, Jazz, Rock..."
+                    value={editFormData.genre}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, genre: e.target.value }))}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
