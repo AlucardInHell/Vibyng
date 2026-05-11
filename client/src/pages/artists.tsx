@@ -772,7 +772,7 @@ useEffect(() => {
 ]);
 
   useEffect(() => {
-    if (!isBroadcastMode || !liveIdParam) return;
+    if (!isBroadcastMode || !liveIdParam || activeTab !== "live") return;
     const liveId = Number(liveIdParam);
     if (!liveId) return;
 
@@ -781,10 +781,10 @@ useEffect(() => {
         ...prev,
         [liveId]: (prev[liveId] ?? 0) + 1,
       }));
-    }, 2000);
+    }, 500);
 
     return () => window.clearTimeout(timer);
-  }, [isBroadcastMode, liveIdParam]);
+  }, [isBroadcastMode, liveIdParam, activeTab]);
   
   useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
