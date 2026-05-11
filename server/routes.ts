@@ -3471,6 +3471,17 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
       WHERE id = ${commentId}
     `);
 
+    // Notifica like commento post
+    if (Number(userId) !== Number(commentRow.author_id)) {
+      const liker = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: Number(commentRow.author_id),
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
+        relatedUserId: userId,
+      });
+    }
+    
     res.json({
       success: true,
       liked: true,
@@ -4739,6 +4750,17 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
       WHERE id = ${commentId}
     `);
 
+    // Notifica like commento foto
+    if (Number(userId) !== Number(commentRow.author_id)) {
+      const liker = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: Number(commentRow.author_id),
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
+        relatedUserId: userId,
+      });
+    } 
+    
     res.json({
       success: true,
       likesCount: Number(updated.rows[0]?.likes_count ?? 0),
@@ -4965,6 +4987,17 @@ app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
       WHERE id = ${commentId}
     `);
 
+    // Notifica like commento video
+    if (Number(userId) !== Number(commentRow.author_id)) {
+      const liker = await storage.getUser(userId);
+      await storage.createNotification({
+        userId: Number(commentRow.author_id),
+        type: "like",
+        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
+        relatedUserId: userId,
+      });
+    }
+    
     res.json({
       success: true,
       likesCount: Number(updated.rows[0]?.likes_count ?? 0),
