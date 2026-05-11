@@ -770,6 +770,21 @@ useEffect(() => {
   broadcasterToken,
   broadcasterUrl,
 ]);
+
+  useEffect(() => {
+    if (!isBroadcastMode || !liveIdParam) return;
+    const liveId = Number(liveIdParam);
+    if (!liveId) return;
+
+    const timer = window.setTimeout(() => {
+      setLiveRoomRemountKeys(prev => ({
+        ...prev,
+        [liveId]: (prev[liveId] ?? 0) + 1,
+      }));
+    }, 2000);
+
+    return () => window.clearTimeout(timer);
+  }, [isBroadcastMode, liveIdParam]);
   
   useEffect(() => {
     localStorage.setItem("flow-saved-videos", JSON.stringify(savedVideoIds));
