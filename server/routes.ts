@@ -851,12 +851,13 @@ app.post("/api/videos/:videoId/unlike", async (req, res) => {
 });
 
 // Notifica like video
-   const liker = await storage.getUser(userId);
-    if (liker) {
+    const videoOwnerId = Number((video as any).artistId ?? (video as any).artist_id);
+    if (videoOwnerId && videoOwnerId !== userId) {
+      const liker = await storage.getUser(userId);
       await storage.createNotification({
-        userId: Number(video.artistId),
+        userId: videoOwnerId,
         type: "like",
-        message: `${liker.displayName || "Qualcuno"} ha messo like al tuo video`,
+        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
         relatedUserId: userId,
       });
     }
