@@ -49,7 +49,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl'>>): Promise<User | undefined>;
+  updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl' | 'genre'>>): Promise<User | undefined>;
   getArtists(): Promise<User[]>;
   getAllUsers(): Promise<User[]>;
   searchUsers(query: string, role?: string): Promise<User[]>;
@@ -299,7 +299,7 @@ async searchUsers(query: string, role?: string): Promise<User[]> {
     return redemption;
   }
 
- async updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl'>>): Promise<User | undefined> {
+async updateUser(id: number, data: Partial<Pick<User, 'displayName' | 'username' | 'email' | 'bio' | 'avatarUrl' | 'genre'>>): Promise<User | undefined> {
     const [updated] = await db.update(users)
       .set(data)
       .where(eq(users.id, id))
