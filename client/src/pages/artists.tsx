@@ -776,12 +776,16 @@ useEffect(() => {
     const liveId = Number(liveIdParam);
     if (!liveId) return;
 
+    const storageKey = `vibyng-live-soft-reset-${liveId}`;
+    if (sessionStorage.getItem(storageKey) === "1") return;
+
     const timer = window.setTimeout(() => {
-      setLiveRoomRemountKeys(prev => ({
-        ...prev,
-        [liveId]: (prev[liveId] ?? 0) + 1,
-      }));
-    }, 500);
+      sessionStorage.setItem(storageKey, "1");
+      setActiveTab("for-you");
+      window.setTimeout(() => {
+        setActiveTab("live");
+      }, 300);
+    }, 1500);
 
     return () => window.clearTimeout(timer);
   }, [isBroadcastMode, liveIdParam, activeTab]);
