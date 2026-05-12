@@ -154,15 +154,23 @@ function getNotificationTargetUrl(notification: any): string | null {
     }
   }
 
-  if (notification.relatedPostId ?? notification.related_post_id) {
-    return `/me?openPost=${notification.relatedPostId ?? notification.related_post_id}`;
-  }
+ const relatedPostId = notification.relatedPostId ?? notification.related_post_id;
+ const relatedUserId = notification.relatedUserId ?? notification.related_user_id;
 
-  if (notification.relatedUserId ?? notification.related_user_id) {
-    return `/artist/${notification.relatedUserId ?? notification.related_user_id}`;
-  }
+if (relatedPostId) {
+  return `/me?openPost=${relatedPostId}`;
+}
 
-  return null;
+// Solo le notifiche di follow/profilo devono aprire il profilo.
+// Like, commenti, nuove song, video, foto ecc. NON devono cadere sul profilo.
+if (
+  relatedUserId &&
+  (notification.type === "follow" || notification.type === "profile")
+) {
+  return `/artist/${relatedUserId}`;
+}
+
+return null;
 }
 
 export default function Notifications() {
