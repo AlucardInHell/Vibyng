@@ -4794,10 +4794,8 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
       await sendMentionNotifications(String(content ?? ""), Number(authorId));
 
    // Notifica commento foto
-    console.log("[photo-comment-notif] authorId:", authorId, "photo.artist_id:", photo.artist_id);
     if (Number(authorId) !== Number(photo.artist_id)) {
       const commenter = await storage.getUser(authorId);
-      console.log("[photo-comment-notif] creating notification for userId:", Number(photo.artist_id));
       await storage.createNotification({
         userId: Number(photo.artist_id),
         type: "comment",
@@ -4806,7 +4804,6 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
         referenceType: "photo",
         referenceId: photoId,
       });
-      console.log("[photo-comment-notif] notification created!");
     }
 
     res.status(201).json(comment);
