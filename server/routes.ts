@@ -816,7 +816,7 @@ const likesCount = await syncVideoLikesCount(videoId);
     const videoOwnerId = Number((video as any).artistId ?? (video as any).artist_id);
     if (videoOwnerId && videoOwnerId !== userId) {
       const liker = await storage.getUser(userId);
-     await storage.createNotification({
+    await storage.createNotification({
   userId: videoOwnerId,
   type: "like",
   message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
@@ -3453,13 +3453,15 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
     // Notifica commento post
     if (Number(authorId) !== Number(post.authorId)) {
       const commenter = await storage.getUser(authorId);
-      await storage.createNotification({
-        userId: Number(post.authorId),
-        type: "comment",
-        message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo post`,
-        relatedUserId: authorId,
-        relatedPostId: postId,
-      });
+     await storage.createNotification({
+  userId: postOwnerId,
+  type: "comment",
+  message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo post`,
+  relatedUserId: userId,
+  relatedPostId: postId,
+  referenceType: "post",
+  referenceId: postId,
+});
     }
 
     res.status(201).json(comment);
@@ -4793,12 +4795,14 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
     // Notifica commento foto
     if (Number(authorId) !== Number(photo.artist_id)) {
       const commenter = await storage.getUser(authorId);
-      await storage.createNotification({
-        userId: Number(photo.artist_id),
-        type: "comment",
-        message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua foto`,
-        relatedUserId: authorId,
-      });
+     await storage.createNotification({
+  userId: photoOwnerId,
+  type: "comment",
+  message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua foto`,
+  relatedUserId: userId,
+  referenceType: "photo",
+  referenceId: photoId,
+});
     }
 
     res.status(201).json(comment);
