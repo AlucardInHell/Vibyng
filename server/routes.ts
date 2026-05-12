@@ -209,6 +209,16 @@ export async function registerRoutes(
 ): Promise<Server> {
 
 await db.execute(sql`
+  ALTER TABLE notifications
+  ADD COLUMN IF NOT EXISTS reference_type text
+`);
+
+await db.execute(sql`
+  ALTER TABLE notifications
+  ADD COLUMN IF NOT EXISTS reference_id integer
+`);
+
+await db.execute(sql`
   ALTER TABLE users
   ADD COLUMN IF NOT EXISTS email_verified boolean NOT NULL DEFAULT false
 `);
