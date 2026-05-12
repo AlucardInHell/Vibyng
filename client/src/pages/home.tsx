@@ -1006,14 +1006,15 @@ function PhotoComments({
   const [newComment, setNewComment] = useState("");
   const CURRENT_USER_ID_LOCAL = getCurrentUserId();
   const { mentionQuery, showMentions, handleTextChange, insertMention, closeMentions } = useMention();
-
+  
   const { data: comments = [], refetch } = useQuery<any[]>({
-  queryKey: ["/api/photos", photoId, "comments", CURRENT_USER_ID_LOCAL],
-  queryFn: async () => {
-    const res = await fetch(`/api/photos/${photoId}/comments?userId=${CURRENT_USER_ID_LOCAL}`);
-    return res.json();
-  },
-})
+    queryKey: ["/api/photos", photoId, "comments", CURRENT_USER_ID_LOCAL],
+    queryFn: async () => {
+      const res = await fetch(`/api/photos/${photoId}/comments?userId=${CURRENT_USER_ID_LOCAL}`);
+      return res.json();
+    },
+    staleTime: 0,
+  });
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
@@ -1021,8 +1022,8 @@ function PhotoComments({
       authorId: CURRENT_USER_ID_LOCAL,
       content: newComment.trim(),
     });
-    setNewComment("");
-    refetch();
+   setNewComment("");
+    await refetch();
   };
 
   return (
@@ -1155,17 +1156,16 @@ function VideoComments({
     },
     staleTime: 0,
   });
-
-  const handleSubmit = async () => {
+  
+const handleSubmit = async () => {
     if (!newComment.trim()) return;
-
-    await apiRequest("POST", `/api/videos/${videoId}/comments`, {
+    await apiRequest("POST", `/api/photos/${photoId}/comments`, {
       authorId: CURRENT_USER_ID_LOCAL,
       content: newComment.trim(),
     });
-
     setNewComment("");
     await refetch();
+  };
     await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID_LOCAL, "status"] });
     await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID_LOCAL] });
   };
@@ -1196,7 +1196,7 @@ function VideoComments({
           />
         </div>
 
-        <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}>
+       <Button size="icon" onClick={handleSubmit} disabled={!newComment.trim()}>
           <Send className="w-4 h-4" />
         </Button>
       </div>
