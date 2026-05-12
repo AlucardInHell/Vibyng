@@ -355,6 +355,8 @@ export const notifications = pgTable("notifications", {
   isRead: boolean("is_read").default(false),
   relatedUserId: integer("related_user_id").references(() => users.id),
   relatedPostId: integer("related_post_id").references(() => posts.id, { onDelete: "set null" }),
+  referenceType: text("reference_type"),
+  referenceId: integer("reference_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
