@@ -370,6 +370,7 @@ function ArtistPostComments({
     const res = await fetch(`/api/posts/${postId}/comments?userId=${currentUserId}`);
     return res.json();
   },
+  staleTime: 0,
 });
 
   const handleSubmit = async () => {
@@ -554,7 +555,8 @@ useEffect(() => {
     const res = await fetch(`/api/videos/${selectedVideo.id}/comments?userId=${currentUserId}`);
     return res.json();
   },
-    enabled: !!selectedVideo,
+   enabled: !!selectedVideo,
+    staleTime: 0,
   });
   const { data: videoLikeData, refetch: refetchVideoLike } = useQuery<{ liked: boolean }>({
   queryKey: ["/api/videos", selectedVideo?.id, "liked", currentUserId],
@@ -628,7 +630,8 @@ useEffect(() => {
     const res = await fetch(`/api/photos/${selectedPhoto.id}/comments?userId=${currentUserId}`);
     return res.json();
   },
-  enabled: !!selectedPhoto?.id,
+ enabled: !!selectedPhoto?.id,
+  staleTime: 0,
  });
   const [attendingEventIds, setAttendingEventIds] = useState<Set<number>>(new Set());
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
