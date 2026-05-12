@@ -816,12 +816,14 @@ const likesCount = await syncVideoLikesCount(videoId);
     const videoOwnerId = Number((video as any).artistId ?? (video as any).artist_id);
     if (videoOwnerId && videoOwnerId !== userId) {
       const liker = await storage.getUser(userId);
-      await storage.createNotification({
-        userId: videoOwnerId,
-        type: "like",
-        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
-        relatedUserId: userId,
-      });
+     await storage.createNotification({
+  userId: videoOwnerId,
+  type: "like",
+  message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo video`,
+  relatedUserId: userId,
+  referenceType: "video",
+  referenceId: videoId,
+});
     }
 
     res.json({
@@ -974,12 +976,14 @@ const songLikeHandler = async (req: any, res: any) => {
     const songOwnerId = Number((song as any).artistId ?? (song as any).artist_id);
     if (songOwnerId && songOwnerId !== userId) {
       const liker = await storage.getUser(userId);
-      await storage.createNotification({
-        userId: songOwnerId,
-        type: "like",
-        message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua canzone`,
-        relatedUserId: userId,
-      });
+     await storage.createNotification({
+  userId: songOwnerId,
+  type: "like",
+  message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua canzone`,
+  relatedUserId: userId,
+  referenceType: "song",
+  referenceId: songId,
+});
     }
     
     res.json({
@@ -1121,12 +1125,14 @@ app.post("/api/songs/:songId/comments", async (req, res) => {
     const songOwnerId = Number((song as any).artistId ?? (song as any).artist_id);
     if (songOwnerId && songOwnerId !== authorId) {
       const commenter = await storage.getUser(authorId);
-      await storage.createNotification({
-        userId: songOwnerId,
-        type: "comment",
-        message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua canzone`,
-        relatedUserId: authorId,
-      });
+     await storage.createNotification({
+  userId: songOwnerId,
+  type: "comment",
+  message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua canzone`,
+  relatedUserId: userId,
+  referenceType: "song",
+  referenceId: songId,
+});
     }
 
     res.status(201).json(created.rows[0]);
@@ -4031,12 +4037,14 @@ app.get("/api/users/:userId/followers", async (req, res) => {
 
     const follower = await storage.getUser(userId);
 
-    await storage.createNotification({
-      userId: artistId,
-      type: "follow",
-      message: `${follower?.displayName || "Qualcuno"} ha iniziato a seguirti`,
-      relatedUserId: userId,
-    });
+   await storage.createNotification({
+  userId: artistId,
+  type: "follow",
+  message: `${fan?.displayName || "Qualcuno"} ha iniziato a seguirti`,
+  relatedUserId: fanId,
+  referenceType: "follow",
+  referenceId: fanId,
+});
 
     res.json({ success: true });
   } catch (err: any) {
@@ -5022,12 +5030,14 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
     // Notifica commento video
     if (Number(authorId) !== Number(video.artist_id)) {
       const commenter = await storage.getUser(authorId);
-      await storage.createNotification({
-        userId: Number(video.artist_id),
-        type: "comment",
-        message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo video`,
-        relatedUserId: authorId,
-      });
+     await storage.createNotification({
+  userId: videoOwnerId,
+  type: "comment",
+  message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo video`,
+  relatedUserId: userId,
+  referenceType: "video",
+  referenceId: videoId,
+});
     }
 
     res.status(201).json(comment);
