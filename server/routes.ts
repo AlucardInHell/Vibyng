@@ -3453,15 +3453,12 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
     // Notifica commento post
     if (Number(authorId) !== Number(post.authorId)) {
       const commenter = await storage.getUser(authorId);
-     await storage.createNotification({
-  userId: postOwnerId,
-  type: "comment",
-  message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo post`,
-  relatedUserId: userId,
-  relatedPostId: postId,
-  referenceType: "post",
-  referenceId: postId,
-});
+      await storage.createNotification({
+        userId: Number(post.authorId),
+        type: "comment",
+        message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo post`,
+        relatedUserId: authorId,
+      });
     }
 
     res.status(201).json(comment);
@@ -4792,17 +4789,15 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
     }
       await sendMentionNotifications(String(content ?? ""), Number(authorId));
 
-    // Notifica commento foto
+   // Notifica commento foto
     if (Number(authorId) !== Number(photo.artist_id)) {
       const commenter = await storage.getUser(authorId);
-     await storage.createNotification({
-  userId: photoOwnerId,
-  type: "comment",
-  message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua foto`,
-  relatedUserId: userId,
-  referenceType: "photo",
-  referenceId: photoId,
-});
+      await storage.createNotification({
+        userId: Number(photo.artist_id),
+        type: "comment",
+        message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua foto`,
+        relatedUserId: authorId,
+      });
     }
 
     res.status(201).json(comment);
@@ -5034,14 +5029,12 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
     // Notifica commento video
     if (Number(authorId) !== Number(video.artist_id)) {
       const commenter = await storage.getUser(authorId);
-     await storage.createNotification({
-  userId: videoOwnerId,
-  type: "comment",
-  message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo video`,
-  relatedUserId: userId,
-  referenceType: "video",
-  referenceId: videoId,
-});
+      await storage.createNotification({
+        userId: Number(video.artist_id),
+        type: "comment",
+        message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo video`,
+        relatedUserId: authorId,
+      });
     }
 
     res.status(201).json(comment);
