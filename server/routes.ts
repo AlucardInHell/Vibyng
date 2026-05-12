@@ -3452,12 +3452,14 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
 
     // Notifica commento post
     if (Number(authorId) !== Number(post.authorId)) {
-      const commenter = await storage.getUser(authorId);
-      await storage.createNotification({
+     const commenter = await storage.getUser(authorId);
+     await storage.createNotification({
         userId: Number(post.authorId),
         type: "comment",
         message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo post`,
         relatedUserId: authorId,
+        referenceType: "post",
+        referenceId: postId,
       });
     }
 
@@ -4573,12 +4575,14 @@ app.post("/api/stories/:storyId/like", async (req, res) => {
     const storyResult = await db.execute(sql`SELECT user_id FROM stories WHERE id = ${storyId} LIMIT 1`);
     const storyOwnerId = Number(storyResult.rows[0]?.user_id);
     if (storyOwnerId && storyOwnerId !== Number(userId)) {
-      const liker = await storage.getUser(Number(userId));
-      await storage.createNotification({
+     const liker = await storage.getUser(Number(userId));
+     await storage.createNotification({
         userId: storyOwnerId,
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua storia`,
         relatedUserId: Number(userId),
+        referenceType: "story",
+        referenceId: storyId,
       });
     }
 
@@ -4792,11 +4796,13 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
    // Notifica commento foto
     if (Number(authorId) !== Number(photo.artist_id)) {
       const commenter = await storage.getUser(authorId);
-      await storage.createNotification({
+     await storage.createNotification({
         userId: Number(photo.artist_id),
         type: "comment",
         message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua foto`,
         relatedUserId: authorId,
+        referenceType: "photo",
+        referenceId: photoId,
       });
     }
 
@@ -5034,6 +5040,8 @@ app.post("/api/videos/:videoId/comments", async (req, res) => {
         type: "comment",
         message: `${commenter?.displayName || "Qualcuno"} ha commentato il tuo video`,
         relatedUserId: authorId,
+        referenceType: "video",
+        referenceId: videoId,
       });
     }
 
