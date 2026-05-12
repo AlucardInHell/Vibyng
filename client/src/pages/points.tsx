@@ -1021,11 +1021,42 @@ const handleEndLive = async () => {
     queryKey: ["/api/users", currentUserId, "videos"],
   });
 
+  const { data: myVideos = [] } = useQuery<ArtistVideo[]>({
+    queryKey: ["/api/users", currentUserId, "videos"],
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const openPhotoId = params.get("openPhoto");
+    const openVideoId = params.get("openVideo");
+
+    if (openPhotoId && myPhotos.length > 0) {
+      const photo = myPhotos.find(p => String(p.id) === openPhotoId);
+      if (photo) {
+        setSelectedPhoto(photo);
+        setPhotoCommentsOpen(false);
+      }
+    }
+
+    if (openVideoId && myVideos.length > 0) {
+      const video = myVideos.find((v: any) => String(v.id) === openVideoId);
+      if (video) {
+        setSelectedVideo(video);
+        setVideoLikeCount(prev => ({
+          ...prev,
+          [video.id]: Number((video as any).likesCount ?? 0),
+        }));
+      }
+    }
+  }, [myPhotos, myVideos]);
+
+  const { data: myPosts = [] } = useQuery<(Post & { author: User })[]>({
+  
   const { data: myPosts = [] } = useQuery<(Post & { author: User })[]>({
     queryKey: ["/api/users", currentUserId, "posts"],
   });
 
-const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
+  const { data: likedPostIds = [], refetch: refetchLikes } = useQuery<number[]>({
     queryKey: ["/api/likes", currentUserId, "posts"],
     queryFn: async () => {
       if (!myPosts || myPosts.length === 0) return [];
