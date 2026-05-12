@@ -380,8 +380,6 @@ function CommentAuthorName({
   className?: string;
 }) {
   const currentUserId = getCurrentUserId();
-  const [location] = useLocation();
-
   const authorId = Number(
     comment.authorId ??
       comment.author_id ??
@@ -636,6 +634,7 @@ function MePostComments({
 }
 export default function Points() {
   const currentUserId = getCurrentUserId();
+  const [location] = useLocation();
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = pointsTranslations[language];
