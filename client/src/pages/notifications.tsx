@@ -109,6 +109,62 @@ function timeAgo(date: Date | string | null, t: typeof notificationsTranslations
   return `${Math.floor(diff / 86400)}${t.daysAgo}`;
 }
 
+function getNotificationTargetUrl(notification: any): string | null {
+  const referenceType = notification.referenceType ?? notification.reference_type;
+  const referenceId = notification.referenceId ?? notification.reference_id;
+
+  if (referenceType && referenceId) {
+    switch (referenceType) {
+      case "post":
+        return `/me?openPost=${referenceId}`;
+
+      case "photo":
+        return `/me?openPhoto=${referenceId}`;
+
+      case "video":
+        return `/me?openVideo=${referenceId}`;
+
+      case "song":
+        return `/me?openSong=${referenceId}`;
+
+      case "live":
+        return `/artists?tab=live&liveId=${referenceId}`;
+
+      case "goal":
+        return `/me?tab=goals&goalId=${referenceId}`;
+
+      case "event":
+        return `/me?tab=events&eventId=${referenceId}`;
+
+      case "message":
+        if (notification.relatedUserId ?? notification.related_user_id) {
+          return `/messages?userId=${notification.relatedUserId ?? notification.related_user_id}`;
+        }
+        return "/messages";
+
+      case "profile":
+      case "follow":
+        if (notification.relatedUserId ?? notification.related_user_id) {
+          return `/artist/${notification.relatedUserId ?? notification.related_user_id}`;
+        }
+        return null;
+
+      default:
+        return null;
+    }
+  }
+
+  if (notification.relatedPostId ?? notification.related_post_id) {
+    return `/me?openPost=${notification.relatedPostId ?? notification.related_post_id}`;
+  }
+
+  if (notification.relatedUserId ?? notification.related_user_id) {
+    return `/artist/${notification.relatedUserId ?? notification.related_user_id}`;
+  }
+
+  return null;
+}
+
 export default function Notifications() {
   const userId = getCurrentUserId();
   const { toast } = useToast();
@@ -324,15 +380,20 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
         onTouchMove={(e) => handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY)}
         onTouchEnd={() => handleSwipeEnd(notification.id)}
         onTouchCancel={() => handleSwipeEnd(notification.id)}
-      >
-        <Card
-          className={`hover-elevate cursor-pointer transition-colors ${!notification.isRead ? "border-primary/30 bg-primary/5" : ""}`}
-          onClick={() => {
-            if (!notification.isRead) {
-              markReadMutation.mutate(notification.id);
-            }
-          }}
-        >
+      ><Card
+  className={`hover-elevate cursor-pointer transition-colors ${!notification.isRead ? "border-primary/30 bg-primary/5" : ""}`}
+  onClick={async () => {
+    if (!notification.isRead) {
+      await markReadMutation.mutateAsync(notification.id);
+    }
+
+    const targetUrl = getNotificationTargetUrl(notification);
+
+    if (targetUrl) {
+      window.location.href = targetUrl;
+    }
+  }}
+>
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
