@@ -1163,9 +1163,8 @@ const handleSubmit = async () => {
       authorId: CURRENT_USER_ID_LOCAL,
       content: newComment.trim(),
     });
-    setNewComment("");
+   setNewComment("");
     await refetch();
-  };
     await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID_LOCAL, "status"] });
     await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID_LOCAL] });
   };
