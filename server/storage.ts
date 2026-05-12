@@ -669,10 +669,18 @@ async getUnreadFromSender(senderId: number, receiverId: number): Promise<number>
       .orderBy(desc(notifications.createdAt));
   }
 
-  async createNotification(data: { userId: number; type: string; message: string; relatedUserId?: number; relatedPostId?: number }) {
-    const [notification] = await db.insert(notifications).values(data).returning();
-    return notification;
-  }
+ async createNotification(data: {
+  userId: number;
+  type: string;
+  message: string;
+  relatedUserId?: number;
+  relatedPostId?: number;
+  referenceType?: string;
+  referenceId?: number;
+}) {
+  const [notification] = await db.insert(notifications).values(data).returning();
+  return notification;
+}
 
   async markNotificationRead(notificationId: number): Promise<void> {
     await db.update(notifications)
