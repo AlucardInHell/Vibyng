@@ -710,9 +710,25 @@ useEffect(() => {
 
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<ArtistPhoto | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const openPhotoId = params.get("openPhoto");
+    const openVideoId = params.get("openVideo");
+
+    if (openPhotoId && myPhotos.length > 0) {
+      const photo = myPhotos.find(p => String(p.id) === openPhotoId);
+      if (photo) setSelectedPhoto(photo);
+    }
+
+    if (openVideoId && myVideos.length > 0) {
+      const video = myVideos.find((v: any) => String(v.id) === openVideoId);
+      if (video) setSelectedVideo(video);
+    }
+  }, [myPhotos, myVideos]);
+  
   const [selectedPhotoIsTall, setSelectedPhotoIsTall] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
   if (!selectedPhoto?.imageUrl) {
     setSelectedPhotoIsTall(false);
     return;
