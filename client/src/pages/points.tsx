@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus, MoreVertical, Radio } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
 import { useToast } from "@/hooks/use-toast";
@@ -380,6 +380,7 @@ function CommentAuthorName({
   className?: string;
 }) {
   const currentUserId = getCurrentUserId();
+  const [location] = useLocation();
 
   const authorId = Number(
     comment.authorId ??
@@ -717,12 +718,21 @@ useEffect(() => {
 
     if (openPhotoId && myPhotos.length > 0) {
       const photo = myPhotos.find(p => String(p.id) === openPhotoId);
-      if (photo) setSelectedPhoto(photo);
+      if (photo) {
+        setSelectedPhoto(photo);
+        setPhotoCommentsOpen(false);
+      }
     }
 
     if (openVideoId && myVideos.length > 0) {
       const video = myVideos.find((v: any) => String(v.id) === openVideoId);
-      if (video) setSelectedVideo(video);
+      if (video) {
+        setSelectedVideo(video);
+        setVideoLikeCount(prev => ({
+          ...prev,
+          [video.id]: Number((video as any).likesCount ?? 0),
+        }));
+      }
     }
   }, [myPhotos, myVideos]);
   
