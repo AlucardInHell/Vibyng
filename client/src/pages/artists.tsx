@@ -2863,8 +2863,8 @@ return (
               className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
-              <div
-  className={`relative ${commentsOpen ? "h-[48%]" : "h-full"} transition-all duration-300`}
+             <div
+  className="relative h-full"
   onClick={() => togglePause(video.id)}
 >
   <video
@@ -2988,8 +2988,8 @@ return (
                 </div>
 
                 {commentsOpen && (
-  <div className="h-[52%] bg-background border-t border-border/70 flex flex-col">
-    <div className="space-y-4 flex-1 overflow-y-auto px-4 pt-4 pr-3">
+ <div className="absolute inset-x-0 bottom-0 z-50 h-[58svh] max-h-[58svh] bg-background border-t border-border/70 rounded-t-3xl flex flex-col overflow-hidden shadow-2xl">
+   <div className="space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pt-4 pr-3">
       {comments.length > 0 ? (
         comments.map((comment: any) => (
           <div key={comment.id} className="flex items-start gap-3">
@@ -3102,7 +3102,7 @@ return (
       )}
     </div>
 
-    <div className="pt-3 mt-2 border-t px-4 pb-4 bg-background shrink-0">
+   <div className="shrink-0 pt-3 mt-2 border-t px-4 pb-[max(env(safe-area-inset-bottom),1rem)] bg-background">
       <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
         <div className="relative flex-1">
           <Input
@@ -3128,11 +3128,16 @@ return (
         </div>
 
         <Button
-          size="icon"
-          className="shrink-0"
-          onClick={handleSubmitComment}
-          disabled={!commentInput.trim()}
-        >
+  type="button"
+  size="icon"
+  className="shrink-0"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSubmitComment();
+  }}
+  disabled={!commentInput.trim()}
+>
           <MessageCircle className="w-4 h-4" />
         </Button>
       </div>
