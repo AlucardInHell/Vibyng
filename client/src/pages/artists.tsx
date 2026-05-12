@@ -414,6 +414,8 @@ export default function Artists() {
   const [commentsOpenId, setCommentsOpenId] = useState<number | null>(null);
   const [commentInput, setCommentInput] = useState("");
   const [commentsOpenType, setCommentsOpenType] = useState<"video" | "photo" | "song" | null>(null);
+  const isVideoCommentsOpen =
+  commentsOpenType === "video" && commentsOpenId !== null;
   const [savedVideoIds, setSavedVideoIds] = useState<number[]>(() => {
     try {
       const raw = localStorage.getItem("flow-saved-videos");
@@ -517,6 +519,30 @@ const isBroadcastMode =
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const flowAudioRef = useRef<HTMLAudioElement | null>(null);
   const [playingFlowSongKey, setPlayingFlowSongKey] = useState<string | null>(null);
+  useEffect(() => {
+  if (!isVideoCommentsOpen) return;
+
+  const previousBodyOverflow = document.body.style.overflow;
+  const previousHtmlOverflow = document.documentElement.style.overflow;
+  const previousScrollOverflowY = scrollRef.current?.style.overflowY ?? "";
+
+  document.body.style.overflow = "hidden";
+  document.documentElement.style.overflow = "hidden";
+
+  if (scrollRef.current) {
+    scrollRef.current.style.overflowY = "hidden";
+  }
+
+  return () => {
+    document.body.style.overflow = previousBodyOverflow;
+    document.documentElement.style.overflow = previousHtmlOverflow;
+
+    if (scrollRef.current) {
+      scrollRef.current.style.overflowY = previousScrollOverflowY;
+    }
+  };
+}, [isVideoCommentsOpen]);
+  
   useEffect(() => {
   return () => {
     if (flowAudioRef.current) {
@@ -1927,7 +1953,9 @@ return (
 <div
   ref={scrollRef}
   onScroll={handleScroll}
-  className={`${activeTab === "live" ? "hidden" : ""} h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] overflow-y-auto snap-y snap-mandatory`}
+  className={`${activeTab === "live" ? "hidden" : ""} h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] ${
+    isVideoCommentsOpen ? "overflow-hidden" : "overflow-y-auto"
+  } snap-y snap-mandatory`}
 >
         {activeList.map((item, index) => {
   if (item.type === "song") {
@@ -2988,8 +3016,12 @@ return (
                 </div>
 
                 {commentsOpen && (
- <div className="absolute inset-x-0 bottom-0 z-50 h-[58svh] max-h-[58svh] bg-background border-t border-border/70 rounded-t-3xl flex flex-col overflow-hidden shadow-2xl">
-   <div className="space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pt-4 pr-3">
+ <div
+  className="fixed inset-x-0 bottom-0 z-[9999] h-[62dvh] max-h-[62dvh] bg-background border-t border-border/70 rounded-t-3xl flex flex-col overflow-hidden shadow-2xl pb-[env(safe-area-inset-bottom)]"
+  onClick={(e) => e.stopPropagation()}
+  onTouchStart={(e) => e.stopPropagation()}
+>
+  <div className="space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 pt-4 pr-3 pb-2">
       {comments.length > 0 ? (
         comments.map((comment: any) => (
           <div key={comment.id} className="flex items-start gap-3">
