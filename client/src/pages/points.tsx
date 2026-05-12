@@ -793,30 +793,7 @@ useEffect(() => {
   const isVideoLiked = videoLikeData?.liked ?? false;
 
   useBodyScrollLock(Boolean(selectedVideo || selectedPhoto || photoCommentsOpen));
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const openPhotoId = params.get("openPhoto");
-    const openVideoId = params.get("openVideo");
-
-    if (openPhotoId && myPhotos.length > 0) {
-      const photo = myPhotos.find(p => String(p.id) === openPhotoId);
-      if (photo) {
-        setSelectedPhoto(photo);
-        setPhotoCommentsOpen(false);
-      }
-    }
-
-    if (openVideoId && myVideos.length > 0) {
-      const video = myVideos.find((v: any) => String(v.id) === openVideoId);
-      if (video) {
-        setSelectedVideo(video);
-        setVideoLikeCount(prev => ({
-          ...prev,
-          [video.id]: Number((video as any).likesCount ?? 0),
-        }));
-      }
-    }
-  }, [myPhotos, myVideos]);
+  
   
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({ name: "", eventDate: "", city: "", venue: "", description: "", ticketUrl: "" });
