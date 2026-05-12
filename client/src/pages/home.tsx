@@ -1159,16 +1159,18 @@ function VideoComments({
   
 const handleSubmit = async () => {
     if (!newComment.trim()) return;
-    await apiRequest("POST", `/api/photos/${photoId}/comments`, {
+
+    await apiRequest("POST", `/api/videos/${videoId}/comments`, {
       authorId: CURRENT_USER_ID_LOCAL,
       content: newComment.trim(),
     });
-   setNewComment("");
+
+    setNewComment("");
+    await new Promise(r => setTimeout(r, 300));
     await refetch();
     await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", CURRENT_USER_ID_LOCAL, "status"] });
     await queryClient.invalidateQueries({ queryKey: ["/api/users", CURRENT_USER_ID_LOCAL] });
   };
-
   return (
     <div className="border-t pt-3 mt-3 space-y-3">
       <div className="flex items-center gap-2">
