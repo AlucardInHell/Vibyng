@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { Zap, Gift, Star, Trophy, MessageCircle, Heart, Users, Image as ImageIcon, Video, Music, Edit, Play, Pause, Minus, UserMinus, UserPlus, Camera, Send, ImagePlus, Share2, FileText, Calendar, Plus, MoreVertical, Radio } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import { useAudioPlayer, type Song } from "@/components/audio-player";
 import { useToast } from "@/hooks/use-toast";
@@ -634,7 +634,6 @@ function MePostComments({
 }
 export default function Points() {
   const currentUserId = getCurrentUserId();
-  const [location] = useLocation();
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = pointsTranslations[language];
