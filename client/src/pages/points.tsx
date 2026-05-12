@@ -1021,10 +1021,6 @@ const handleEndLive = async () => {
     queryKey: ["/api/users", currentUserId, "videos"],
   });
 
-  const { data: myVideos = [] } = useQuery<ArtistVideo[]>({
-    queryKey: ["/api/users", currentUserId, "videos"],
-  });
-
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const openPhotoId = params.get("openPhoto");
@@ -1050,8 +1046,6 @@ const handleEndLive = async () => {
     }
   }, [myPhotos, myVideos]);
 
-  const { data: myPosts = [] } = useQuery<(Post & { author: User })[]>({
-  
   const { data: myPosts = [] } = useQuery<(Post & { author: User })[]>({
     queryKey: ["/api/users", currentUserId, "posts"],
   });
