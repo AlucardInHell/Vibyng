@@ -392,11 +392,12 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
   className={`hover-elevate cursor-pointer transition-colors ${!notification.isRead ? "border-primary/30 bg-primary/5" : ""}`}
   onClick={async () => {
     if (!notification.isRead) {
-      await markReadMutation.mutateAsync(notification.id);
+      try {
+        await markReadMutation.mutateAsync(notification.id);
+      } catch {}
     }
 
     const targetUrl = getNotificationTargetUrl(notification);
-
     if (targetUrl) {
       window.location.href = targetUrl;
     }
