@@ -3546,6 +3546,7 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
         relatedUserId: userId,
         referenceType: "post",
+        referenceId: Number(commentRow.post_id),
       });
     }
     
@@ -3809,6 +3810,8 @@ app.post("/api/photos/:photoId/like", async (req, res) => {
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like alla tua foto`,
         relatedUserId: userId,
+        referenceType: "photo",
+        referenceId: photoId,
       });
     }
 
@@ -4897,6 +4900,7 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
         relatedUserId: userId,
         referenceType: "photo",
+        referenceId: Number(req.params.photoId),
       });
     } 
     
@@ -5157,6 +5161,7 @@ await db.execute(sql`
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
         relatedUserId: userId,
         referenceType: "video",
+        referenceId: Number(req.params.videoId),
       });
     }
     
