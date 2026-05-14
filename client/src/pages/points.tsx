@@ -1021,30 +1021,31 @@ const handleEndLive = async () => {
     queryKey: ["/api/users", currentUserId, "videos"],
   });
 
-  useEffect(() => {
+ useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const openPhotoId = params.get("openPhoto");
     const openVideoId = params.get("openVideo");
 
-    console.log("[deep-link] openPhotoId:", openPhotoId, "myPhotos:", myPhotos.length);
-
     if (openPhotoId && myPhotos.length > 0) {
       const photo = myPhotos.find(p => String(p.id) === openPhotoId);
-      console.log("[deep-link] photo found:", photo);
       if (photo) {
-        setSelectedPhoto(photo);
-        setPhotoCommentsOpen(false);
+        setTimeout(() => {
+          setSelectedPhoto(photo);
+          setPhotoCommentsOpen(false);
+        }, 500);
       }
     }
 
     if (openVideoId && myVideos.length > 0) {
       const video = myVideos.find((v: any) => String(v.id) === openVideoId);
       if (video) {
-        setSelectedVideo(video);
-        setVideoLikeCount(prev => ({
-          ...prev,
-          [video.id]: Number((video as any).likesCount ?? 0),
-        }));
+        setTimeout(() => {
+          setSelectedVideo(video);
+          setVideoLikeCount(prev => ({
+            ...prev,
+            [video.id]: Number((video as any).likesCount ?? 0),
+          }));
+        }, 500);
       }
     }
   }, [myPhotos, myVideos]);
