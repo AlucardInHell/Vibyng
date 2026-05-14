@@ -1151,12 +1151,6 @@ function SettingsMenu() {
               <p className="text-xs text-muted-foreground">{t.publicProfileDescription}</p>
               <p className="text-xs text-amber-500 mt-1">🚧 Funzionalità in arrivo — al momento tutti i profili sono pubblici.</p>
             </div>
-              <SwitchUI 
-                checked={privacySettings.profilePublic} 
-                onCheckedChange={(checked) => setPrivacySettings(prev => ({ ...prev, profilePublic: checked }))}
-                data-testid="switch-profile-public"
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button onClick={() => {
