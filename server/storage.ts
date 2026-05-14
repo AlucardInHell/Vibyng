@@ -569,7 +569,6 @@ async getAllVideosForFeed() {
     return [];
   }
 }
-}
   
   async getPhotosByUser(userId: number): Promise<ArtistPhoto[]> {
     return await db.select().from(artistPhotos)
