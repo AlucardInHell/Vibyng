@@ -4138,6 +4138,7 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
   app.get("/api/users/:userId/videos", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
+
     const result = await db.execute(sql`
       SELECT
         id,
@@ -4146,18 +4147,27 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
         video_url AS "videoUrl",
         thumbnail_url AS "thumbnailUrl",
         (
-        SELECT COUNT(DISTINCT vl.user_id)::int
-        FROM video_likes vl
-        WHERE vl.video_id = artist_videos.id
+          SELECT COUNT(DISTINCT vl.user_id)::int
+          FROM video_likes vl
+          WHERE vl.video_id = artist_videos.id
         ) AS "likesCount",
-        created_at AS "createdAt"
-      FROM artist_videos
-      WHERE artist_id = ${userId}
-      ORDER BY created_at DESC
+        (
+          SELECT COUNT(*)::int
+          FROM video_comments vc
+          WHERE vc.video_id = artist_videos.id
+        ) AS "commentsCount",
+          created_at AS "createdAt"
+          FROM artist_videos
+          WHERE artist_id = ${userId}
+          ORDER BY created_at DESC
     `);
+
     res.json(result.rows);
   } catch (err: any) {
-    res.status(400).json({ message: "Errore nel recupero video", detail: err?.message });
+    res.status(400).json({
+      message: "Errore nel recupero video",
+      detail: err?.message,
+    });
   }
 });
 
