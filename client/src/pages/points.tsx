@@ -1025,6 +1025,11 @@ const handleEndLive = async () => {
     const params = new URLSearchParams(window.location.search);
     const openPhotoId = params.get("openPhoto");
     const openVideoId = params.get("openVideo");
+    const openTab = params.get("tab");
+
+    if (openTab) {
+      // gestito dal componente Tabs con defaultValue
+    }
 
     if (openPhotoId && myPhotos.length > 0) {
       const photo = myPhotos.find(p => String(p.id) === openPhotoId);
@@ -1737,7 +1742,7 @@ const reportMutation = useMutation({
   </DialogContent>
 </Dialog>
     
-      <Tabs defaultValue="songs" className="w-full">
+      <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") || "songs"} className="w-full">
        <TabsList className="w-full grid grid-cols-6">
           <TabsTrigger value="songs" className="px-1 text-xs" data-testid="tab-songs">
             <Music className="w-4 h-4 sm:mr-1" />
