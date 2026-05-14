@@ -1157,28 +1157,6 @@ function SettingsMenu() {
                 data-testid="switch-profile-public"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-               <Label>{t.showActivity}</Label>
-               <p className="text-xs text-muted-foreground">{t.showActivityDescription}</p>
-              </div>
-              <SwitchUI 
-                checked={privacySettings.showActivity} 
-                onCheckedChange={(checked) => setPrivacySettings(prev => ({ ...prev, showActivity: checked }))}
-                data-testid="switch-show-activity"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t.allowMessages}</Label>
-              <p className="text-xs text-muted-foreground">{t.allowMessagesDescription}</p>
-              </div>
-              <SwitchUI 
-                checked={privacySettings.allowMessages} 
-                onCheckedChange={(checked) => setPrivacySettings(prev => ({ ...prev, allowMessages: checked }))}
-                data-testid="switch-allow-messages"
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button onClick={() => {
