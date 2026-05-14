@@ -1026,8 +1026,11 @@ const handleEndLive = async () => {
     const openPhotoId = params.get("openPhoto");
     const openVideoId = params.get("openVideo");
 
+    console.log("[deep-link] openPhotoId:", openPhotoId, "myPhotos:", myPhotos.length);
+
     if (openPhotoId && myPhotos.length > 0) {
       const photo = myPhotos.find(p => String(p.id) === openPhotoId);
+      console.log("[deep-link] photo found:", photo);
       if (photo) {
         setSelectedPhoto(photo);
         setPhotoCommentsOpen(false);
