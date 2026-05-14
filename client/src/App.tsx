@@ -1146,11 +1146,11 @@ function SettingsMenu() {
             <DialogDescription>{t.privacyDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t.publicProfile}</Label>
+           <div className="flex flex-col gap-1 p-3 rounded-lg bg-muted/50 border border-border/50">
+              <Label>{t.publicProfile}</Label>
               <p className="text-xs text-muted-foreground">{t.publicProfileDescription}</p>
-              </div>
+              <p className="text-xs text-amber-500 mt-1">🚧 Funzionalità in arrivo — al momento tutti i profili sono pubblici.</p>
+            </div>
               <SwitchUI 
                 checked={privacySettings.profilePublic} 
                 onCheckedChange={(checked) => setPrivacySettings(prev => ({ ...prev, profilePublic: checked }))}
