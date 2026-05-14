@@ -1036,7 +1036,7 @@ const handleEndLive = async () => {
       if (photo) {
         setTimeout(() => {
           setSelectedPhoto(photo);
-          setPhotoCommentsOpen(false);
+          setPhotoCommentsOpen(true);
         }, 500);
       }
     }
