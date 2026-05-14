@@ -125,16 +125,16 @@ function getNotificationTargetUrl(notification: any): string | null {
         return `/me?openVideo=${referenceId}`;
 
       case "song":
-        return `/me?openSong=${referenceId}`;
+        return `/me?tab=songs`;
 
       case "live":
-        return `/artists?tab=live&liveId=${referenceId}`;
+        return `/artists?tab=live`;
 
       case "goal":
-        return `/me?tab=goals&goalId=${referenceId}`;
+        return `/me?tab=goals`;
 
       case "event":
-        return `/me?tab=events&eventId=${referenceId}`;
+        return `/me?tab=events`;
 
       case "message":
         if (notification.relatedUserId ?? notification.related_user_id) {
