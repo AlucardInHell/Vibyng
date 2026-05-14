@@ -1274,16 +1274,22 @@ const handleSubmit = async () => {
                   }`}
                   disabled={Number(c.author_id) === Number(CURRENT_USER_ID_LOCAL)}
                   onClick={async () => {
-                    if (c.likedByMe) {
-                      await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/unlike/${CURRENT_USER_ID_LOCAL}`);
-                    } else {
-                      await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/like/${CURRENT_USER_ID_LOCAL}`);
-                    }
-                    await refetch();
-                  }}
+  if (c.likedByMe) {
+    await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/unlike`, {
+      userId: CURRENT_USER_ID_LOCAL,
+    });
+  } else {
+    await apiRequest("POST", `/api/videos/${videoId}/comments/${c.id}/like`, {
+      userId: CURRENT_USER_ID_LOCAL,
+    });
+  }
+
+  await new Promise((r) => setTimeout(r, 300));
+  await refetch();
+}}
                 >
                   <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
-                  <span>{c.likes_count ?? 0}</span>
+                 <span>{c.likes_count ?? c.likesCount ?? 0}</span>
                 </button>
               </div>
             </div>
