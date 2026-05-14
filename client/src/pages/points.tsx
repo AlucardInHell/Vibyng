@@ -3063,7 +3063,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
                   className="text-xs text-red-400 hover:text-red-600"
                   onClick={async () => {
                     await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`);
-                   await new Promise(r => setTimeout(r, 200));
+                   await new Promise(r => setTimeout(r, 500));
                   await refetchVideoComments();
                   }}
                 >
@@ -3090,7 +3090,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
                       userId: currentUserId,
                     });
                   }
-                  await new Promise(r => setTimeout(r, 200));
+                  await new Promise(r => setTimeout(r, 500));
                   await refetchVideoComments();
                 }}
               >
@@ -3123,7 +3123,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
               });
               setVideoCommentInput("");
               closeVideoCommentMentions();
-              await new Promise(r => setTimeout(r, 200));
+              await new Promise(r => setTimeout(r, 500));
                   await refetchVideoComments();
               await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
               await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
@@ -3155,7 +3155,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
           });
           setVideoCommentInput("");
           closeVideoCommentMentions();
-          await new Promise(r => setTimeout(r, 200));
+          await new Promise(r => setTimeout(r, 500));
                   await refetchVideoComments();
           await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
           await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
