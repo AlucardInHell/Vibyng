@@ -138,6 +138,16 @@ deleteAccountSuccess: "Profilo eliminato",
     languageUpdated: "Lingua aggiornata",
     languageUpdatedDescription: "Italiano selezionato.",
 
+faqTitle: "Domande Frequenti",
+    faqItems: [
+      { q: "Come posso diventare artista su Vibyng?", a: "Durante la registrazione seleziona il ruolo 'Artista'. Potrai caricare musica, foto e video, avviare live e ricevere il supporto economico dei tuoi fan." },
+      { q: "Come faccio a ricevere il supporto economico dei fan?", a: "Per ricevere pagamenti devi collegare un account Stripe al tuo profilo artista. Vai su Impostazioni → Account e segui la procedura di collegamento. Senza un account Stripe attivo non potrai incassare i contributi dei fan." },
+      { q: "Cosa sono i VibyngPoints?", a: "I VibyngPoints sono punti che guadagni interagendo con la community: pubblicare contenuti, commentare, mettere like. Puoi usarli per sbloccare funzionalità esclusive e ricompense." },
+      { q: "Come funziona il supporto agli artisti?", a: "Ogni artista può creare degli obiettivi economici. I fan possono contribuire liberamente tramite carta di credito. I pagamenti vengono processati da Stripe in modo sicuro." },
+      { q: "Come avvio una diretta live?", a: "Dalla sezione 'Me' premi il pulsante rosso Live, configura il titolo e premi 'Avvia diretta'. La tua live sarà visibile nella sezione Flow a tutti gli utenti." },
+      { q: "Come segnalo un contenuto inappropriato?", a: "Su ogni post, foto, video e commento trovi il menu (⋮) con l'opzione 'Segnala'. Il nostro team esaminerà la segnalazione entro 24 ore." },
+      { q: "Posso seguire sia artisti che altri fan?", a: "Sì, puoi seguire qualsiasi profilo su Vibyng, sia artisti che fan." },
+    ],    
 helpTitle: "Assistenza",
 helpDescription: "Come possiamo aiutarti?",
 faq: "Domande Frequenti (FAQ)",
@@ -247,6 +257,16 @@ deleteAccountSuccess: "Profile deleted",
     languageUpdated: "Language updated",
     languageUpdatedDescription: "English selected.",
 
+faqTitle: "Frequently Asked Questions",
+    faqItems: [
+      { q: "How do I become an artist on Vibyng?", a: "During registration, select the 'Artist' role. You'll be able to upload music, photos and videos, start live streams and receive financial support from your fans." },
+      { q: "How do I receive financial support from fans?", a: "To receive payments you need to connect a Stripe account to your artist profile. Go to Settings → Account and follow the connection process. Without an active Stripe account you won't be able to receive fan contributions." },
+      { q: "What are VibyngPoints?", a: "VibyngPoints are points you earn by interacting with the community: publishing content, commenting, liking. You can use them to unlock exclusive features and rewards." },
+      { q: "How does artist support work?", a: "Each artist can create financial goals. Fans can contribute freely via credit card. Payments are processed securely by Stripe." },
+      { q: "How do I start a live stream?", a: "From the 'Me' section press the red Live button, set a title and press 'Start broadcast'. Your live will be visible in the Flow section to all users." },
+      { q: "How do I report inappropriate content?", a: "On every post, photo, video and comment you'll find the menu (⋮) with a 'Report' option. Our team will review the report within 24 hours." },
+      { q: "Can I follow both artists and other fans?", a: "Yes, you can follow any profile on Vibyng, both artists and fans." },
+    ],    
 helpTitle: "Help",
 helpDescription: "How can we help you?",
 faq: "Frequently Asked Questions (FAQ)",
@@ -766,6 +786,8 @@ function SettingsMenu() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -1220,7 +1242,7 @@ function SettingsMenu() {
           <div className="space-y-3">
             <Button variant="outline" className="w-full justify-start" onClick={() => {
   setHelpOpen(false);
-  toast({ title: t.faqToastTitle, description: t.faqToastDescription });
+  setFaqOpen(true);
 }} data-testid="button-faq">
   <FileText className="w-4 h-4 mr-2" />
   {t.faq}
@@ -1292,6 +1314,35 @@ function SettingsMenu() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t.faqTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {(t.faqItems as any[]).map((item: any, index: number) => (
+              <div key={index} className="border rounded-lg overflow-hidden">
+                <button
+                  className="w-full text-left px-4 py-3 flex items-center justify-between text-sm font-medium hover:bg-muted/50 transition-colors"
+                  onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
+                >
+                  <span>{item.q}</span>
+                  <span className="text-muted-foreground ml-2">{openFaqIndex === index ? "▲" : "▼"}</span>
+                </button>
+                {openFaqIndex === index && (
+                  <div className="px-4 pb-3 text-sm text-muted-foreground border-t pt-2">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+function AppLayout() {
     </>
   );
 }
