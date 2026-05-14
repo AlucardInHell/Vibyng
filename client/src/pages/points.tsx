@@ -3113,7 +3113,7 @@ await queryClient.invalidateQueries({
                 }}
               >
                 <Heart className={`w-3 h-3 ${c.likedByMe ? "fill-red-500" : ""}`} />
-                <span>{c.likes_count ?? 0}</span>
+                <span>{c.likes_count ?? c.likesCount ?? 0}</span>
               </button>
             </div>
           </div>
