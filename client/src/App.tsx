@@ -1168,7 +1168,7 @@ function SettingsMenu() {
            <DialogDescription>{t.notificationsDescription}</DialogDescription>
           </DialogHeader>
          <div className="flex flex-col gap-2 py-4">
-            <p className="text-sm text-muted-foreground">Le notifiche push saranno disponibili nella versione app.</p>
+            <p className="text-sm text-muted-foreground">Le notifiche push saranno disponibili prossimamente.</p>
             <p className="text-xs text-amber-500">🚧 Funzionalità in arrivo</p>
           </div>
           <DialogFooter>
