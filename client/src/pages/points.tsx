@@ -2884,9 +2884,9 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
   onClick={(e) => e.stopPropagation()}
   onPointerDown={(e) => e.stopPropagation()}
 >
-            <div className="w-full max-w-lg bg-background rounded-none sm:rounded-xl overflow-hidden h-[100dvh] max-h-[100dvh] flex flex-col pb-[env(safe-area-inset-bottom)]"
-              <video
-  src={selectedVideo.videoUrl}
+            <div className="w-full max-w-lg bg-background rounded-none sm:rounded-xl overflow-hidden h-[100dvh] max-h-[100dvh] flex flex-col pb-[env(safe-area-inset-bottom)]">
+  <video
+    src={selectedVideo.videoUrl}
   controls
   className="w-full h-[30dvh] max-h-[30dvh] sm:h-[38dvh] sm:max-h-[38dvh] object-contain bg-black shrink-0"
 />
