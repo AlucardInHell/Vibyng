@@ -4953,22 +4953,34 @@ app.get("/api/videos/:videoId/comments", async (req, res) => {
     const userId = Number(req.query.userId);
 
     const result = await db.execute(sql`
-      SELECT
-        vc.id,
-        vc.video_id,
-        vc.author_id,
-        vc.content,
-        vc.likes_count,
-        vc.created_at,
-        u.display_name,
-        u.avatar_url
-      FROM video_comments vc
-      JOIN users u ON vc.author_id = u.id
-      WHERE vc.video_id = ${videoId}
-      ORDER BY vc.created_at ASC
-    `);
+    SELECT
+    vc.id,
+    vc.video_id,
+    vc.author_id,
+    vc.content,
+    (
+      SELECT COUNT(*)::int
+      FROM video_comment_likes vcl
+      WHERE vcl.comment_id = vc.id
+    ) AS likes_count,
+    vc.created_at,
+    u.display_name,
+    u.avatar_url
+  FROM video_comments vc
+  JOIN users u ON vc.author_id = u.id
+  WHERE vc.video_id = ${videoId}
+  ORDER BY vc.created_at ASC
+`);
 
     const comments = Array.isArray(result.rows) ? result.rows : [];
+    
+    for (const c of comments as any[]) {
+    await db.execute(sql`
+    UPDATE video_comments
+    SET likes_count = ${Number(c.likes_count ?? 0)}
+    WHERE id = ${Number(c.id)}
+  `);
+}
 
     if (!userId) {
       return res.json(comments);
@@ -5122,11 +5134,19 @@ app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
       `);
     }
 
-    const updated = await db.execute(sql`
-      SELECT likes_count
-      FROM video_comments
-      WHERE id = ${commentId}
-    `);
+   const countResult = await db.execute(sql`
+  SELECT COUNT(*)::int AS count
+  FROM video_comment_likes
+  WHERE comment_id = ${commentId}
+`);
+
+const likesCount = Number(countResult.rows[0]?.count ?? 0);
+
+await db.execute(sql`
+  UPDATE video_comments
+  SET likes_count = ${likesCount}
+  WHERE id = ${commentId}
+`);
 
     // Notifica like commento video
     if (Number(userId) !== Number(commentRow.author_id)) {
@@ -5142,7 +5162,8 @@ app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
     
     res.json({
       success: true,
-      likesCount: Number(updated.rows[0]?.likes_count ?? 0),
+      likesCount,
+      likes_count: likesCount,
     });
   } catch (err: any) {
     console.error("[video-comment-like]", err?.message || err);
@@ -5173,13 +5194,26 @@ app.post("/api/videos/:videoId/comments/:commentId/unlike", async (req, res) => 
       `);
     }
 
-    const updated = await db.execute(sql`
-      SELECT likes_count
-      FROM video_comments
-      WHERE id = ${commentId}
-    `);
+    const countResult = await db.execute(sql`
+  SELECT COUNT(*)::int AS count
+  FROM video_comment_likes
+  WHERE comment_id = ${commentId}
+`);
 
-    res.json({ success: true, likesCount: updated.rows[0]?.likes_count ?? 0 });
+const likesCount = Number(countResult.rows[0]?.count ?? 0);
+
+await db.execute(sql`
+  UPDATE video_comments
+  SET likes_count = ${likesCount}
+  WHERE id = ${commentId}
+`);
+
+res.json({
+  success: true,
+  liked: false,
+  likesCount,
+  likes_count: likesCount,
+});
   } catch (err: any) {
     console.error("[video-comment-unlike]", err?.message);
     res.status(400).json({ message: "Errore nel unlike", detail: err?.message });
