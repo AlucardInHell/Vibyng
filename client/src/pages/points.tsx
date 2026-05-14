@@ -2872,7 +2872,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
     )}
       {selectedVideo && (
   <div
-    className="fixed inset-0 z-50 bg-black/90 flex flex-col overflow-hidden overscroll-contain"
+    className="fixed inset-0 z-[100000] bg-black/95 overflow-hidden overscroll-none"
     onClick={(e) => {
       if (e.target === e.currentTarget) {
         setSelectedVideo(null);
@@ -2880,15 +2880,15 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
     }}
   >
          <div
-  className="absolute inset-x-0 top-4 z-[9999] flex justify-end gap-2 px-4"
+  className="fixed inset-x-0 top-0 bottom-0 z-[100001] flex justify-center px-0 sm:px-4"
   onClick={(e) => e.stopPropagation()}
   onPointerDown={(e) => e.stopPropagation()}
 >
-            <div className="w-full max-w-lg bg-background rounded-xl overflow-hidden h-[calc(100dvh-8rem)] max-h-[88dvh] flex flex-col">
+            <div className="w-full max-w-lg bg-background rounded-none sm:rounded-xl overflow-hidden h-[100dvh] max-h-[100dvh] flex flex-col pb-[env(safe-area-inset-bottom)]"
               <video
   src={selectedVideo.videoUrl}
   controls
-  className="w-full max-h-[34vh] sm:max-h-[42vh] object-contain bg-black shrink-0"
+  className="w-full h-[30dvh] max-h-[30dvh] sm:h-[38dvh] sm:max-h-[38dvh] object-contain bg-black shrink-0"
 />
               <div className="p-4 flex flex-col flex-1 min-h-0 overflow-hidden">
                 {selectedVideo.title && selectedVideo.title !== "Video" && <p className="font-medium whitespace-pre-wrap break-words">
@@ -2990,8 +2990,11 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
   ✕
 </button>
                 </div>
-                <div className="mt-0 pt-2 px-4 pb-0 flex flex-col flex-1 min-h-0 overflow-hidden">
-  <div className="space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 pb-2">
+                <div
+  className="mt-0 pt-2 px-4 pb-0 flex flex-col flex-1 min-h-0 h-0 overflow-hidden"
+  onClick={(e) => e.stopPropagation()}
+>
+  <div className="space-y-3 flex-1 h-0 min-h-0 overflow-y-auto overscroll-contain touch-pan-y pr-1 pb-4">
   {videoCommentsList.map((c: any) => (
     <div key={c.id} className="flex items-start gap-3">
       <CommentAuthorAvatar comment={c} className="w-9 h-9 flex-shrink-0" />
@@ -3088,7 +3091,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
     ))}
   </div>
 
-  <div className="pt-2 mt-2 border-t shrink-0 bg-background pb-1">
+  <div className="shrink-0 border-t bg-background px-0 pt-2 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
     <div className="flex items-center gap-2 rounded-xl border bg-background/95 px-3 py-2">
       <div className="relative flex-1">
         <input
@@ -3124,9 +3127,13 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
       </div>
 
       <Button
-        size="icon"
-        className="shrink-0"
-        onClick={async () => {
+    type="button"
+    size="icon"
+    className="shrink-0"
+    onClick={async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+      
           if (!videoCommentInput.trim()) return;
           await apiRequest("POST", `/api/videos/${selectedVideo.id}/comments`, {
             authorId: currentUserId,
