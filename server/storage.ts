@@ -495,7 +495,7 @@ async likePost(postId: number, userId: number): Promise<void> {
     return song;
   }
 
-async deleteSong(songId: number): Promise<void> {
+  async deleteSong(songId: number): Promise<void> {
     await db.delete(artistSongs).where(eq(artistSongs.id, songId));
   }
 
@@ -559,11 +559,24 @@ async getAllPhotosForFeed() {
 async getAllVideosForFeed() {
   try {
     const result = await db.execute(
-      sql`SELECT av.*, u.display_name, u.username, u.avatar_url, u.role
-          FROM artist_videos av
-          JOIN users u ON av.artist_id = u.id
-          ORDER BY av.created_at DESC`
+      sql`
+        SELECT
+          av.*,
+          u.display_name,
+          u.username,
+          u.avatar_url,
+          u.role,
+          (
+            SELECT COUNT(*)::int
+            FROM video_comments vc
+            WHERE vc.video_id = av.id
+          ) AS comments_count
+        FROM artist_videos av
+        JOIN users u ON av.artist_id = u.id
+        ORDER BY av.created_at DESC
+      `
     );
+
     return Array.isArray(result.rows) ? result.rows : [];
   } catch {
     return [];
