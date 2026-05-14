@@ -116,7 +116,7 @@ function getNotificationTargetUrl(notification: any): string | null {
   if (referenceType && referenceId) {
     switch (referenceType) {
       case "post":
-        return `/me?openPost=${referenceId}`;
+        return `/me?tab=posts`;
 
       case "photo":
         return `/me?openPhoto=${referenceId}`;
