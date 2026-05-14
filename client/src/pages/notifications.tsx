@@ -149,7 +149,17 @@ function getNotificationTargetUrl(notification: any): string | null {
         }
         return null;
 
+      case "comment_like":
+        if (notification.relatedUserId ?? notification.related_user_id) {
+          return `/artist/${notification.relatedUserId ?? notification.related_user_id}`;
+        }
+        return null;
+
       default:
+        if ((notification.type === "like") && !(referenceType)) {
+          const relatedUser = notification.relatedUserId ?? notification.related_user_id;
+          if (relatedUser) return `/artist/${relatedUser}`;
+        }
         return null;
     }
   }
