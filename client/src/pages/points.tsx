@@ -3062,9 +3062,27 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
                 <button
                   className="text-xs text-red-400 hover:text-red-600"
                   onClick={async () => {
-                    await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`);
+                   await apiRequest("DELETE", `/api/videos/${selectedVideo.id}/comments/${c.id}`);
                    await new Promise(r => setTimeout(r, 500));
-                  await refetchVideoComments();
+                   await refetchVideoComments();
+
+setSelectedVideo((prev: any) =>
+  prev
+    ? {
+        ...prev,
+        commentsCount: Math.max(0, Number(prev.commentsCount ?? 0) - 1),
+      }
+    : prev
+);
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/users", currentUserId, "videos"],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/flow/client"],
+  exact: false,
+});
                   }}
                 >
                   🗑️
@@ -3123,10 +3141,29 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
               });
               setVideoCommentInput("");
               closeVideoCommentMentions();
-              await new Promise(r => setTimeout(r, 500));
-                  await refetchVideoComments();
-              await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
-              await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+             await new Promise(r => setTimeout(r, 500));
+             await refetchVideoComments();
+
+setSelectedVideo((prev: any) =>
+  prev
+    ? {
+        ...prev,
+        commentsCount: Number(prev.commentsCount ?? 0) + 1,
+      }
+    : prev
+);
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/users", currentUserId, "videos"],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/flow/client"],
+  exact: false,
+});
+
+await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
             }
           }}
         />
@@ -3155,10 +3192,29 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
           });
           setVideoCommentInput("");
           closeVideoCommentMentions();
-          await new Promise(r => setTimeout(r, 500));
-                  await refetchVideoComments();
-          await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
-          await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+         await new Promise(r => setTimeout(r, 500));
+         await refetchVideoComments();
+
+setSelectedVideo((prev: any) =>
+  prev
+    ? {
+        ...prev,
+        commentsCount: Number(prev.commentsCount ?? 0) + 1,
+      }
+    : prev
+);
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/users", currentUserId, "videos"],
+});
+
+await queryClient.invalidateQueries({
+  queryKey: ["/api/flow/client"],
+  exact: false,
+});
+
+await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
         }}
         disabled={!videoCommentInput.trim()}
       >
