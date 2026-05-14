@@ -1255,6 +1255,7 @@ app.post("/api/songs/:songId/comments/:commentId/like/:userId", async (req, res)
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
         relatedUserId: userId,
+        referenceType: "song",
       });
     }
 
@@ -3544,6 +3545,7 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
         relatedUserId: userId,
+        referenceType: "post",
       });
     }
     
@@ -4884,6 +4886,7 @@ app.post("/api/stories/:storyId/unlike", async (req, res) => {
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
         relatedUserId: userId,
+        referenceType: "photo",
       });
     } 
     
@@ -5123,6 +5126,7 @@ app.post("/api/videos/:videoId/comments/:commentId/like", async (req, res) => {
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
         relatedUserId: userId,
+        referenceType: "video",
       });
     }
     
