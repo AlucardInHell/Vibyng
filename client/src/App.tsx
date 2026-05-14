@@ -1167,56 +1167,9 @@ function SettingsMenu() {
            <DialogTitle>{t.notificationsTitle}</DialogTitle>
            <DialogDescription>{t.notificationsDescription}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t.pushNotifications}</Label>
-                <p className="text-xs text-muted-foreground">{t.pushNotificationsDescription}</p>
-              </div>
-              <SwitchUI 
-                checked={notificationSettings.pushEnabled} 
-                onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, pushEnabled: checked }))}
-                data-testid="switch-push"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>{t.emailNotifications}</Label>
-               <p className="text-xs text-muted-foreground">{t.emailNotificationsDescription}</p>
-              </div>
-              <SwitchUI 
-                checked={notificationSettings.emailEnabled} 
-                onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, emailEnabled: checked }))}
-                data-testid="switch-email"
-              />
-            </div>
-            <div className="border-t pt-3 space-y-3">
-             <p className="text-sm font-medium">{t.notificationTypes}</p>
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-normal">{t.newFollowers}</Label>
-                <SwitchUI 
-                  checked={notificationSettings.newFollowers} 
-                  onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, newFollowers: checked }))}
-                  data-testid="switch-followers"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-               <Label className="text-sm font-normal">{t.newMessages}</Label>
-                <SwitchUI 
-                  checked={notificationSettings.newMessages} 
-                  onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, newMessages: checked }))}
-                  data-testid="switch-messages"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-normal">{t.artistUpdates}</Label>
-                <SwitchUI 
-                  checked={notificationSettings.artistUpdates} 
-                  onCheckedChange={(checked) => setNotificationSettings(prev => ({ ...prev, artistUpdates: checked }))}
-                  data-testid="switch-artist-updates"
-                />
-              </div>
-            </div>
+         <div className="flex flex-col gap-2 py-4">
+            <p className="text-sm text-muted-foreground">Le notifiche push saranno disponibili nella versione app.</p>
+            <p className="text-xs text-amber-500">🚧 Funzionalità in arrivo</p>
           </div>
           <DialogFooter>
             <Button onClick={() => {
