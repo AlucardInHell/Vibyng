@@ -1231,12 +1231,6 @@ function SettingsMenu() {
 }} data-testid="button-contact">
   <MessageCircle className="w-4 h-4 mr-2" />
   {t.contactSupport}
-</Button><Button variant="outline" className="w-full justify-start" onClick={() => {
-  setHelpOpen(false);
-  toast({ title: t.bugToastTitle, description: t.bugToastDescription });
-}} data-testid="button-bug">
-  <HelpCircle className="w-4 h-4 mr-2" />
-  {t.reportProblem}
 </Button>
           </div>
           <div className="text-center text-xs text-muted-foreground pt-2 border-t">
