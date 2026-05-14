@@ -1857,374 +1857,6 @@ const reportMutation = useMutation({
             <p className="text-center text-muted-foreground py-8">Nessuna foto. Usa l'icona foto per caricare!</p>
           )}
 
-          {selectedPhoto && (
-  <>
-    <div
-      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
-      onClick={() => {
-        setSelectedPhoto(null);
-        setPhotoCommentsOpen(false);
-      }}
-    >
-      <div
-        className="relative flex-1 flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          className="absolute top-4 right-4 z-20 text-white text-2xl"
-          onClick={() => {
-            setSelectedPhoto(null);
-            setPhotoCommentsOpen(false);
-          }}
-        >
-          ✕
-        </button>
-
-        <div
-  className={
-    selectedPhotoIsTall
-      ? "flex-1 flex items-center justify-center px-0 pt-12 pb-0"
-      : "flex-1 flex items-center justify-center px-2 pt-12 pb-24"
-  }
->
-          <img
-  src={selectedPhoto.imageUrl ?? undefined}
-  alt={selectedPhoto.title}
-  className={
-    selectedPhotoIsTall
-      ? "w-full h-full max-h-[calc(100dvh-9rem)] object-contain"
-      : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
-  }
-  />
-        </div>
-
-       <div
- className={
-  selectedPhotoIsTall
-    ? "absolute inset-x-0 bottom-0 z-20 bg-black/90 px-4 pt-4 pb-4"
-    : "px-4 pb-4"
-}
->
-          {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
-            <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
-              <MentionText text={selectedPhoto.title} />
-            </p>
-          )}
-
-          <p className="text-xs text-white/70 mb-3">
-            {selectedPhoto.createdAt &&
-              (() => {
-                const dateStr =
-                  selectedPhoto.createdAt.toString().replace(" ", "T") +
-                  (selectedPhoto.createdAt.toString().includes("Z") ? "" : "Z");
-                return new Date(dateStr).toLocaleDateString("it-IT", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-              })()}
-          </p>
-
-          <div className="mt-3 flex items-center gap-4 border-t border-white/10 pt-3">
-            <button
-              className="flex items-center gap-1 text-sm text-white/80 opacity-50 cursor-not-allowed"
-              disabled={true}
-            >
-              <Heart className="w-5 h-5" />
-              <span>{selectedPhotoLiveData?.likesCount ?? selectedPhoto.likesCount ?? 0}</span>
-            </button>
-
-            <button
-              className="flex items-center gap-1 text-sm text-white/80"
-              onClick={() => setPhotoCommentsOpen(true)}
-            >
-              <MessageCircle className="w-5 h-5" />
-              {t.comments}
-            </button>
-<button
-  className="flex items-center gap-1 text-sm text-white/80"
-  onClick={async (e) => {
-    e.stopPropagation();
-
-    const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
-
-    const result = await shareVibyngContent({
-      title: selectedPhoto.title || "Foto",
-      text: selectedPhoto.title || "Foto su Vibyng",
-      mediaUrl: selectedPhoto.imageUrl ?? undefined,
-      fallbackUrl: shareUrl,
-      shareUrl,
-      fileName: `foto-${selectedPhoto.id}`,
-    });
-
-    if (result === "copied") {
-     toast({ title: t.copied });
-    }
-  }}
->
-  <Share2 className="w-5 h-5" />
-{t.share}
-</button>
-            <button
-              className="flex items-center gap-1 text-sm text-red-400 ml-auto"
-              onClick={async () => {
-                try {
-                  await apiRequest("DELETE", `/api/users/${currentUserId}/photos/${selectedPhoto.id}`);
-                  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "photos"] });
-                  queryClient.invalidateQueries({ queryKey: ["/api/posts", currentUserId] });
-                  setSelectedPhoto(null);
-                  setPhotoCommentsOpen(false);
-                  toast({ title: "Foto eliminata" });
-                } catch {
-                  toast({
-                    title: "Errore",
-                    description: "Non è stato possibile eliminare la foto",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            >
-              🗑️
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <Sheet open={photoCommentsOpen} onOpenChange={setPhotoCommentsOpen}>
-      <SheetContent side="bottom" className="h-[75vh] rounded-t-2xl">
-        <SheetHeader>
-          <SheetTitle>{t.comments}</SheetTitle>
-        </SheetHeader>
-
-        <div className="mt-4 flex flex-col h-[calc(75vh-5rem)]">
-  <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
-    {photoCommentsList.map((c: any) => (
-      <div key={c.id} className="flex gap-2">
-        <CommentAuthorAvatar comment={c} className="w-8 h-8 flex-shrink-0" />
-
-        <div className="flex-1 bg-muted rounded-lg px-3 py-2">
-          <div className="flex items-start justify-between gap-2">
-            <CommentAuthorName
-              comment={c}
-              className="block text-sm font-semibold min-w-0 truncate"
-            />
-
-            {Number(c.author_id) !== Number(currentUserId) && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-
-                  openReport({
-                    targetType: "comment",
-                    targetId: String(c.id),
-                    targetOwnerId: Number(c.author_id),
-                    title: t.reportComment,
-                    description: t.reportContentDescription,
-                  });
-                }}
-                aria-label={t.reportComment}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-
-          <p className="text-sm whitespace-pre-wrap break-words">
-            <MentionText text={c.content} />
-          </p>
-
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-muted-foreground">
-              {c.created_at &&
-                new Date(c.created_at).toLocaleDateString("it-IT", {
-                  day: "numeric",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-            </span>
-
-            <div className="flex items-center gap-2">
-              {(Number(c.author_id) === Number(currentUserId) ||
-                Number(selectedPhoto?.artistId) === Number(currentUserId)) && (
-                <button
-                  className="text-xs text-red-400 hover:text-red-600"
-                  onClick={async () => {
-                    await apiRequest(
-                      "DELETE",
-                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}`
-                    );
-                    refetchPhotoComments();
-                  }}
-                >
-                  🗑️
-                </button>
-              )}
-
-              <button
-                className={`flex items-center gap-1 text-xs ${
-                  Number(c.author_id) === currentUserId
-                    ? "opacity-50 cursor-not-allowed text-muted-foreground"
-                    : c.likedByMe
-                      ? "text-red-500"
-                      : "text-muted-foreground hover:text-red-500"
-                }`}
-                disabled={Number(c.author_id) === currentUserId}
-                onClick={async () => {
-                  if (c.likedByMe) {
-                    await apiRequest(
-                      "POST",
-                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}/unlike/${currentUserId}`
-                    );
-                  } else {
-                    await apiRequest(
-                      "POST",
-                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}/like/${currentUserId}`
-                    );
-                  }
-
-                  await refetchPhotoComments();
-                }}
-              >
-                <Heart
-                  className={`w-3 h-3 ${
-                    c.likedByMe ? "fill-red-500" : ""
-                  }`}
-                />
-                <span>{c.likes_count ?? 0}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    ))}
- </div>
-
-  <div className="border-t px-3 py-3 shrink-0 bg-background">
-    <div className="flex items-center gap-2">
-      <div className="relative flex-1">
-        <Input
-          value={commentInput}
-          placeholder={t.commentPlaceholder}
-          className="w-full"
-          onChange={(e) => {
-            setCommentInput(e.target.value);
-            handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
-          }}
-          onKeyDown={async (e) => {
-            if (e.key !== "Enter" || !commentInput.trim() || !selectedPhoto?.id) return;
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-              authorId: currentUserId,
-              content: commentInput.trim(),
-            });
-
-            setCommentInput("");
-            closePhotoCommentMentions();
-
-            await refetchPhotoComments();
-
-            const photoOwnerId = Number(
-              selectedPhoto.artistId ??
-              selectedPhoto.artist_id ??
-              selectedPhoto.userId ??
-              selectedPhoto.user_id ??
-              currentUserId
-            );
-
-            await queryClient.invalidateQueries({
-              queryKey: ["/api/users", photoOwnerId, "photos"],
-            });
-
-            await queryClient.invalidateQueries({
-              queryKey: ["/api/flow/client"],
-              exact: false,
-            });
-
-            await queryClient.invalidateQueries({
-              queryKey: ["/api/vpoints", currentUserId, "status"],
-            });
-
-            await queryClient.invalidateQueries({
-              queryKey: ["/api/users", currentUserId],
-            });
-          }}
-        />
-
-        <MentionDropdown
-          query={photoCommentMentionQuery}
-          visible={showPhotoCommentMentions}
-          onSelect={(username) => {
-            setCommentInput(insertPhotoCommentMention(commentInput, username));
-            closePhotoCommentMentions();
-          }}
-        />
-      </div>
-
-      <Button
-        size="icon"
-        disabled={!commentInput.trim() || !selectedPhoto?.id}
-        onClick={async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-
-          if (!commentInput.trim() || !selectedPhoto?.id) return;
-
-          await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
-            authorId: currentUserId,
-            content: commentInput.trim(),
-          });
-
-          setCommentInput("");
-          closePhotoCommentMentions();
-
-          await refetchPhotoComments();
-
-          const photoOwnerId = Number(
-            selectedPhoto.artistId ??
-            selectedPhoto.artist_id ??
-            selectedPhoto.userId ??
-            selectedPhoto.user_id ??
-            currentUserId
-          );
-
-          await queryClient.invalidateQueries({
-            queryKey: ["/api/users", photoOwnerId, "photos"],
-          });
-
-          await queryClient.invalidateQueries({
-            queryKey: ["/api/flow/client"],
-            exact: false,
-          });
-
-          await queryClient.invalidateQueries({
-            queryKey: ["/api/vpoints", currentUserId, "status"],
-          });
-
-          await queryClient.invalidateQueries({
-            queryKey: ["/api/users", currentUserId],
-          });
-        }}
-      >
-        <Send className="w-4 h-4" />
-      </Button>
-    </div>
-  </div>
-</div>
-      </SheetContent>
-    </Sheet>
-  </>
-)}
         </TabsContent>
         <TabsContent value="videos" className="mt-4">
           {myVideos.length > 0 ? (
@@ -2874,6 +2506,376 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
         </div>
       </div>
     )}
+
+    {selectedPhoto && (
+  <>
+    <div
+      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
+      onClick={() => {
+        setSelectedPhoto(null);
+        setPhotoCommentsOpen(false);
+      }}
+    >
+      <div
+        className="relative flex-1 flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="absolute top-4 right-4 z-20 text-white text-2xl"
+          onClick={() => {
+            setSelectedPhoto(null);
+            setPhotoCommentsOpen(false);
+          }}
+        >
+          ✕
+        </button>
+
+        <div
+  className={
+    selectedPhotoIsTall
+      ? "flex-1 flex items-center justify-center px-0 pt-12 pb-0"
+      : "flex-1 flex items-center justify-center px-2 pt-12 pb-24"
+  }
+>
+          <img
+  src={selectedPhoto.imageUrl ?? undefined}
+  alt={selectedPhoto.title}
+  className={
+    selectedPhotoIsTall
+      ? "w-full h-full max-h-[calc(100dvh-9rem)] object-contain"
+      : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+  }
+  />
+        </div>
+
+       <div
+ className={
+  selectedPhotoIsTall
+    ? "absolute inset-x-0 bottom-0 z-20 bg-black/90 px-4 pt-4 pb-4"
+    : "px-4 pb-4"
+}
+>
+          {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
+            <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
+              <MentionText text={selectedPhoto.title} />
+            </p>
+          )}
+
+          <p className="text-xs text-white/70 mb-3">
+            {selectedPhoto.createdAt &&
+              (() => {
+                const dateStr =
+                  selectedPhoto.createdAt.toString().replace(" ", "T") +
+                  (selectedPhoto.createdAt.toString().includes("Z") ? "" : "Z");
+                return new Date(dateStr).toLocaleDateString("it-IT", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+              })()}
+          </p>
+
+          <div className="mt-3 flex items-center gap-4 border-t border-white/10 pt-3">
+            <button
+              className="flex items-center gap-1 text-sm text-white/80 opacity-50 cursor-not-allowed"
+              disabled={true}
+            >
+              <Heart className="w-5 h-5" />
+              <span>{selectedPhotoLiveData?.likesCount ?? selectedPhoto.likesCount ?? 0}</span>
+            </button>
+
+            <button
+              className="flex items-center gap-1 text-sm text-white/80"
+              onClick={() => setPhotoCommentsOpen(true)}
+            >
+              <MessageCircle className="w-5 h-5" />
+              {t.comments}
+            </button>
+<button
+  className="flex items-center gap-1 text-sm text-white/80"
+  onClick={async (e) => {
+    e.stopPropagation();
+
+    const shareUrl = buildContentShareUrl("photo", selectedPhoto.id);
+
+    const result = await shareVibyngContent({
+      title: selectedPhoto.title || "Foto",
+      text: selectedPhoto.title || "Foto su Vibyng",
+      mediaUrl: selectedPhoto.imageUrl ?? undefined,
+      fallbackUrl: shareUrl,
+      shareUrl,
+      fileName: `foto-${selectedPhoto.id}`,
+    });
+
+    if (result === "copied") {
+     toast({ title: t.copied });
+    }
+  }}
+>
+  <Share2 className="w-5 h-5" />
+{t.share}
+</button>
+            <button
+              className="flex items-center gap-1 text-sm text-red-400 ml-auto"
+              onClick={async () => {
+                try {
+                  await apiRequest("DELETE", `/api/users/${currentUserId}/photos/${selectedPhoto.id}`);
+                  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "photos"] });
+                  queryClient.invalidateQueries({ queryKey: ["/api/posts", currentUserId] });
+                  setSelectedPhoto(null);
+                  setPhotoCommentsOpen(false);
+                  toast({ title: "Foto eliminata" });
+                } catch {
+                  toast({
+                    title: "Errore",
+                    description: "Non è stato possibile eliminare la foto",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              🗑️
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <Sheet open={photoCommentsOpen} onOpenChange={setPhotoCommentsOpen}>
+      <SheetContent side="bottom" className="h-[75vh] rounded-t-2xl">
+        <SheetHeader>
+          <SheetTitle>{t.comments}</SheetTitle>
+        </SheetHeader>
+
+        <div className="mt-4 flex flex-col h-[calc(75vh-5rem)]">
+  <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
+    {photoCommentsList.map((c: any) => (
+      <div key={c.id} className="flex gap-2">
+        <CommentAuthorAvatar comment={c} className="w-8 h-8 flex-shrink-0" />
+
+        <div className="flex-1 bg-muted rounded-lg px-3 py-2">
+          <div className="flex items-start justify-between gap-2">
+            <CommentAuthorName
+              comment={c}
+              className="block text-sm font-semibold min-w-0 truncate"
+            />
+
+            {Number(c.author_id) !== Number(currentUserId) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full shrink-0 -mt-1 -mr-1"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+
+                  openReport({
+                    targetType: "comment",
+                    targetId: String(c.id),
+                    targetOwnerId: Number(c.author_id),
+                    title: t.reportComment,
+                    description: t.reportContentDescription,
+                  });
+                }}
+                aria-label={t.reportComment}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+
+          <p className="text-sm whitespace-pre-wrap break-words">
+            <MentionText text={c.content} />
+          </p>
+
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-xs text-muted-foreground">
+              {c.created_at &&
+                new Date(c.created_at).toLocaleDateString("it-IT", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+            </span>
+
+            <div className="flex items-center gap-2">
+              {(Number(c.author_id) === Number(currentUserId) ||
+                Number(selectedPhoto?.artistId) === Number(currentUserId)) && (
+                <button
+                  className="text-xs text-red-400 hover:text-red-600"
+                  onClick={async () => {
+                    await apiRequest(
+                      "DELETE",
+                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}`
+                    );
+                    refetchPhotoComments();
+                  }}
+                >
+                  🗑️
+                </button>
+              )}
+
+              <button
+                className={`flex items-center gap-1 text-xs ${
+                  Number(c.author_id) === currentUserId
+                    ? "opacity-50 cursor-not-allowed text-muted-foreground"
+                    : c.likedByMe
+                      ? "text-red-500"
+                      : "text-muted-foreground hover:text-red-500"
+                }`}
+                disabled={Number(c.author_id) === currentUserId}
+                onClick={async () => {
+                  if (c.likedByMe) {
+                    await apiRequest(
+                      "POST",
+                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}/unlike/${currentUserId}`
+                    );
+                  } else {
+                    await apiRequest(
+                      "POST",
+                      `/api/photos/${selectedPhoto?.id}/comments/${c.id}/like/${currentUserId}`
+                    );
+                  }
+
+                  await refetchPhotoComments();
+                }}
+              >
+                <Heart
+                  className={`w-3 h-3 ${
+                    c.likedByMe ? "fill-red-500" : ""
+                  }`}
+                />
+                <span>{c.likes_count ?? 0}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+ </div>
+
+  <div className="border-t px-3 py-3 shrink-0 bg-background">
+    <div className="flex items-center gap-2">
+      <div className="relative flex-1">
+        <Input
+          value={commentInput}
+          placeholder={t.commentPlaceholder}
+          className="w-full"
+          onChange={(e) => {
+            setCommentInput(e.target.value);
+            handlePhotoCommentTextChange(e.target.value, e.target.selectionStart || 0);
+          }}
+          onKeyDown={async (e) => {
+            if (e.key !== "Enter" || !commentInput.trim() || !selectedPhoto?.id) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+              authorId: currentUserId,
+              content: commentInput.trim(),
+            });
+
+            setCommentInput("");
+            closePhotoCommentMentions();
+
+            await refetchPhotoComments();
+
+            const photoOwnerId = Number(
+              selectedPhoto.artistId ??
+              selectedPhoto.artist_id ??
+              selectedPhoto.userId ??
+              selectedPhoto.user_id ??
+              currentUserId
+            );
+
+            await queryClient.invalidateQueries({
+              queryKey: ["/api/users", photoOwnerId, "photos"],
+            });
+
+            await queryClient.invalidateQueries({
+              queryKey: ["/api/flow/client"],
+              exact: false,
+            });
+
+            await queryClient.invalidateQueries({
+              queryKey: ["/api/vpoints", currentUserId, "status"],
+            });
+
+            await queryClient.invalidateQueries({
+              queryKey: ["/api/users", currentUserId],
+            });
+          }}
+        />
+
+        <MentionDropdown
+          query={photoCommentMentionQuery}
+          visible={showPhotoCommentMentions}
+          onSelect={(username) => {
+            setCommentInput(insertPhotoCommentMention(commentInput, username));
+            closePhotoCommentMentions();
+          }}
+        />
+      </div>
+
+      <Button
+        size="icon"
+        disabled={!commentInput.trim() || !selectedPhoto?.id}
+        onClick={async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (!commentInput.trim() || !selectedPhoto?.id) return;
+
+          await apiRequest("POST", `/api/photos/${selectedPhoto.id}/comments`, {
+            authorId: currentUserId,
+            content: commentInput.trim(),
+          });
+
+          setCommentInput("");
+          closePhotoCommentMentions();
+
+          await refetchPhotoComments();
+
+          const photoOwnerId = Number(
+            selectedPhoto.artistId ??
+            selectedPhoto.artist_id ??
+            selectedPhoto.userId ??
+            selectedPhoto.user_id ??
+            currentUserId
+          );
+
+          await queryClient.invalidateQueries({
+            queryKey: ["/api/users", photoOwnerId, "photos"],
+          });
+
+          await queryClient.invalidateQueries({
+            queryKey: ["/api/flow/client"],
+            exact: false,
+          });
+
+          await queryClient.invalidateQueries({
+            queryKey: ["/api/vpoints", currentUserId, "status"],
+          });
+
+          await queryClient.invalidateQueries({
+            queryKey: ["/api/users", currentUserId],
+          });
+        }}
+      >
+        <Send className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+</div>
+      </SheetContent>
+    </Sheet>
+  </>
+)}  
+
       {selectedVideo && (
   <div
     className="fixed inset-0 z-[100000] bg-black/95 overflow-hidden overscroll-none"
