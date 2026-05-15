@@ -31,7 +31,7 @@ CONDIZIONI GENERALI D’USO (TOS) – VIBYNG
 INFORMATIVA SULLA PRIVACY – VIBYNG
 ​Ai sensi del Regolamento UE 2016/679 (GDPR)
 ​1. Titolare del Trattamento
-​Il titolare del trattamento è la struttura organizzativa di Vibyng. Per domande relative alla privacy, gli utenti possono contattare l'indirizzo email dedicato [inserire email].
+​Il titolare del trattamento è la struttura organizzativa di Vibyng. Per domande relative alla privacy, gli utenti possono contattare l'indirizzo email dedicato [support@vibyng.com].
 ​2. Dati Raccolti
 ​Raccogliamo i seguenti dati per garantire il funzionamento della piattaforma:
 ​Dati Identificativi: Nome, cognome, indirizzo email, immagine del profilo.
