@@ -1341,35 +1341,8 @@ function SettingsMenu() {
       </Dialog>
     </>
   );
-<Dialog open={faqOpen} onOpenChange={setFaqOpen}>
-        <DialogContent className="max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t.faqTitle}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            {(t.faqItems as any[]).map((item: any, index: number) => (
-              <div key={index} className="border rounded-lg overflow-hidden">
-                <button
-                  className="w-full text-left px-4 py-3 flex items-center justify-between text-sm font-medium hover:bg-muted/50 transition-colors"
-                  onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
-                >
-                  <span>{item.q}</span>
-                  <span className="text-muted-foreground ml-2">{openFaqIndex === index ? "▲" : "▼"}</span>
-                </button>
-                {openFaqIndex === index && (
-                  <div className="px-4 pb-3 text-sm text-muted-foreground border-t pt-2">
-                    {item.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-    );
-  }
-  function AppLayout() {
+}
+function AppLayout() {
   const [location, setLocation] = useLocation();
   const handleLogoClick = () => {
     if (location !== "/") {
