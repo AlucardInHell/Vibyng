@@ -2081,135 +2081,146 @@ res.json({ success: true, blocked: true });
   });
 
   app.post("/api/reports", async (req, res) => {
-    try {
-      const reporterId = Number(req.body.reporterId);
-      const targetType = String(req.body.targetType || "").trim();
-      const targetId = String(req.body.targetId || "").trim();
-      const targetOwnerId = req.body.targetOwnerId ? Number(req.body.targetOwnerId) : null;
-      const reason = String(req.body.reason || "").trim();
-      const details = req.body.details ? String(req.body.details).trim() : null;
+  try {
+    const reporterId = Number(req.body?.reporterId);
+    const targetType = String(req.body?.targetType || "").trim();
+    const targetId = String(req.body?.targetId || "").trim();
+    const targetOwnerIdRaw = req.body?.targetOwnerId;
+    const targetOwnerId =
+      targetOwnerIdRaw === null || targetOwnerIdRaw === undefined
+        ? null
+        : Number(targetOwnerIdRaw);
+    const reason = String(req.body?.reason || "").trim();
+    const details = req.body?.details
+      ? String(req.body.details).trim()
+      : null;
 
-      const allowedTargetTypes = new Set([
-        "user",
-        "post",
-        "photo",
-        "video",
-        "comment",
-        "story",
-        "message",
-      ]);
-
-      const allowedReasons = new Set([
-        "offensive",
-        "violent",
-        "pornographic",
-        "harassment",
-        "hate",
-        "spam",
-        "self_harm",
-        "fake_profile",
-        "other",
-      ]);
-
-      if (!reporterId) {
-        return res.status(400).json({ message: "Reporter non valido" });
-      }
-
-      if (!allowedTargetTypes.has(targetType)) {
-        return res.status(400).json({ message: "Tipo contenuto non valido" });
-      }
-
-      if (!targetId) {
-        return res.status(400).json({ message: "ID contenuto non valido" });
-      }
-
-      if (!allowedReasons.has(reason)) {
-        return res.status(400).json({ message: "Motivo segnalazione non valido" });
-      }
-
-      const reporter = await storage.getUser(reporterId);
-
-      if (!reporter) {
-        return res.status(404).json({ message: "Utente segnalante non trovato" });
-      }
-
-     const result = await db.execute(sql`
-  INSERT INTO content_reports (
-    reporter_id,
-    target_type,
-    target_id,
-    target_owner_id,
-    reason,
-    details,
-    status
-  )
-  VALUES (
-    ${reporterId},
-    ${targetType},
-    ${targetId},
-    ${targetOwnerId},
-    ${reason},
-    ${details},
-    'pending'
-  )
-  RETURNING *
-`);
-
-try {
-  const reportsEmail = process.env.REPORTS_EMAIL?.trim();
-
-  if (reportsEmail) {
-    const reportedUser = targetOwnerId ? await storage.getUser(targetOwnerId) : null;
-
-    await resend.emails.send({
-      from: "Vibyng <noreply@mail.vibyng.com>",
-      to: reportsEmail,
-      subject: `Nuova segnalazione Vibyng: ${targetType}`,
-      html: `
-        <div style="font-family: sans-serif; max-width: 640px; margin: 0 auto; padding: 24px;">
-          <h2>Nuova segnalazione su Vibyng</h2>
-
-          <p><strong>ID segnalazione:</strong> ${result.rows[0]?.id}</p>
-          <p><strong>Tipo contenuto:</strong> ${targetType}</p>
-          <p><strong>ID contenuto/profilo:</strong> ${targetId}</p>
-          <p><strong>Motivo:</strong> ${reason}</p>
-          <p><strong>Dettagli:</strong> ${details || "Nessun dettaglio fornito"}</p>
-
-          <hr />
-
-          <p><strong>Segnalante ID:</strong> ${reporterId}</p>
-          <p><strong>Segnalante:</strong> ${reporter.displayName} (@${reporter.username})</p>
-
-          ${
-            reportedUser
-              ? `
-                <p><strong>Profilo segnalato ID:</strong> ${reportedUser.id}</p>
-                <p><strong>Profilo segnalato:</strong> ${reportedUser.displayName} (@${reportedUser.username})</p>
-              `
-              : ""
-          }
-
-          <p><strong>Status:</strong> pending</p>
-        </div>
-      `,
-    });
-  }
-} catch (emailErr: any) {
-  console.error("[report-email] error:", emailErr?.message || emailErr);
-}
-
-res.status(201).json({
-  success: true,
-  report: result.rows[0],
-});
-    } catch (err: any) {
-      console.error("[create-report] error:", err?.message || err);
-      res.status(400).json({
-        message: "Errore nella creazione della segnalazione",
-        detail: err?.message,
+    if (!reporterId || !targetType || !targetId || !reason) {
+      return res.status(400).json({
+        message: "Dati segnalazione non validi",
       });
     }
-  });
+
+    const allowedTypes = ["post", "photo", "video", "comment", "profile", "song"];
+
+    if (!allowedTypes.includes(targetType)) {
+      return res.status(400).json({
+        message: "Tipo segnalazione non valido",
+      });
+    }
+
+    const reporter = await storage.getUser(reporterId);
+    const targetOwner =
+      targetOwnerId && Number.isFinite(targetOwnerId)
+        ? await storage.getUser(targetOwnerId)
+        : null;
+
+    const inserted = await db.execute(sql`
+      INSERT INTO content_reports (
+        reporter_id,
+        target_type,
+        target_id,
+        target_owner_id,
+        reason,
+        details,
+        status
+      )
+      VALUES (
+        ${reporterId},
+        ${targetType},
+        ${targetId},
+        ${
+          targetOwnerId && Number.isFinite(targetOwnerId)
+            ? targetOwnerId
+            : null
+        },
+        ${reason},
+        ${details},
+        'pending'
+      )
+      RETURNING *
+    `);
+
+    const report = inserted.rows[0] as any;
+
+    const supportEmail =
+      process.env.REPORTS_EMAIL?.trim() ||
+      process.env.SUPPORT_EMAIL?.trim() ||
+      "support@vibyng.com";
+
+    const appUrl =
+      process.env.APP_URL?.trim() ||
+      "https://vibyng-production.up.railway.app";
+
+    const targetUrl = `${appUrl}/api/content/${encodeURIComponent(
+      targetType === "comment" ? "post" : targetType
+    )}/${encodeURIComponent(targetId)}`;
+
+    let emailSent = false;
+
+    try {
+      await sendTransactionalEmail({
+        to: supportEmail,
+        subject: `[Vibyng] Nuova segnalazione ${targetType} #${targetId}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 720px; margin: 0 auto; padding: 24px;">
+            <h2>Nuova segnalazione contenuto</h2>
+
+            <p><strong>ID segnalazione:</strong> ${report?.id}</p>
+            <p><strong>Tipo contenuto:</strong> ${targetType}</p>
+            <p><strong>ID contenuto/commento:</strong> ${targetId}</p>
+            <p><strong>Motivo:</strong> ${reason}</p>
+
+            <hr />
+
+            <h3>Utente segnalante</h3>
+            <p>
+              <strong>ID:</strong> ${reporterId}<br />
+              <strong>Nome:</strong> ${reporter?.displayName || "-"}<br />
+              <strong>Username:</strong> ${reporter?.username || "-"}<br />
+              <strong>Email:</strong> ${reporter?.email || "-"}
+            </p>
+
+            <h3>Proprietario contenuto</h3>
+            <p>
+              <strong>ID:</strong> ${targetOwnerId || "-"}<br />
+              <strong>Nome:</strong> ${targetOwner?.displayName || "-"}<br />
+              <strong>Username:</strong> ${targetOwner?.username || "-"}<br />
+              <strong>Email:</strong> ${targetOwner?.email || "-"}
+            </p>
+
+            <h3>Dettagli inseriti dall’utente</h3>
+            <p style="white-space: pre-wrap;">${details || "Nessun dettaglio aggiuntivo."}</p>
+
+            <hr />
+
+            <p>
+              <strong>Link contenuto:</strong><br />
+              <a href="${targetUrl}">${targetUrl}</a>
+            </p>
+          </div>
+        `,
+      });
+
+      emailSent = true;
+    } catch (emailErr: any) {
+      console.error("[report-email] error:", emailErr?.message || emailErr);
+    }
+
+    res.status(201).json({
+      success: true,
+      report,
+      emailSent,
+    });
+  } catch (err: any) {
+    console.error("[report-create] error:", err?.message || err);
+
+    res.status(400).json({
+      message: "Errore nell'invio della segnalazione",
+      detail: err?.message,
+    });
+  }
+});
   
   // === USERS ===
   app.get(api.users.artists.path, async (_req, res) => {
