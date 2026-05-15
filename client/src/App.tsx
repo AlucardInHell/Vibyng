@@ -155,7 +155,7 @@ faqToastTitle: "FAQ",
 faqToastDescription: "Apertura FAQ...",
 contactSupport: "Contatta il Supporto",
 supportToastTitle: "Supporto",
-supportToastDescription: "Email inviata a supporto@vibyng.com",
+supportToastDescription: "Scrivici a support@vibyng.com",
 reportProblem: "Segnala un Problema",
 bugToastTitle: "Bug Report",
 bugToastDescription: "Grazie per la segnalazione!",
@@ -274,7 +274,7 @@ faqToastTitle: "FAQ",
 faqToastDescription: "Opening FAQ...",
 contactSupport: "Contact Support",
 supportToastTitle: "Support",
-supportToastDescription: "Email sent to support@vibyng.com",
+supportToastDescription: "Write to us at support@vibyng.com",
 reportProblem: "Report a Problem",
 bugToastTitle: "Bug Report",
 bugToastDescription: "Thanks for your report!",
@@ -1249,7 +1249,7 @@ function SettingsMenu() {
 </Button>
             <Button variant="outline" className="w-full justify-start" onClick={() => {
   setHelpOpen(false);
-  toast({ title: t.supportToastTitle, description: t.supportToastDescription });
+  window.location.href = "mailto:support@vibyng.com";
 }} data-testid="button-contact">
   <MessageCircle className="w-4 h-4 mr-2" />
   {t.contactSupport}
@@ -1257,7 +1257,7 @@ function SettingsMenu() {
           </div>
           <div className="text-center text-xs text-muted-foreground pt-2 border-t">
             <p>Vibyng v1.0.0</p>
-            <p>supporto@vibyng.com</p>
+            <p>support@vibyng.com</p>
           </div>
         </DialogContent>
       </Dialog>
