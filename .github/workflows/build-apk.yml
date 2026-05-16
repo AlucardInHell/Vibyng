@@ -53,11 +53,11 @@ jobs:
           convert client/public/1769045968337.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
           convert client/public/1769045968337.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
           convert client/public/1769045968337.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
-          # Rimuovi le icone adaptive XML che sovrascrivono le PNG
-          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
-          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
-          # Aggiorna AndroidManifest per usare PNG dirette
-          sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@mipmap/ic_launcher"|g' android/app/src/main/AndroidManifest.xml
+          mkdir -p android/app/src/main/res/values
+          echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#000000</color></resources>' > android/app/src/main/res/values/ic_launcher_background.xml
+          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
+          echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@mipmap/ic_launcher"|g' android/app/src/main/AndroidManifest.xml
 
       - name: Fix Kotlin duplicate classes
