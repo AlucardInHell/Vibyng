@@ -34,6 +34,25 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
+      - name: Generate app icons
+        run: |
+          sudo apt-get install -y imagemagick
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          convert client/public/1769045968337.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert client/public/1769045968337.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert client/public/1769045968337.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert client/public/1769045968337.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert client/public/1769045968337.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          convert client/public/1769045968337.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          convert client/public/1769045968337.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          convert client/public/1769045968337.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          convert client/public/1769045968337.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          convert client/public/1769045968337.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
       - name: Fix Kotlin duplicate classes
         run: |
           echo "" >> android/build.gradle
