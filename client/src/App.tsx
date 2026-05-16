@@ -1467,7 +1467,7 @@ function AppLayout() {
           </div>
         </div>
       </header>
-      <main className="pb-36 pt-4 px-4 max-w-md mx-auto overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+      <main className="pb-36 pt-4 px-4 max-w-md mx-auto overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         <Router />
       </main>
       <AppAudioPlayer />
