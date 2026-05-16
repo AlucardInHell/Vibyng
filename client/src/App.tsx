@@ -149,6 +149,15 @@ faqTitle: "Domande Frequenti",
       { q: "Posso seguire sia artisti che altri fan?", a: "Sì, puoi seguire qualsiasi profilo su Vibyng, sia artisti che fan." },
     ],    
 helpTitle: "Assistenza",
+paymentsTitle: "Pagamenti",
+    paymentsDescription: "Gestisci il tuo account Stripe per ricevere i pagamenti",
+    connectStripe: "Collega account Stripe",
+    stripeConnected: "Account Stripe collegato ✅",
+    stripeNotConnected: "Account Stripe non collegato",
+    stripeOnboardingComplete: "Onboarding completato — puoi ricevere pagamenti",
+    stripeOnboardingPending: "Completa la verifica su Stripe per ricevere pagamenti",
+    openStripeDashboard: "Apri dashboard Stripe",
+    stripeConnecting: "Connessione in corso...",
 helpDescription: "Come possiamo aiutarti?",
 faq: "Domande Frequenti (FAQ)",
 faqToastTitle: "FAQ",
@@ -268,6 +277,15 @@ faqTitle: "Frequently Asked Questions",
       { q: "Can I follow both artists and other fans?", a: "Yes, you can follow any profile on Vibyng, both artists and fans." },
     ],    
 helpTitle: "Help",
+paymentsTitle: "Payments",
+    paymentsDescription: "Manage your Stripe account to receive payments",
+    connectStripe: "Connect Stripe account",
+    stripeConnected: "Stripe account connected ✅",
+    stripeNotConnected: "Stripe account not connected",
+    stripeOnboardingComplete: "Onboarding complete — you can receive payments",
+    stripeOnboardingPending: "Complete verification on Stripe to receive payments",
+    openStripeDashboard: "Open Stripe dashboard",
+    stripeConnecting: "Connecting...",
 helpDescription: "How can we help you?",
 faq: "Frequently Asked Questions (FAQ)",
 faqToastTitle: "FAQ",
@@ -787,6 +805,9 @@ function SettingsMenu() {
   const [languageOpen, setLanguageOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
+  const [paymentsOpen, setPaymentsOpen] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState<any>(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
   const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false);
@@ -797,7 +818,7 @@ function SettingsMenu() {
   const followedProfilesCount = followingList.length;
   const legalTexts = legalDocuments[language];
 
- const [editFormData, setEditFormData] = useState({
+  const [editFormData, setEditFormData] = useState({
     displayName: "",
     username: "",
     email: "",
@@ -873,6 +894,21 @@ function SettingsMenu() {
             <Shield className="w-4 h-4 mr-2" />
             {t.privacy}
           </DropdownMenuItem>
+          {(user as any)?.role === "artist" && (
+            <DropdownMenuItem onClick={async () => {
+              setStripeLoading(true);
+              try {
+                const res = await fetch(`/api/stripe/connect/status/${userId}`);
+                const data = await res.json();
+                setStripeStatus(data);
+              } catch {}
+              setStripeLoading(false);
+              setPaymentsOpen(true);
+            }}>
+              <Zap className="w-4 h-4 mr-2" />
+              {t.paymentsTitle}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={() => setNotificationsOpen(true)} data-testid="menu-item-notifications">
             <Bell className="w-4 h-4 mr-2" />
             {t.notifications}
@@ -1312,6 +1348,69 @@ function SettingsMenu() {
   {t.logout}
 </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={paymentsOpen} onOpenChange={setPaymentsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t.paymentsTitle}</DialogTitle>
+            <DialogDescription>{t.paymentsDescription}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {stripeLoading ? (
+              <p className="text-sm text-muted-foreground">Caricamento...</p>
+            ) : stripeStatus?.connected ? (
+              <>
+                <p className="text-sm font-medium text-green-600">{t.stripeConnected}</p>
+                <p className="text-sm text-muted-foreground">
+                  {stripeStatus.onboardingComplete ? t.stripeOnboardingComplete : t.stripeOnboardingPending}
+                </p>
+                {stripeStatus.onboardingComplete ? (
+                  <Button className="w-full" onClick={async () => {
+                    const res = await fetch(`/api/stripe/connect/dashboard-link/${userId}`, { method: "POST" });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  }}>
+                    {t.openStripeDashboard}
+                  </Button>
+                ) : (
+                  <Button className="w-full" onClick={async () => {
+                    const res = await fetch("/api/stripe/connect/create-account", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ artistId: userId }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  }}>
+                    {t.connectStripe}
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">{t.stripeNotConnected}</p>
+                <p className="text-xs text-muted-foreground">
+                  Collega il tuo account Stripe per ricevere i pagamenti dai fan direttamente sul tuo conto bancario.
+                </p>
+                <Button className="w-full" onClick={async () => {
+                  setStripeLoading(true);
+                  try {
+                    const res = await fetch("/api/stripe/connect/create-account", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ artistId: userId }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  } catch {}
+                  setStripeLoading(false);
+                }}>
+                  {stripeLoading ? t.stripeConnecting : t.connectStripe}
+                </Button>
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
       <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
