@@ -21,11 +21,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Capacitor locally
+        run: npm install @capacitor/cli @capacitor/core @capacitor/android
+
       - name: Build web app
         run: npm run build
-
-      - name: Install Capacitor CLI
-        run: npm install -g @capacitor/cli @capacitor/core @capacitor/android
 
       - name: Init Capacitor Android
         run: |
