@@ -228,3 +228,13 @@
     inset: -1px;
   }
 }
+
+/* Nascondi scrollbar ovunque */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
