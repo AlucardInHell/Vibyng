@@ -2586,6 +2586,94 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
     }
   });
 
+  // === STRIPE CONNECT ===
+app.post("/api/stripe/connect/create-account", async (req, res) => {
+  try {
+    const { artistId } = req.body;
+    if (!artistId) return res.status(400).json({ message: "artistId mancante" });
+
+    const artist = await storage.getUser(Number(artistId));
+    if (!artist) return res.status(404).json({ message: "Artista non trovato" });
+
+    let accountId = (artist as any).stripeConnectedAccountId;
+
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        email: artist.email || undefined,
+        capabilities: {
+          transfers: { requested: true },
+        },
+        metadata: { vibyng_user_id: String(artistId) },
+      });
+      accountId = account.id;
+      await db.execute(sql`
+        UPDATE users SET stripe_connected_account_id = ${accountId}
+        WHERE id = ${artistId}
+      `);
+    }
+
+    const appUrl = process.env.APP_URL || "https://vibyng-production.up.railway.app";
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${appUrl}/me?stripe=refresh`,
+      return_url: `${appUrl}/me?stripe=success`,
+      type: "account_onboarding",
+    });
+
+    res.json({ url: accountLink.url });
+  } catch (err: any) {
+    console.error("[stripe-connect-create]", err?.message);
+    res.status(500).json({ message: "Errore Stripe Connect", detail: err?.message });
+  }
+});
+
+app.get("/api/stripe/connect/status/:artistId", async (req, res) => {
+  try {
+    const artistId = Number(req.params.artistId);
+    const artist = await storage.getUser(artistId);
+    if (!artist) return res.status(404).json({ message: "Artista non trovato" });
+
+    const accountId = (artist as any).stripeConnectedAccountId;
+    if (!accountId) return res.json({ connected: false, onboardingComplete: false });
+
+    const account = await stripe.accounts.retrieve(accountId);
+    const onboardingComplete = account.details_submitted;
+
+    if (onboardingComplete && !(artist as any).stripeOnboardingComplete) {
+      await db.execute(sql`
+        UPDATE users SET stripe_onboarding_complete = true
+        WHERE id = ${artistId}
+      `);
+    }
+
+    res.json({
+      connected: true,
+      onboardingComplete,
+      payoutsEnabled: account.payouts_enabled,
+      chargesEnabled: account.charges_enabled,
+    });
+  } catch (err: any) {
+    console.error("[stripe-connect-status]", err?.message);
+    res.status(500).json({ message: "Errore verifica stato Stripe" });
+  }
+});
+
+app.post("/api/stripe/connect/dashboard-link/:artistId", async (req, res) => {
+  try {
+    const artistId = Number(req.params.artistId);
+    const artist = await storage.getUser(artistId);
+    const accountId = (artist as any).stripeConnectedAccountId;
+    if (!accountId) return res.status(400).json({ message: "Account Stripe non collegato" });
+
+    const loginLink = await stripe.accounts.createLoginLink(accountId);
+    res.json({ url: loginLink.url });
+  } catch (err: any) {
+    console.error("[stripe-connect-dashboard]", err?.message);
+    res.status(500).json({ message: "Errore link dashboard Stripe" });
+  }
+});
+  
   // === STRIPE WEBHOOK ===
   app.post("/api/stripe/webhook", async (req, res) => {
     try {
