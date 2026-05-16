@@ -52,6 +52,13 @@ jobs:
           convert client/public/1769045968337.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
           convert client/public/1769045968337.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
           convert client/public/1769045968337.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+          convert client/public/1769045968337.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+          # Rimuovi le icone adaptive XML che sovrascrivono le PNG
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          # Aggiorna AndroidManifest per usare PNG dirette
+          sed -i 's|android:icon="@mipmap/ic_launcher"|android:icon="@mipmap/ic_launcher"|g' android/app/src/main/AndroidManifest.xml
+          sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@mipmap/ic_launcher"|g' android/app/src/main/AndroidManifest.xml
 
       - name: Fix Kotlin duplicate classes
         run: |
