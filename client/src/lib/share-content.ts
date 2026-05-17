@@ -1,3 +1,7 @@
+import { Share } from '@capacitor/share';
+
+const isCapacitor = typeof (window as any).Capacitor !== 'undefined';
+
 type ShareVibyngContentInput = {
   title: string;
   text?: string | null;
@@ -60,29 +64,33 @@ const permalink = shareUrl?.trim() || fallbackUrl || mediaUrl;
 const shareText = [normalizedText, shareUrl].filter(Boolean).join("\n\n");
 const fallbackText = [normalizedText, permalink].filter(Boolean).join("\n\n");
 
+ if (isCapacitor) {
+    try {
+      await Share.share({
+        title,
+        text: shareText || normalizedText,
+        url: shareUrl || fallbackUrl || undefined,
+        dialogTitle: title,
+      });
+      return "shared";
+    } catch (error: any) {
+      if (error?.message?.includes("cancel") || error?.name === "AbortError") return "cancelled";
+    }
+  }
+
   if (typeof navigator !== "undefined" && "share" in navigator && mediaUrl) {
     try {
       const file = await fileFromUrl(mediaUrl, fileName);
-
       if (!nav.canShare || nav.canShare({ files: [file] })) {
-        await navigator.share({
-          title,
-          text: shareText || normalizedText,
-          files: [file],
-        });
+        await navigator.share({ title, text: shareText || normalizedText, files: [file] });
         return "shared";
       }
-    } catch {
-      // fallback sotto
-    }
+    } catch {}
   }
 
   if (typeof navigator !== "undefined" && "share" in navigator) {
     try {
-      await navigator.share({
-        title,
-        text: fallbackText || normalizedText,
-      });
+      await navigator.share({ title, text: fallbackText || normalizedText });
       return "shared";
     } catch (error: any) {
       if (error?.name === "AbortError") return "cancelled";
