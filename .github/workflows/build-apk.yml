@@ -42,7 +42,8 @@ jobs:
           mkdir -p android/app/src/main/res/mipmap-xhdpi
           mkdir -p android/app/src/main/res/mipmap-xxhdpi
           mkdir -p android/app/src/main/res/mipmap-xxxhdpi
-          convert client/public/1769045968337.png -trim +repage -resize 192x192 -background black -gravity center -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
+          mkdir -p android/app/src/main/res/values
           convert client/public/1769045968337.png -trim +repage -resize 48x48 -background black -gravity center -extent 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert client/public/1769045968337.png -trim +repage -resize 72x72 -background black -gravity center -extent 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           convert client/public/1769045968337.png -trim +repage -resize 96x96 -background black -gravity center -extent 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
@@ -52,13 +53,13 @@ jobs:
           convert client/public/1769045968337.png -trim +repage -resize 72x72 -background black -gravity center -extent 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
           convert client/public/1769045968337.png -trim +repage -resize 96x96 -background black -gravity center -extent 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
           convert client/public/1769045968337.png -trim +repage -resize 144x144 -background black -gravity center -extent 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
-          convert client/public/1769045968337.png -trim +repage -resize 192x192 -background black -gravity center -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png          mkdir -p android/app/src/main/res/values
+          convert client/public/1769045968337.png -trim +repage -resize 192x192 -background black -gravity center -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+          convert client/public/1769045968337.png -trim +repage -resize 192x192 -background black -gravity center -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
           echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#000000</color></resources>' > android/app/src/main/res/values/ic_launcher_background.xml
-          mkdir -p android/app/src/main/res/mipmap-anydpi-v26
           echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@mipmap/ic_launcher"|g' android/app/src/main/AndroidManifest.xml
-
+          
       - name: Fix Kotlin duplicate classes
         run: |
           echo "" >> android/build.gradle
