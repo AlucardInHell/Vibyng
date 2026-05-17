@@ -3016,12 +3016,34 @@ return (
                 </div>
 
                 {commentsOpen && (
- <div
-  className="fixed inset-x-0 bottom-0 z-[9999] h-[62dvh] max-h-[62dvh] bg-background border-t border-border/70 rounded-t-3xl flex flex-col overflow-hidden shadow-2xl pb-[env(safe-area-inset-bottom)]"
-  onClick={(e) => e.stopPropagation()}
-  onTouchStart={(e) => e.stopPropagation()}
->
-  <div className="space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 pt-4 pr-3 pb-2">
+  <div
+    className="fixed inset-x-0 bottom-0 z-[9999] h-[62dvh] max-h-[62dvh] bg-background border-t border-border/70 rounded-t-3xl flex flex-col overflow-hidden shadow-2xl pb-[env(safe-area-inset-bottom)]"
+    onClick={(e) => e.stopPropagation()}
+    onTouchStart={(e) => e.stopPropagation()}
+  >
+    <div className="shrink-0 px-4 py-3 border-b border-border/70 flex items-center justify-between bg-background">
+      <p className="text-sm font-semibold">
+        Commenti
+      </p>
+
+      <button
+        type="button"
+        className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setCommentsOpenType(null);
+          setCommentsOpenId(null);
+          setCommentInput("");
+          closeMentions();
+        }}
+        aria-label="Chiudi commenti"
+      >
+        ✕
+      </button>
+    </div>
+
+    <div className="space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y px-4 pt-3 pr-3 pb-2">
       {comments.length > 0 ? (
         comments.map((comment: any) => (
           <div key={comment.id} className="flex items-start gap-3">
