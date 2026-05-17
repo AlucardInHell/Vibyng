@@ -530,18 +530,34 @@ function AppAudioPlayer() {
 function MessagesButton() {
   const { t } = useLanguage();
   const [location, setLocation] = useLocation();
-  const isActive = location === "/messages";
-  const goToMessages = () => {
-  if (location !== "/messages") {
-    setLocation("/messages");
-  }
 
-  setTimeout(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, 0);
-};
   const storedUser = localStorage.getItem("vibyng-user");
   const userId = storedUser ? JSON.parse(storedUser).id : 0;
+
+  const isActive = location === "/messages";
+
+  const goToMessages = () => {
+    if (location !== "/messages") {
+      setLocation("/messages");
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["/api/users", userId, "conversations"],
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: ["/api/messages/unread", userId],
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: ["/api/messages/unread-per-user", userId],
+    });
+
+    setTimeout(() => {
+      window.dispatchEvent(new Event("vibyng-messages-refresh"));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
+  };
   const { data: unreadCount = 0 } = useQuery<number>({
    queryKey: ["/api/messages/unread", userId],
    queryFn: async () => {
@@ -574,18 +590,26 @@ function MessagesButton() {
 function NotificationBell() {
   const { t } = useLanguage();
   const [location, setLocation] = useLocation();
-  const isActive = location === "/notifications";
-  const goToNotifications = () => {
-  if (location !== "/notifications") {
-    setLocation("/notifications");
-  }
 
-  setTimeout(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, 0);
-};
   const storedUser = localStorage.getItem("vibyng-user");
   const userId = storedUser ? JSON.parse(storedUser).id : 0;
+
+  const isActive = location === "/notifications";
+
+  const goToNotifications = () => {
+    if (location !== "/notifications") {
+      setLocation("/notifications");
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: ["/api/notifications", userId],
+    });
+
+    setTimeout(() => {
+      window.dispatchEvent(new Event("vibyng-notifications-refresh"));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
+  };
   const { data: notifications = [] } = useQuery<any[]>({
     queryKey: ["/api/notifications", userId],
     queryFn: async () => {
@@ -618,6 +642,7 @@ function NotificationBell() {
 function BottomNav() {
   const { t } = useLanguage();
   const [location, setLocation] = useLocation();
+  const currentUserId = getCurrentUserId();
   const goToTop = (path: string) => {
   if (location !== path) {
     setLocation(path);
@@ -646,6 +671,30 @@ function BottomNav() {
 
   setTimeout(() => {
     window.dispatchEvent(new Event("vibyng-flow-refresh"));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, 0);
+};
+  const handleMeRefresh = () => {
+  if (location !== "/me") {
+    setLocation("/me");
+  }
+
+  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+  queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "following"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "followers"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "photos"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "videos"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "posts"] });
+  queryClient.invalidateQueries({ queryKey: ["/api/likes", currentUserId, "posts"] });
+  queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/songs`] });
+  queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/goals`] });
+  queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/events`] });
+  queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/followers/count`] });
+  queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
+
+  setTimeout(() => {
+    window.dispatchEvent(new Event("vibyng-me-refresh"));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, 0);
 };
@@ -725,7 +774,7 @@ if (item.path === "/me") {
   return (
     <button
       key={item.path}
-      onClick={() => goToTop("/me")}
+      onClick={handleMeRefresh}
       className={`flex w-full min-w-0 flex-col items-center justify-center gap-1 px-0 py-2 rounded-md transition-colors ${
         isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
       }`}
