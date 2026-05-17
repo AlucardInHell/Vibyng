@@ -109,13 +109,17 @@ function timeAgo(date: Date | string | null, t: typeof notificationsTranslations
   return `${Math.floor(diff / 86400)}${t.daysAgo}`;
 }
 
-function getNotificationTargetUrl(notification: any): string | null {
+function getNotificationTargetUrl(notification: any, currentUserId?: number): string | null {
   const referenceType = notification.referenceType ?? notification.reference_type;
   const referenceId = notification.referenceId ?? notification.reference_id;
 
   if (referenceType && referenceId) {
     switch (referenceType) {
-      case "post":
+     case "post":
+        const relatedUser = notification.relatedUserId ?? notification.related_user_id;
+        if (relatedUser && Number(relatedUser) !== Number(currentUserId)) {
+          return `/artist/${relatedUser}?tab=posts`;
+        }
         return `/me?tab=posts`;
 
       case "photo":
@@ -407,7 +411,7 @@ const unreadCount = notifications.filter(n => !n.isRead).length;
       } catch {}
     }
 
-    const targetUrl = getNotificationTargetUrl(notification);
+    const targetUrl = getNotificationTargetUrl(notification, getCurrentUserId());
     if (targetUrl) {
       window.location.href = targetUrl;
     }
