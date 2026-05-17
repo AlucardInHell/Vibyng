@@ -1,5 +1,3 @@
-import { Share } from '@capacitor/share';
-
 const isCapacitor = typeof (window as any).Capacitor !== 'undefined';
 
 type ShareVibyngContentInput = {
@@ -66,6 +64,7 @@ const fallbackText = [normalizedText, permalink].filter(Boolean).join("\n\n");
 
  if (isCapacitor) {
     try {
+      const { Share } = await import('@capacitor/share');
       await Share.share({
         title,
         text: shareText || normalizedText,
@@ -77,7 +76,7 @@ const fallbackText = [normalizedText, permalink].filter(Boolean).join("\n\n");
       if (error?.message?.includes("cancel") || error?.name === "AbortError") return "cancelled";
     }
   }
-
+  
   if (typeof navigator !== "undefined" && "share" in navigator && mediaUrl) {
     try {
       const file = await fileFromUrl(mediaUrl, fileName);
