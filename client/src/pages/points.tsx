@@ -1066,8 +1066,9 @@ const handleEndLive = async () => {
     queryKey: ["/api/users", currentUserId, "videos"],
   });
 
- useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+useEffect(() => {
+    const fullUrl = window.location.href;
+    const params = new URLSearchParams(window.location.search || fullUrl.split('?')[1] || '');
     const openPhotoId = params.get("openPhoto");
     const openVideoId = params.get("openVideo");
     const openTab = params.get("tab");
