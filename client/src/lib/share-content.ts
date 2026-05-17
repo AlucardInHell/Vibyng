@@ -30,14 +30,16 @@ export async function shareVibyngContent({
   const fallbackText = [normalizedText, permalink].filter(Boolean).join("\n\n");
 
   try {
-    const { Share } = await import('@capacitor/share');
-    await Share.share({
-      title,
-      text: fallbackText || normalizedText,
-      url: shareUrl || fallbackUrl || undefined,
-      dialogTitle: title,
-    });
-    return "shared";
+    const cap = (window as any).Capacitor;
+    if (cap?.Plugins?.Share) {
+      await cap.Plugins.Share.share({
+        title,
+        text: fallbackText || normalizedText,
+        url: shareUrl || fallbackUrl || undefined,
+        dialogTitle: title,
+      });
+      return "shared";
+    }
   } catch (error: any) {
     if (error?.message?.includes("cancel") || error?.name === "AbortError") return "cancelled";
   }
