@@ -634,6 +634,9 @@ function MePostComments({
 }
 export default function Points() {
   const currentUserId = getCurrentUserId();
+  const initialMeTab = new URLSearchParams(window.location.search).get("tab") || "posts";
+  const [activeMeTab, setActiveMeTab] = useState(initialMeTab);
+  const handledNotificationFocusRef = useRef(false);
   const mePageTopRef = useRef<HTMLDivElement | null>(null);
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
@@ -1029,41 +1032,6 @@ const handleEndLive = async () => {
     queryKey: ["/api/users", currentUserId, "videos"],
   });
 
-useEffect(() => {
-    const fullUrl = window.location.href;
-    const params = new URLSearchParams(window.location.search || fullUrl.split('?')[1] || '');
-    const openPhotoId = params.get("openPhoto");
-    const openVideoId = params.get("openVideo");
-    const openTab = params.get("tab");
-
-    if (openTab) {
-      // gestito dal componente Tabs con defaultValue
-    }
-
-    if (openPhotoId && myPhotos.length > 0) {
-      const photo = myPhotos.find(p => String(p.id) === openPhotoId);
-      if (photo) {
-        setTimeout(() => {
-          setSelectedPhoto(photo);
-          setPhotoCommentsOpen(true);
-        }, 500);
-      }
-    }
-
-    if (openVideoId && myVideos.length > 0) {
-      const video = myVideos.find((v: any) => String(v.id) === openVideoId);
-      if (video) {
-        setTimeout(() => {
-          setSelectedVideo(video);
-          setVideoLikeCount(prev => ({
-            ...prev,
-            [video.id]: Number((video as any).likesCount ?? 0),
-          }));
-        }, 500);
-      }
-    }
-  }, [myPhotos, myVideos]);
-
   const { data: myPosts = [] } = useQuery<(Post & { author: User })[]>({
     queryKey: ["/api/users", currentUserId, "posts"],
   });
@@ -1094,6 +1062,126 @@ useEffect(() => {
   queryKey: [`/api/artists/${currentUserId}/goals`],
   enabled: currentUser?.role === "artist",
   });
+
+  useEffect(() => {
+  if (handledNotificationFocusRef.current) return;
+
+  const params = new URLSearchParams(window.location.search);
+
+  const focusPhoto = params.get("focusPhoto");
+  const focusVideo = params.get("focusVideo");
+  const focusPost = params.get("focusPost");
+  const focusSong = params.get("focusSong");
+  const focusGoal = params.get("focusGoal");
+  const focusEvent = params.get("focusEvent");
+  const shouldOpenComments = params.get("comments") === "1";
+
+  if (focusPhoto && myPhotos.length > 0) {
+    const photo = myPhotos.find((p: any) => Number(p.id) === Number(focusPhoto));
+
+    if (photo) {
+      handledNotificationFocusRef.current = true;
+      setActiveMeTab("photos");
+      setSelectedPhoto(photo);
+
+      if (shouldOpenComments) {
+        setPhotoCommentsOpen(true);
+      }
+
+      return;
+    }
+  }
+
+  if (focusVideo && myVideos.length > 0) {
+    const video = myVideos.find((v: any) => Number(v.id) === Number(focusVideo));
+
+    if (video) {
+      handledNotificationFocusRef.current = true;
+      setActiveMeTab("videos");
+      setSelectedVideo(video);
+      setVideoLikeCount(prev => ({
+        ...prev,
+        [video.id]: Number((video as any).likesCount ?? 0),
+      }));
+
+      return;
+    }
+  }
+
+  if (focusPost && myPosts.length > 0) {
+    const post = myPosts.find((p: any) => Number(p.id) === Number(focusPost));
+
+    if (post) {
+      handledNotificationFocusRef.current = true;
+      setActiveMeTab("posts");
+
+      if (shouldOpenComments) {
+        setOpenCommentsPosts((prev) => {
+          const next = new Set(prev);
+          next.add(Number(focusPost));
+          return next;
+        });
+      }
+
+      setTimeout(() => {
+        const el = document.querySelector(`[data-testid="card-my-post-${focusPost}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+
+      return;
+    }
+  }
+
+  if (focusSong && mySongs.length > 0) {
+    const song = mySongs.find((s: any) => Number(s.id) === Number(focusSong));
+
+    if (song) {
+      handledNotificationFocusRef.current = true;
+      setActiveMeTab("songs");
+
+      setTimeout(() => {
+        const el = document.querySelector(`[data-testid="card-my-song-${focusSong}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+
+      return;
+    }
+  }
+
+  if (focusGoal && myArtistGoals.length > 0) {
+    const goal = myArtistGoals.find((g: any) => Number(g.id) === Number(focusGoal));
+
+    if (goal) {
+      handledNotificationFocusRef.current = true;
+      setActiveMeTab("goals");
+
+      setTimeout(() => {
+        const el = document.querySelector(`[data-testid="card-my-goal-${focusGoal}"]`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+
+      return;
+    }
+  }
+
+  if (focusEvent && (myArtistEvents.length > 0 || attendingEvents.length > 0)) {
+    const ownEvent = myArtistEvents.find((e: any) => Number(e.id) === Number(focusEvent));
+    const attendingEvent = attendingEvents.find((item: any) => Number(item?.event?.id) === Number(focusEvent));
+
+    if (ownEvent || attendingEvent) {
+      handledNotificationFocusRef.current = true;
+      setActiveMeTab("events");
+
+      setTimeout(() => {
+        const el =
+          document.querySelector(`[data-testid="card-my-event-${focusEvent}"]`) ||
+          document.querySelector(`[data-testid="card-attending-event-${focusEvent}"]`);
+
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    }
+  }
+}, [myPhotos, myVideos, myPosts, mySongs, myArtistGoals, myArtistEvents, attendingEvents]);
   
   const unfollowMutation = useMutation({
     mutationFn: async (artistId: number) => {
@@ -1753,7 +1841,7 @@ const reportMutation = useMutation({
   </DialogContent>
 </Dialog>
     
-      <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") || "posts"} className="w-full">
+      <Tabs value={activeMeTab} onValueChange={setActiveMeTab} className="w-full">
        <TabsList className="w-full grid grid-cols-6">
           <TabsTrigger value="songs" className="px-1 text-xs" data-testid="tab-songs">
             <Music className="w-4 h-4 sm:mr-1" />
@@ -1792,7 +1880,7 @@ const reportMutation = useMutation({
           <div className="flex flex-col gap-2">
             {mySongs.length > 0 ? (
               mySongs.map((song: any) => (
-                <Card key={song.id} className="hover-elevate">
+                <Card key={song.id} className="hover-elevate" data-testid={`card-my-song-${song.id}`}>
                   <CardContent className="p-3 flex items-center gap-3">
                     <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0 bg-primary/10 flex items-center justify-center">
                       {song.coverUrl ? (
@@ -2082,7 +2170,7 @@ const reportMutation = useMutation({
               {myArtistEvents.length > 0 ? (
                 <div className="flex flex-col gap-3">
                   {myArtistEvents.map((event: any) => (
-                    <Card key={event.id} className="hover-elevate">
+                    <Card key={event.id} className="hover-elevate" data-testid={`card-my-event-${event.id}`}>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
@@ -2121,7 +2209,7 @@ const reportMutation = useMutation({
           {attendingEvents.length > 0 ? (
             <div className="flex flex-col gap-3">
               {attendingEvents.map(({ event }) => (
-                <Card key={event.id} className="hover-elevate">
+                <Card key={event.id} className="hover-elevate" data-testid={`card-attending-event-${event.id}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
@@ -2249,7 +2337,7 @@ const reportMutation = useMutation({
             const progress = target > 0 ? Math.min(100, (current / target) * 100) : 0;
 
             return (
-              <Card key={goal.id}>
+              <Card key={goal.id} data-testid={`card-my-goal-${goal.id}`}>
                 <CardContent className="p-4 space-y-3">
                   <div>
                     <div className="flex items-start justify-between gap-2">
