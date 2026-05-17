@@ -82,27 +82,33 @@ export default function Messages() {
   };
 }, []);
 
-  const { data: conversations = [], isLoading } = useQuery<User[]>({
-    queryKey: ["/api/users", userId, "conversations"],
-    queryFn: async () => {
-      const res = await fetch(`/api/users/${userId}/conversations`);
-      return res.json();
-    },
-  });
+ const { data: conversations = [], isLoading } = useQuery<User[]>({
+  queryKey: ["/api/users", userId, "conversations"],
+  queryFn: async ({ signal }) => {
+    const res = await fetch(`/api/users/${userId}/conversations`, { signal });
+    return res.json();
+  },
+});
 
   const { data: unreadPerUser = {} } = useQuery<Record<number, number>>({
     queryKey: ["/api/messages/unread-per-user", userId],
-    queryFn: async () => {
-      const counts: Record<number, number> = {};
-      await Promise.all(
-        conversations.map(async (user) => {
-          const res = await fetch(`/api/messages/unread-from/${user.id}/${userId}?t=${Date.now()}`);
-          const count = await res.json();
-          counts[user.id] = count;
-        })
+    queryFn: async ({ signal }) => {
+  const counts: Record<number, number> = {};
+
+  await Promise.all(
+    conversations.map(async (user) => {
+      const res = await fetch(
+        `/api/messages/unread-from/${user.id}/${userId}?t=${Date.now()}`,
+        { signal }
       );
-      return counts;
-    },
+
+      const count = await res.json();
+      counts[user.id] = count;
+    })
+  );
+
+  return counts;
+},
     enabled: conversations.length > 0,
     refetchInterval: 5000,
   });
