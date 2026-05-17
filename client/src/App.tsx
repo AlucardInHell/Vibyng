@@ -19,7 +19,7 @@ import Onboarding from "@/pages/onboarding";
 import Notifications from "@/pages/notifications";
 import VPoints from "@/pages/vpoints";
 import ResetPassword from "@/pages/reset-password";
-import { useState, createContext, useContext, useEffect, useRef, useCallback } from "react";
+import { useState, createContext, useContext, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import type { User as UserType } from "@shared/schema";
 import { Home as HomeIcon, Users, Zap, Music, MessageCircle, Settings, User, Shield, Bell, Globe, Moon, Sun, HelpCircle, FileText, LogOut, Check, X, Plus, Camera, Video, Upload, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -706,11 +706,17 @@ function BottomNav() {
   });
 }
     
-  setLocation("/me");
+ document.documentElement.scrollTop = 0;
+ document.body.scrollTop = 0;
+ window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
-  setTimeout(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, 0);
+ setLocation("/me");
+
+ requestAnimationFrame(() => {
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+});
 };
   const { toast } = useToast();
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -1509,19 +1515,22 @@ function AppLayout() {
   const mainRef = useRef<HTMLElement | null>(null);
   const routeKey = location.split("?")[0];
 
-  useEffect(() => {
-    mainRef.current?.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "auto",
-    });
+  useLayoutEffect(() => {
+  mainRef.current?.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "auto",
+  });
 
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "auto",
-    });
-  }, [routeKey]);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "auto",
+  });
+}, [routeKey]);
   
   const handleLogoClick = () => {
     if (location !== "/") {
