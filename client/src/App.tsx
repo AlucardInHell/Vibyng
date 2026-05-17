@@ -696,6 +696,16 @@ function BottomNav() {
     return;
   }
 
+  if (location.startsWith("/messages")) {
+  queryClient.cancelQueries({
+    queryKey: ["/api/users", currentUserId, "conversations"],
+  });
+
+  queryClient.cancelQueries({
+    queryKey: ["/api/messages/unread-per-user", currentUserId],
+  });
+}
+    
   setLocation("/me");
 
   setTimeout(() => {
