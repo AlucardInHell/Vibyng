@@ -698,22 +698,7 @@ function BottomNav() {
 
   setLocation("/me");
 
-  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
-  queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
-  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "following"] });
-  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "followers"] });
-  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "photos"] });
-  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "videos"] });
-  queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId, "posts"] });
-  queryClient.invalidateQueries({ queryKey: ["/api/likes", currentUserId, "posts"] });
-  queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/songs`] });
-  queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/goals`] });
-  queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/events`] });
-  queryClient.invalidateQueries({ queryKey: [`/api/artists/${currentUserId}/followers/count`] });
-  queryClient.invalidateQueries({ queryKey: ["/api/lives/active"] });
-
   setTimeout(() => {
-    window.dispatchEvent(new Event("vibyng-me-refresh"));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, 0);
 };
