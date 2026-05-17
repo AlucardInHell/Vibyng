@@ -150,8 +150,8 @@ function getNotificationTargetUrl(notification: any): string | null {
         return null;
 
       case "comment_like":
-        if (notification.relatedUserId ?? notification.related_user_id) {
-          return `/artist/${notification.relatedUserId ?? notification.related_user_id}`;
+        if (referenceId) {
+          return `/me?tab=posts`;
         }
         return null;
 
