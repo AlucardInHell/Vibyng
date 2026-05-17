@@ -115,9 +115,13 @@ export default function Chat() {
   insertMention,
   closeMentions,
 } = useMention();
- const messagesEndRef = useRef<HTMLDivElement>(null);
+ const messagesScrollRef = useRef<HTMLDivElement>(null);
 
   useBodyScrollLock(true);
+
+  useEffect(() => {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+}, [artistId]);
 
   useEffect(() => {
   const syncLanguage = () => {
@@ -181,8 +185,14 @@ export default function Chat() {
   });
 
 useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const container = messagesScrollRef.current;
+
+  if (!container) return;
+
+  requestAnimationFrame(() => {
+    container.scrollTop = container.scrollHeight;
+  });
+}, [messages]);
   
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -263,7 +273,10 @@ useEffect(() => {
           </div>
         </CardHeader>
 
-        <CardContent className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3 scrollbar-hide [&::-webkit-scrollbar]:hidden">
+        <CardContent
+  ref={messagesScrollRef}
+  className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-3 scrollbar-hide [&::-webkit-scrollbar]:hidden"
+>
           {isConversationBlocked ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
               <MessageCircle className="w-12 h-12 text-muted-foreground/50 mb-3" />
@@ -416,7 +429,7 @@ const sharedContent = parseSharedContentMessage(msg.content);
               </p>
             </div>
           )}
-          <div ref={messagesEndRef} />
+          <div />
         </CardContent>
 
         <div className="p-4 border-t shrink-0 bg-background">
