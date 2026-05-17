@@ -113,62 +113,52 @@ function getNotificationTargetUrl(notification: any, currentUserId?: number): st
   const referenceType = notification.referenceType ?? notification.reference_type;
   const referenceId = notification.referenceId ?? notification.reference_id;
 
-  if (referenceType && referenceId) {
+if (referenceType && referenceId) {
   switch (referenceType) {
     case "post":
-      return `/content/post/${referenceId}`;
+      return `/me?tab=posts&focusPost=${referenceId}&comments=1`;
 
     case "photo":
-      return `/content/photo/${referenceId}`;
+      return `/me?tab=photos&focusPhoto=${referenceId}&comments=1`;
 
     case "video":
-      return `/content/video/${referenceId}`;
+      return `/me?tab=videos&focusVideo=${referenceId}&comments=1`;
 
     case "song":
-      return `/me?tab=songs`;
+      return `/me?tab=songs&focusSong=${referenceId}`;
 
-      case "live":
-        return `/artists?tab=live`;
+    case "goal":
+      return `/me?tab=goals&focusGoal=${referenceId}`;
 
-      case "goal":
-        return `/me?tab=goals`;
+    case "event":
+      return `/me?tab=events&focusEvent=${referenceId}`;
 
-      case "event":
-        return `/me?tab=events`;
+    case "live":
+      return `/artists?tab=live&focusLive=${referenceId}`;
 
-      case "message":
-        if (notification.relatedUserId ?? notification.related_user_id) {
-          return `/messages?userId=${notification.relatedUserId ?? notification.related_user_id}`;
-        }
-        return "/messages";
+    case "message":
+      if (notification.relatedUserId ?? notification.related_user_id) {
+        return `/messages?userId=${notification.relatedUserId ?? notification.related_user_id}`;
+      }
+      return "/messages";
 
-      case "profile":
-      case "follow":
-        if (notification.relatedUserId ?? notification.related_user_id) {
-          return `/artist/${notification.relatedUserId ?? notification.related_user_id}`;
-        }
-        return null;
+    case "profile":
+    case "follow":
+      if (notification.relatedUserId ?? notification.related_user_id) {
+        return `/artist/${notification.relatedUserId ?? notification.related_user_id}`;
+      }
+      return null;
 
-      case "comment_like":
-        if (referenceId) {
-          return `/me?tab=posts`;
-        }
-        return null;
-
-      default:
-        if ((notification.type === "like") && !(referenceType)) {
-          const relatedUser = notification.relatedUserId ?? notification.related_user_id;
-          if (relatedUser) return `/artist/${relatedUser}`;
-        }
-        return null;
-    }
+    default:
+      return null;
   }
+}
 
  const relatedPostId = notification.relatedPostId ?? notification.related_post_id;
  const relatedUserId = notification.relatedUserId ?? notification.related_user_id;
 
 if (relatedPostId) {
-  return `/content/post/${relatedPostId}`;
+  return `/me?tab=posts&focusPost=${relatedPostId}&comments=1`;
 }
 
 // Solo le notifiche di follow/profilo devono aprire il profilo.
