@@ -634,6 +634,7 @@ function MePostComments({
 }
 export default function Points() {
   const currentUserId = getCurrentUserId();
+  const mePageTopRef = useRef<HTMLDivElement | null>(null);
   const { playSong, currentSong, isPlaying, togglePlay } = useAudioPlayer();
   const [language, setLanguage] = useState<AppLanguage>(getStoredLanguage);
   const t = pointsTranslations[language];
@@ -686,6 +687,50 @@ export default function Points() {
 
   return () => {
     window.removeEventListener("vibyng-language-change", handleLanguageChange);
+  };
+}, []);
+
+  useEffect(() => {
+  const fromMessages =
+    sessionStorage.getItem("vibyng-open-me-from-messages") === "1";
+
+  if (!fromMessages) return;
+
+  sessionStorage.removeItem("vibyng-open-me-from-messages");
+
+  const resetMeScroll = () => {
+    (document.activeElement as HTMLElement | null)?.blur?.();
+
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+
+    mePageTopRef.current?.scrollIntoView({
+      block: "start",
+      inline: "nearest",
+      behavior: "auto",
+    });
+  };
+
+  resetMeScroll();
+
+  requestAnimationFrame(() => {
+    resetMeScroll();
+
+    requestAnimationFrame(() => {
+      resetMeScroll();
+    });
+  });
+
+  const timeout = window.setTimeout(resetMeScroll, 180);
+
+  return () => {
+    window.clearTimeout(timeout);
   };
 }, []);
 
@@ -1434,6 +1479,8 @@ const reportMutation = useMutation({
 
   return (
   <div className="flex flex-col gap-4">
+    <div ref={mePageTopRef} className="h-0" data-me-page-top />
+    
     <Dialog open={reportOpen} onOpenChange={setReportOpen}>
       <DialogContent className="z-[130]">
         <DialogHeader>
