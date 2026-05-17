@@ -537,9 +537,12 @@ function MessagesButton() {
   const isActive = location === "/messages";
 
   const goToMessages = () => {
-    if (location !== "/messages") {
-      setLocation("/messages");
-    }
+  if (location === "/messages") {
+    window.location.assign("/messages");
+    return;
+  }
+
+  setLocation("/messages");
 
     queryClient.invalidateQueries({
       queryKey: ["/api/users", userId, "conversations"],
@@ -597,9 +600,12 @@ function NotificationBell() {
   const isActive = location === "/notifications";
 
   const goToNotifications = () => {
-    if (location !== "/notifications") {
-      setLocation("/notifications");
-    }
+  if (location === "/notifications") {
+    window.location.assign("/notifications");
+    return;
+  }
+
+  setLocation("/notifications");
 
     queryClient.invalidateQueries({
       queryKey: ["/api/notifications", userId],
@@ -654,17 +660,27 @@ function BottomNav() {
 };
   
   const handleFeedRefresh = () => {
-  if (location !== "/") {
-    setLocation("/");
+  if (location === "/") {
+    window.location.assign("/");
+    return;
   }
+
+  setLocation("/");
+
   queryClient.invalidateQueries({ queryKey: ["/api/posts"] });
   queryClient.invalidateQueries({ queryKey: ["/api/stories"] });
-  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, 0);
 };
   const handleFlowRefresh = () => {
-  if (location !== "/artists") {
-    setLocation("/artists");
+  if (location.startsWith("/artists")) {
+    window.location.assign("/artists");
+    return;
   }
+
+  setLocation("/artists");
 
   queryClient.invalidateQueries({ queryKey: ["/api/artists"] });
   queryClient.invalidateQueries({ queryKey: ["/api/flow/client"], exact: false });
@@ -675,9 +691,12 @@ function BottomNav() {
   }, 0);
 };
   const handleMeRefresh = () => {
-  if (location !== "/me") {
-    setLocation("/me");
+  if (location.startsWith("/me")) {
+    window.location.assign("/me");
+    return;
   }
+
+  setLocation("/me");
 
   queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
   queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
