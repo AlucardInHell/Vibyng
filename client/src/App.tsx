@@ -696,6 +696,11 @@ function BottomNav() {
     return;
   }
 
+  if (location.startsWith("/messages")) {
+    window.location.assign("/me");
+    return;
+  }
+
   setLocation("/me");
 };
   const { toast } = useToast();
