@@ -1742,7 +1742,7 @@ const reportMutation = useMutation({
   </DialogContent>
 </Dialog>
     
-      <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") || "songs"} className="w-full">
+      <Tabs defaultValue={new URLSearchParams(window.location.search).get("tab") || "posts"} className="w-full">
        <TabsList className="w-full grid grid-cols-6">
           <TabsTrigger value="songs" className="px-1 text-xs" data-testid="tab-songs">
             <Music className="w-4 h-4 sm:mr-1" />
