@@ -1,5 +1,7 @@
-const isCapacitor = typeof (window as any).Capacitor !== 'undefined' && 
-  (window as any).Capacitor?.isNativePlatform?.() === true;
+function getIsCapacitor(): boolean {
+  return typeof (window as any).Capacitor !== 'undefined' && 
+    (window as any).Capacitor?.isNativePlatform?.() === true;
+}
 
 type ShareVibyngContentInput = {
   title: string;
@@ -63,7 +65,7 @@ const permalink = shareUrl?.trim() || fallbackUrl || mediaUrl;
 const shareText = [normalizedText, shareUrl].filter(Boolean).join("\n\n");
 const fallbackText = [normalizedText, permalink].filter(Boolean).join("\n\n");
 
- if (isCapacitor) {
+if (getIsCapacitor()) {
     try {
       const { Share } = await import('@capacitor/share');
       await Share.share({
