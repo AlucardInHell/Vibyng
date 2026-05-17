@@ -29,6 +29,19 @@ export async function shareVibyngContent({
   const shareText = [normalizedText, shareUrl].filter(Boolean).join("\n\n");
   const fallbackText = [normalizedText, permalink].filter(Boolean).join("\n\n");
 
+  try {
+    const { Share } = await import('@capacitor/share');
+    await Share.share({
+      title,
+      text: fallbackText || normalizedText,
+      url: shareUrl || fallbackUrl || undefined,
+      dialogTitle: title,
+    });
+    return "shared";
+  } catch (error: any) {
+    if (error?.message?.includes("cancel") || error?.name === "AbortError") return "cancelled";
+  }
+
   if (typeof navigator !== "undefined" && "share" in navigator) {
     try {
       await navigator.share({
@@ -38,11 +51,8 @@ export async function shareVibyngContent({
       });
       return "shared";
     } catch (error: any) {
-      alert(`Share error: ${error?.name} - ${error?.message}`);
       if (error?.name === "AbortError") return "cancelled";
     }
-  } else {
-    alert(`navigator.share non disponibile`);
   }
 
   if (navigator.clipboard?.writeText) {
