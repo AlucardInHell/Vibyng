@@ -691,48 +691,11 @@ export default function Points() {
 }, []);
 
   useEffect(() => {
-  const fromMessages =
-    sessionStorage.getItem("vibyng-open-me-from-messages") === "1";
-
-  if (!fromMessages) return;
-
-  sessionStorage.removeItem("vibyng-open-me-from-messages");
-
-  const resetMeScroll = () => {
-    (document.activeElement as HTMLElement | null)?.blur?.();
-
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "auto",
-    });
-
-    mePageTopRef.current?.scrollIntoView({
-      block: "start",
-      inline: "nearest",
-      behavior: "auto",
-    });
-  };
-
-  resetMeScroll();
-
-  requestAnimationFrame(() => {
-    resetMeScroll();
-
-    requestAnimationFrame(() => {
-      resetMeScroll();
-    });
-  });
-
-  const timeout = window.setTimeout(resetMeScroll, 180);
-
-  return () => {
-    window.clearTimeout(timeout);
-  };
-}, []);
+    const fromMessages = sessionStorage.getItem("vibyng-open-me-from-messages") === "1";
+    if (!fromMessages) return;
+    sessionStorage.removeItem("vibyng-open-me-from-messages");
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
 
   useEffect(() => {
   if (!showLiveSetup || !livePreviewRef.current || !livePreviewStream) return;
