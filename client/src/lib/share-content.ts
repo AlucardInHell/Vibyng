@@ -1,4 +1,5 @@
-const isCapacitor = typeof (window as any).Capacitor !== 'undefined';
+const isCapacitor = typeof (window as any).Capacitor !== 'undefined' && 
+  (window as any).Capacitor?.isNativePlatform?.() === true;
 
 type ShareVibyngContentInput = {
   title: string;
