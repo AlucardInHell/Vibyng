@@ -3643,7 +3643,7 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
         userId: Number(commentRow.author_id),
         type: "like",
         message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
-        relatedUserId: userId,
+        relatedUserId: Number(commentRow.post_author_id),
         referenceType: "post",
         referenceId: Number(commentRow.post_id),
       });
