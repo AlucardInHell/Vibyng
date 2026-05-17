@@ -38,8 +38,11 @@ export async function shareVibyngContent({
       });
       return "shared";
     } catch (error: any) {
+      alert(`Share error: ${error?.name} - ${error?.message}`);
       if (error?.name === "AbortError") return "cancelled";
     }
+  } else {
+    alert(`navigator.share non disponibile`);
   }
 
   if (navigator.clipboard?.writeText) {
