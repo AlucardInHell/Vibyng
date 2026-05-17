@@ -696,27 +696,7 @@ function BottomNav() {
     return;
   }
 
-  if (location.startsWith("/messages")) {
-  queryClient.cancelQueries({
-    queryKey: ["/api/users", currentUserId, "conversations"],
-  });
-
-  queryClient.cancelQueries({
-    queryKey: ["/api/messages/unread-per-user", currentUserId],
-  });
-}
-    
- document.documentElement.scrollTop = 0;
- document.body.scrollTop = 0;
- window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-
- setLocation("/me");
-
- requestAnimationFrame(() => {
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
-  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-});
+  setLocation("/me");
 };
   const { toast } = useToast();
   const photoInputRef = useRef<HTMLInputElement>(null);
