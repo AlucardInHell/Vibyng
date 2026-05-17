@@ -697,9 +697,10 @@ function BottomNav() {
   }
 
   if (location.startsWith("/messages")) {
-    window.location.assign("/me");
-    return;
+    sessionStorage.setItem("vibyng-open-me-from-messages", "1");
   }
+
+  (document.activeElement as HTMLElement | null)?.blur?.();
 
   setLocation("/me");
 };
