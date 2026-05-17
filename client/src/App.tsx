@@ -1506,6 +1506,23 @@ function SettingsMenu() {
 }
 function AppLayout() {
   const [location, setLocation] = useLocation();
+  const mainRef = useRef<HTMLElement | null>(null);
+  const routeKey = location.split("?")[0];
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+  }, [routeKey]);
+  
   const handleLogoClick = () => {
     if (location !== "/") {
       setLocation("/");
@@ -1530,9 +1547,15 @@ function AppLayout() {
           </div>
         </div>
       </header>
-      <main className="pb-36 pt-4 px-4 max-w-md mx-auto overflow-y-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-        <Router />
-      </main>
+      <main
+  ref={mainRef}
+  className="pb-36 pt-4 px-4 max-w-md mx-auto overflow-y-auto [&::-webkit-scrollbar]:hidden"
+  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+>
+  <div key={routeKey}>
+    <Router />
+  </div>
+</main>
       <AppAudioPlayer />
       <BottomNav />
     </div>
