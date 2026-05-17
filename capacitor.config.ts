@@ -10,10 +10,8 @@ const config: CapacitorConfig = {
     cleartext: true,
   },
   android: {
-    buildOptions: {
-      keystorePath: 'vibyng.keystore',
-      keystoreAlias: 'vibyng',
-    },
+    allowMixedContent: true,
+    webContentsDebuggingEnabled: true,
   },
 };
 
