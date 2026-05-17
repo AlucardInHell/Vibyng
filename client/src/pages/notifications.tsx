@@ -116,11 +116,7 @@ function getNotificationTargetUrl(notification: any, currentUserId?: number): st
   if (referenceType && referenceId) {
     switch (referenceType) {
      case "post":
-        const relatedUser = notification.relatedUserId ?? notification.related_user_id;
-        if (relatedUser && Number(relatedUser) !== Number(currentUserId)) {
-          return `/artist/${relatedUser}?tab=posts`;
-        }
-        return `/me?tab=posts`;
+        return `/`;
 
       case "photo":
         return `/me?openPhoto=${referenceId}`;
