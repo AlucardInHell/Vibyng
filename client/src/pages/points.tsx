@@ -2639,9 +2639,8 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
           <img
   src={selectedPhoto.imageUrl ?? undefined}
   alt={selectedPhoto.title}
-  className={
-    className="max-w-full max-h-full object-contain"
-  />
+  className="max-w-full max-h-full object-contain"
+/>
         </div>
 
        <div className="absolute inset-x-0 bottom-16 z-20 max-h-[13rem] overflow-y-auto bg-gradient-to-t from-black via-black/95 to-black/70 px-4 pt-3 pb-4">
