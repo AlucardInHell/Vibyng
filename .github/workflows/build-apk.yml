@@ -54,11 +54,12 @@ jobs:
           convert client/public/1769045968337.png -trim +repage -resize 150% -gravity center -background black -extent 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
           convert client/public/1769045968337.png -trim +repage -resize 150% -gravity center -background black -extent 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
           convert client/public/1769045968337.png -trim +repage -resize 150% -gravity center -background black -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-          convert client/public/1769045968337.png -trim +repage -resize 150% -gravity center -background black -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png          echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#000000</color></resources>' > android/app/src/main/res/values/ic_launcher_background.xml
+          convert client/public/1769045968337.png -trim +repage -resize 150% -gravity center -background black -extent 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+          echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#000000</color></resources>' > android/app/src/main/res/values/ic_launcher_background.xml
           echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
           echo '<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>' > android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
           sed -i 's|android:roundIcon="@mipmap/ic_launcher_round"|android:roundIcon="@mipmap/ic_launcher"|g' android/app/src/main/AndroidManifest.xml
-          
+
       - name: Fix Kotlin duplicate classes
         run: |
           echo "" >> android/build.gradle
