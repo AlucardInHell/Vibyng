@@ -60,23 +60,23 @@ const flowTranslations = {
     loadArtistsError: "Errore nel caricamento artisti",
     flowShareText: "Flow su Vibyng",
     reportContentTitle: "Segnala contenuto",
-reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
-reportComment: "Segnala commento",
-reportReason: "Motivo della segnalazione",
-reportDetails: "Dettagli opzionali",
-reportDetailsPlaceholder: "Aggiungi dettagli utili alla verifica...",
-reportSubmit: "Invia segnalazione",
-reportSuccessTitle: "Segnalazione inviata",
-reportSuccessDescription: "Grazie, analizzeremo la segnalazione.",
-reportErrorDescription: "Non è stato possibile inviare la segnalazione.",
-reportReasonOffensive: "Contenuto offensivo",
-reportReasonViolent: "Contenuto violento",
-reportReasonPornographic: "Contenuto pornografico",
-reportReasonHarassment: "Molestie",
-reportReasonHate: "Odio o discriminazione",
-reportReasonSpam: "Spam",
-reportReasonFakeProfile: "Profilo falso",
-reportReasonOther: "Altro",
+    reportContentDescription: "Aiutaci a capire cosa non va in questo contenuto.",
+    reportComment: "Segnala commento",
+    reportReason: "Motivo della segnalazione",
+    reportDetails: "Dettagli opzionali",
+    reportDetailsPlaceholder: "Aggiungi dettagli utili alla verifica...",
+    reportSubmit: "Invia segnalazione",
+    reportSuccessTitle: "Segnalazione inviata",
+    reportSuccessDescription: "Grazie, analizzeremo la segnalazione.",
+    reportErrorDescription: "Non è stato possibile inviare la segnalazione.",
+    reportReasonOffensive: "Contenuto offensivo",
+    reportReasonViolent: "Contenuto violento",
+    reportReasonPornographic: "Contenuto pornografico",
+    reportReasonHarassment: "Molestie",
+    reportReasonHate: "Odio o discriminazione",
+    reportReasonSpam: "Spam",
+    reportReasonFakeProfile: "Profilo falso",
+    reportReasonOther: "Altro",
   },
   en: {
     loading: "Loading Flow...",
@@ -97,23 +97,23 @@ reportReasonOther: "Altro",
     loadArtistsError: "Error loading artists",
     flowShareText: "Flow on Vibyng",
     reportContentTitle: "Report content",
-reportContentDescription: "Help us understand what is wrong with this content.",
-reportComment: "Report comment",
-reportReason: "Report reason",
-reportDetails: "Optional details",
-reportDetailsPlaceholder: "Add useful details for review...",
-reportSubmit: "Submit report",
-reportSuccessTitle: "Report submitted",
-reportSuccessDescription: "Thank you, we will review this report.",
-reportErrorDescription: "Unable to submit the report.",
-reportReasonOffensive: "Offensive content",
-reportReasonViolent: "Violent content",
-reportReasonPornographic: "Pornographic content",
-reportReasonHarassment: "Harassment",
-reportReasonHate: "Hate or discrimination",
-reportReasonSpam: "Spam",
-reportReasonFakeProfile: "Fake profile",
-reportReasonOther: "Other",
+    reportContentDescription: "Help us understand what is wrong with this content.",
+    reportComment: "Report comment",
+    reportReason: "Report reason",
+    reportDetails: "Optional details",
+    reportDetailsPlaceholder: "Add useful details for review...",
+    reportSubmit: "Submit report",
+    reportSuccessTitle: "Report submitted",
+    reportSuccessDescription: "Thank you, we will review this report.",
+    reportErrorDescription: "Unable to submit the report.",
+    reportReasonOffensive: "Offensive content",
+    reportReasonViolent: "Violent content",
+    reportReasonPornographic: "Pornographic content",
+    reportReasonHarassment: "Harassment",
+    reportReasonHate: "Hate or discrimination",
+    reportReasonSpam: "Spam",
+    reportReasonFakeProfile: "Fake profile",
+    reportReasonOther: "Other",
   },
 } as const;
 
@@ -413,6 +413,8 @@ export default function Artists() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [commentsOpenId, setCommentsOpenId] = useState<number | null>(null);
   const [commentInput, setCommentInput] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const commentSubmittingRef = useRef(false);
   const [commentsOpenType, setCommentsOpenType] = useState<"video" | "photo" | "song" | null>(null);
   const isVideoCommentsOpen =
   commentsOpenType === "video" && commentsOpenId !== null;
@@ -1483,32 +1485,57 @@ const reportMutation = useMutation({
 };
   
   const handleSubmitComment = async () => {
-  if (!commentsOpenId || !commentsOpenType || !commentInput.trim()) return;
+  if (
+    commentSubmittingRef.current ||
+    !commentsOpenId ||
+    !commentsOpenType ||
+    !commentInput.trim()
+  ) {
+    return;
+  }
 
- const endpoint =
-  commentsOpenType === "photo"
-    ? `/api/photos/${commentsOpenId}/comments`
-    : commentsOpenType === "song"
-      ? `/api/songs/${commentsOpenId}/comments`
-      : `/api/videos/${commentsOpenId}/comments`;
+  commentSubmittingRef.current = true;
+  setCommentSubmitting(true);
 
-  await apiRequest("POST", endpoint, {
-    authorId: currentUserId,
-    content: commentInput.trim(),
-  });
+  const contentToSend = commentInput.trim();
 
-  setCommentInput("");
-  closeMentions();
+  const endpoint =
+    commentsOpenType === "photo"
+      ? `/api/photos/${commentsOpenId}/comments`
+      : commentsOpenType === "song"
+        ? `/api/songs/${commentsOpenId}/comments`
+        : `/api/videos/${commentsOpenId}/comments`;
 
-  await refetchComments();
+  try {
+    setCommentInput("");
+    closeMentions();
 
-  await queryClient.invalidateQueries({
-    queryKey: ["/api/flow/client"],
-    exact: false,
-  });
+    await apiRequest("POST", endpoint, {
+      authorId: currentUserId,
+      content: contentToSend,
+    });
 
-  await queryClient.invalidateQueries({ queryKey: ["/api/vpoints", currentUserId, "status"] });
-  await queryClient.invalidateQueries({ queryKey: ["/api/users", currentUserId] });
+    await refetchComments();
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/flow/client"],
+      exact: false,
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/vpoints", currentUserId, "status"],
+    });
+
+    await queryClient.invalidateQueries({
+      queryKey: ["/api/users", currentUserId],
+    });
+  } catch (err) {
+    setCommentInput(contentToSend);
+    console.error("[flow-comment-submit]", err);
+  } finally {
+    commentSubmittingRef.current = false;
+    setCommentSubmitting(false);
+  }
 };
 
   if (isLoading || flowLoading) {
@@ -2149,19 +2176,22 @@ return (
           <Input
             value={commentInput}
             placeholder={t.commentPlaceholder}
+            disabled={commentSubmitting}
             className="w-full bg-white/10 border-white/10 text-white placeholder:text-white/40"
             onChange={(e) => {
               setCommentInput(e.target.value);
               handleTextChange(e.target.value, e.target.selectionStart || 0);
             }}
             onKeyDown={async (e) => {
-              if (e.key !== "Enter") return;
+  if (e.key !== "Enter") return;
 
-              e.preventDefault();
-              e.stopPropagation();
+  e.preventDefault();
+  e.stopPropagation();
 
-              await handleSubmitComment();
-            }}
+  if (commentSubmitting) return;
+
+  await handleSubmitComment();
+}}
           />
 
           <MentionDropdown
@@ -2175,8 +2205,8 @@ return (
         </div>
 
         <Button
-          size="icon"
-          disabled={!commentInput.trim()}
+        size="icon"
+        disabled={!commentInput.trim() || commentSubmitting}
           onClick={async (e) => {
             e.preventDefault();
             e.stopPropagation();
