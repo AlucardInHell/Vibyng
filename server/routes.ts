@@ -1129,7 +1129,7 @@ app.post("/api/songs/:songId/comments", async (req, res) => {
   userId: songOwnerId,
   type: "comment",
   message: `${commenter?.displayName || "Qualcuno"} ha commentato la tua canzone`,
-  relatedUserId: userId,
+  relatedUserId: authorId,
   referenceType: "song",
   referenceId: songId,
 });
@@ -1251,12 +1251,13 @@ app.post("/api/songs/:songId/comments/:commentId/like/:userId", async (req, res)
     if (Number(userId) !== Number(comment.author_id)) {
       const liker = await storage.getUser(userId);
       await storage.createNotification({
-        userId: Number(comment.author_id),
-        type: "like",
-        message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
-        relatedUserId: userId,
-        referenceType: "song",
-      });
+  userId: Number(comment.author_id),
+  type: "like",
+  message: `${liker?.displayName || "Qualcuno"} ha messo like al tuo commento`,
+  relatedUserId: userId,
+  referenceType: "song",
+  referenceId: songId,
+});
     }
 
     res.json({
