@@ -1193,10 +1193,11 @@ app.delete("/api/songs/:songId/comments/:commentId", async (req, res) => {
 
 app.post("/api/songs/:songId/comments/:commentId/like/:userId", async (req, res) => {
   try {
+    const songId = Number(req.params.songId);
     const commentId = Number(req.params.commentId);
     const userId = Number(req.params.userId);
 
-    if (!commentId || !userId) {
+    if (!songId || !commentId || !userId) {
       return res.status(400).json({
         message: "Dati like commento song non validi",
       });
@@ -3736,12 +3737,14 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
     try {
       const followers = await db.execute(sql`SELECT fan_id FROM followers WHERE artist_id = ${input.artistId}`);
       for (const f of followers.rows) {
-        await storage.createNotification({
-          userId: Number(f.fan_id),
-          type: "new_content",
-          message: `Un artista che segui ha creato un nuovo obiettivo: ${input.title || "Nuovo obiettivo"}`,
-          relatedUserId: Number(input.artistId),
-        });
+       await storage.createNotification({
+  userId: Number(f.fan_id),
+  type: "new_content",
+  message: `Un artista che segui ha creato un nuovo obiettivo: ${input.title || "Nuovo obiettivo"}`,
+  relatedUserId: Number(input.artistId),
+  referenceType: "goal",
+  referenceId: Number(goal.id),
+});
       }
     } catch {}
       
@@ -4027,26 +4030,35 @@ if (alreadyExists) {
     code: "SONG_ALREADY_IN_PLAYLIST",
   });
 }
-      const song = await storage.createSong({ artistId, title, audioUrl, coverUrl, duration });
-      res.status(201).json(song);
+  const song = await storage.createSong({ artistId, title, audioUrl, coverUrl, duration });
+
+try {
+  const followers = await db.execute(sql`
+    SELECT fan_id
+    FROM followers
+    WHERE artist_id = ${artistId}
+  `);
+
+  for (const f of followers.rows) {
+    await storage.createNotification({
+      userId: Number(f.fan_id),
+      type: "new_content",
+      message: `Un artista che segui ha caricato una nuova canzone: ${title || "Senza titolo"}`,
+      relatedUserId: artistId,
+      referenceType: "song",
+      referenceId: Number(song.id),
+    });
+  }
+} catch (notificationErr: any) {
+  console.error("[song-followers-notification]", notificationErr?.message || notificationErr);
+}
+
+res.status(201).json(song);
     } catch (err: any) {
       console.error("[create-song] error:", err?.message);
       res.status(400).json({ message: "Errore nel salvare la canzone" });
     }
   });
-
-  // Notifica nuova canzone ai follower
-    try {
-      const followers = await db.execute(sql`SELECT fan_id FROM followers WHERE artist_id = ${artistId}`);
-      for (const f of followers.rows) {
-        await storage.createNotification({
-          userId: Number(f.fan_id),
-          type: "new_content",
-          message: `Un artista che segui ha caricato una nuova canzone: ${title || "Senza titolo"}`,
-          relatedUserId: artistId,
-        });
-      }
-    } catch {}
   
   // === SONGS ===
   app.get(api.songs.listByArtist.path, async (req, res) => {
