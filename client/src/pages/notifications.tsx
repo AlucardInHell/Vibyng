@@ -123,6 +123,9 @@ if (referenceType && referenceId) {
 
     case "video":
       return `/me?tab=videos&focusVideo=${referenceId}`;
+      
+    case "story":
+      return `/?openStory=${referenceId}`;
 
     case "song":
       return `/me?tab=songs&focusSong=${referenceId}`;
@@ -136,11 +139,10 @@ if (referenceType && referenceId) {
     case "live":
       return `/artists?tab=live&focusLive=${referenceId}`;
 
-    case "message":
-      if (notification.relatedUserId ?? notification.related_user_id) {
-        return `/messages?userId=${notification.relatedUserId ?? notification.related_user_id}`;
-      }
-      return "/messages";
+   case "message": {
+   const relatedUserId = notification.relatedUserId ?? notification.related_user_id;
+   return relatedUserId ? `/chat/${relatedUserId}` : "/messages";
+}
 
     case "profile":
     case "follow":
@@ -161,6 +163,10 @@ if (relatedPostId) {
   return `/me?tab=posts&focusPost=${relatedPostId}`;
 }
 
+if (notification.type === "message" && relatedUserId) {
+  return `/chat/${relatedUserId}`;
+}
+  
 // Solo le notifiche di follow/profilo devono aprire il profilo.
 // Like, commenti, nuove song, video, foto ecc. NON devono cadere sul profilo.
 if (
