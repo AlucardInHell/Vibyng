@@ -4146,10 +4146,10 @@ app.get("/api/users/:userId/followers", async (req, res) => {
    await storage.createNotification({
   userId: artistId,
   type: "follow",
-  message: `${fan?.displayName || "Qualcuno"} ha iniziato a seguirti`,
-  relatedUserId: fanId,
+  message: `${follower?.displayName || "Qualcuno"} ha iniziato a seguirti`,
+  relatedUserId: userId,
   referenceType: "follow",
-  referenceId: fanId,
+  referenceId: userId,
 });
 
     res.json({ success: true });
