@@ -116,13 +116,13 @@ function getNotificationTargetUrl(notification: any, currentUserId?: number): st
 if (referenceType && referenceId) {
   switch (referenceType) {
     case "post":
-      return `/me?tab=posts&focusPost=${referenceId}&comments=1`;
+      return `/me?tab=posts&focusPost=${referenceId}`;
 
     case "photo":
-      return `/me?tab=photos&focusPhoto=${referenceId}&comments=1`;
+      return `/me?tab=photos&focusPhoto=${referenceId}`;
 
     case "video":
-      return `/me?tab=videos&focusVideo=${referenceId}&comments=1`;
+      return `/me?tab=videos&focusVideo=${referenceId}`;
 
     case "song":
       return `/me?tab=songs&focusSong=${referenceId}`;
@@ -158,7 +158,7 @@ if (referenceType && referenceId) {
  const relatedUserId = notification.relatedUserId ?? notification.related_user_id;
 
 if (relatedPostId) {
-  return `/me?tab=posts&focusPost=${relatedPostId}&comments=1`;
+  return `/me?tab=posts&focusPost=${relatedPostId}`;
 }
 
 // Solo le notifiche di follow/profilo devono aprire il profilo.
