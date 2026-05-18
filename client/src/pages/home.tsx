@@ -331,6 +331,28 @@ function Stories() {
   
  const storiesData = useMemo(() => groupStoriesByUser(storiesFromDb, t), [storiesFromDb, t]);
 
+  useEffect(() => {
+  const openStoryId = new URLSearchParams(window.location.search).get("openStory");
+  if (!openStoryId || !storiesData.length || activeStory) return;
+
+  const group = storiesData.find((storyGroup) =>
+    storyGroup.stories.some((story) => Number(story.id) === Number(openStoryId))
+  );
+
+  if (!group) return;
+
+  const storyIndex = group.stories.findIndex(
+    (story) => Number(story.id) === Number(openStoryId)
+  );
+
+  setActiveStory(group);
+  setActiveStoryIndex(storyIndex >= 0 ? storyIndex : 0);
+  setProgress(0);
+  setViewedStories((prev) => new Set(Array.from(prev).concat(group.userId)));
+
+  window.history.replaceState({}, "", "/");
+}, [storiesData, activeStory]);
+
   const { data: activeLives = [] } = useQuery<any[]>({
     queryKey: ["/api/lives/active"],
     queryFn: async () => {
