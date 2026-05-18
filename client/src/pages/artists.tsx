@@ -1558,8 +1558,8 @@ const reportMutation = useMutation({
     );
   }
 
-  return (
-    <div className="flex flex-col gap-2">
+ return (
+  <div className="h-full min-h-0 flex flex-col gap-2 overflow-hidden">
      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
   <DialogContent className="z-[130]">
     <DialogHeader>
@@ -1615,12 +1615,12 @@ const reportMutation = useMutation({
     </div>
   </DialogContent>
 </Dialog> 
-      <div className="flex items-center gap-2 mb-1">
+      <div className="shrink-0 flex items-center gap-2 mb-1">
         <Sparkles className="w-6 h-6 text-primary" />
         <h1 className="text-2xl font-semibold">Flow</h1>
       </div>
 
-      <div className="flex items-center gap-1 sticky top-0 z-20 bg-background/95 backdrop-blur py-1 overflow-x-auto scrollbar-hide">
+      <div className="shrink-0 flex items-center gap-1 z-20 bg-background/95 backdrop-blur py-1 overflow-x-auto scrollbar-hide">
         <button
           className={`px-2.5 py-1.5 rounded-full text-[12px] font-medium transition whitespace-nowrap shrink-0 ${
             activeTab === "for-you" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
@@ -1660,9 +1660,9 @@ const reportMutation = useMutation({
 </div>
 
 {activeTab === "live" && (
-  <div className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] overflow-y-auto snap-y snap-mandatory">
+  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain snap-y snap-mandatory">
     {livesLoading ? (
-      <section className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0">
+      <section className="h-full snap-start py-0">
         <div className="h-full rounded-[28px] border border-border/60 bg-card flex flex-col items-center justify-center text-center px-6">
           <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4 animate-pulse">
             <span className="text-2xl">🔴</span>
@@ -1673,7 +1673,7 @@ const reportMutation = useMutation({
         </div>
       </section>
     ) : activeLiveStreams.length === 0 ? (
-      <section className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0">
+      <section className="h-full snap-start py-0">
         <div className="h-full rounded-[28px] border border-border/60 bg-card flex flex-col items-center justify-center text-center px-6">
           <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4">
             <span className="text-2xl">🔴</span>
@@ -1980,8 +1980,8 @@ return (
 <div
   ref={scrollRef}
   onScroll={handleScroll}
-  className={`${activeTab === "live" ? "hidden" : ""} h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] ${
-    isVideoCommentsOpen ? "overflow-hidden" : "overflow-y-auto"
+  className={`${activeTab === "live" ? "hidden" : ""} flex-1 min-h-0 ${
+    isVideoCommentsOpen ? "overflow-hidden" : "overflow-y-auto overscroll-contain"
   } snap-y snap-mandatory`}
 >
         {activeList.map((item, index) => {
@@ -1989,10 +1989,10 @@ return (
   const hasCover = !!item.coverUrl;
 
   return (
-    <section
-      key={item.flowKey}
-      className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
-    >
+   <section
+  key={item.flowKey}
+  className="h-full snap-start py-0"
+>
       <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
         {hasCover ? (
           <img
@@ -2587,7 +2587,7 @@ return (
   return (
     <section
       key={item.flowKey}
-      className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
+      className="h-full snap-start py-0"
     >
       <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
         <img
@@ -2918,7 +2918,7 @@ return (
           return (
             <section
               key={video.flowKey}
-              className="h-[calc(100dvh-16rem)] sm:h-[calc(100dvh-14rem)] snap-start py-0"
+              className="h-full snap-start py-0"
             >
               <div className="h-full rounded-[28px] border border-border/60 overflow-hidden bg-black relative">
              <div
