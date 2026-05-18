@@ -2634,31 +2634,17 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
           ✕
         </button>
 
-        <div
-  className={
-    selectedPhotoIsTall
-  ? "flex-1 min-h-0 flex items-center justify-center px-0 pt-12 pb-36"
-  : "flex-1 min-h-0 flex items-center justify-center px-2 pt-12 pb-24"
-  }
->
+        <div className="absolute inset-x-0 top-0 bottom-[13.5rem] flex items-center justify-center px-2 pt-12">
+          
           <img
   src={selectedPhoto.imageUrl ?? undefined}
   alt={selectedPhoto.title}
   className={
-    selectedPhotoIsTall
-  ? "w-full h-full max-h-[calc(100dvh-16rem)] object-contain"
-  : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
-  }
+    className="max-w-full max-h-full object-contain"
   />
         </div>
 
-       <div
- className={
-  selectedPhotoIsTall
-  ? "absolute inset-x-0 bottom-16 z-20 bg-black/90 px-4 pt-3 pb-4"
-  : "px-4 pb-4"
-}
->
+       <div className="absolute inset-x-0 bottom-16 z-20 max-h-[13rem] overflow-y-auto bg-gradient-to-t from-black via-black/95 to-black/70 px-4 pt-3 pb-4">
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
             <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
               <MentionText text={selectedPhoto.title} />
