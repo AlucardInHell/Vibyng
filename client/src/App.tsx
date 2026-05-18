@@ -1501,6 +1501,7 @@ function AppLayout() {
   const [location, setLocation] = useLocation();
   const mainRef = useRef<HTMLElement | null>(null);
   const routeKey = location.split("?")[0];
+  const isFlowRoute = routeKey === "/artists";
 
   useLayoutEffect(() => {
   mainRef.current?.scrollTo({
@@ -1544,8 +1545,13 @@ function AppLayout() {
         </div>
       </header>
       <main
+ <main
   ref={mainRef}
-  className="pb-36 pt-4 px-4 max-w-md mx-auto overflow-y-auto [&::-webkit-scrollbar]:hidden"
+  className={`pt-4 px-4 max-w-md mx-auto [&::-webkit-scrollbar]:hidden ${
+    isFlowRoute
+      ? "h-[calc(100dvh-3.5rem)] pb-0 overflow-hidden"
+      : "pb-36 overflow-y-auto"
+  }`}
   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
 >
   <div key={routeKey}>
