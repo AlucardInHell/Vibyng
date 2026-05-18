@@ -397,24 +397,25 @@ function ProfileProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const profileData: ProfileData = user ? {
-    displayName: user.displayName || "",
-    username: user.username || "",
-    email: user.email || "",
-    bio: user.bio || "",
-    avatarUrl: user.avatarUrl,
-    role: (user as any).role || "",
-    genre: (user as any).genre || "",
-  } : {
-    displayName: "",
-    username: "",
-    email: "",
-    bio: "",
-    avatarUrl: null,
-    role: "",
-    genre: "",
-  };
+  const storedUserData = getStoredUser();
 
+  const profileData: ProfileData = user ? {
+  displayName: user.displayName || "",
+  username: user.username || "",
+  email: user.email || "",
+  bio: user.bio || "",
+  avatarUrl: user.avatarUrl,
+  role: (user as any).role || "",
+  genre: (user as any).genre || "",
+} : {
+  displayName: storedUserData?.displayName || "",
+  username: storedUserData?.username || "",
+  email: storedUserData?.email || "",
+  bio: storedUserData?.bio || "",
+  avatarUrl: storedUserData?.avatarUrl || null,
+  role: storedUserData?.role || "",
+  genre: storedUserData?.genre || "",
+};
   const updateProfile = useCallback(async (data: Partial<ProfileData>) => {
     await updateMutation.mutateAsync(data);
   }, [updateMutation]);
