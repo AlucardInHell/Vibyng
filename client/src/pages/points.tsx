@@ -2637,8 +2637,8 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
         <div
   className={
     selectedPhotoIsTall
-      ? "flex-1 flex items-center justify-center px-0 pt-12 pb-0"
-      : "flex-1 flex items-center justify-center px-2 pt-12 pb-24"
+  ? "flex-1 min-h-0 flex items-center justify-center px-0 pt-12 pb-36"
+  : "flex-1 min-h-0 flex items-center justify-center px-2 pt-12 pb-24"
   }
 >
           <img
@@ -2646,8 +2646,8 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
   alt={selectedPhoto.title}
   className={
     selectedPhotoIsTall
-      ? "w-full h-full max-h-[calc(100dvh-9rem)] object-contain"
-      : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
+  ? "w-full h-full max-h-[calc(100dvh-16rem)] object-contain"
+  : "w-full h-full max-h-[72dvh] sm:max-h-[78vh] object-contain"
   }
   />
         </div>
@@ -2655,8 +2655,8 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
        <div
  className={
   selectedPhotoIsTall
-    ? "absolute inset-x-0 bottom-0 z-20 bg-black/90 px-4 pt-4 pb-4"
-    : "px-4 pb-4"
+  ? "absolute inset-x-0 bottom-16 z-20 bg-black/90 px-4 pt-3 pb-4"
+  : "px-4 pb-4"
 }
 >
           {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
