@@ -1544,7 +1544,6 @@ function AppLayout() {
           </div>
         </div>
       </header>
-      <main
  <main
   ref={mainRef}
   className={`pt-4 px-4 max-w-md mx-auto [&::-webkit-scrollbar]:hidden ${
