@@ -1548,7 +1548,7 @@ function AppLayout() {
   ref={mainRef}
   className={`pt-4 px-4 max-w-md mx-auto [&::-webkit-scrollbar]:hidden ${
     isFlowRoute
-      ? "h-[calc(100dvh-3.5rem)] pb-0 overflow-hidden"
+      ? "h-[calc(100dvh-7.5rem)] pb-0 overflow-hidden"
       : "pb-36 overflow-y-auto"
   }`}
   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
