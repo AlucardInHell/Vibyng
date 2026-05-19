@@ -456,11 +456,63 @@ await db.execute(sql`
   CREATE TABLE IF NOT EXISTS points_redemptions (
     id serial PRIMARY KEY,
     user_id integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    target_artist_id integer REFERENCES users(id) ON DELETE SET NULL,
     reward_code text NOT NULL,
+    reward_title text,
     points_spent integer NOT NULL,
+    fan_message text,
+    status text NOT NULL DEFAULT 'redeemed',
+    confirmed_at timestamp,
+    cancelled_at timestamp,
+    expires_at timestamp,
     created_at timestamp DEFAULT now()
   )
 `);
+
+await db.execute(sql`
+  ALTER TABLE points_redemptions
+  ADD COLUMN IF NOT EXISTS target_artist_id integer REFERENCES users(id) ON DELETE SET NULL
+`);
+
+await db.execute(sql`
+  ALTER TABLE points_redemptions
+  ADD COLUMN IF NOT EXISTS reward_title text
+`);
+
+await db.execute(sql`
+  ALTER TABLE points_redemptions
+  ADD COLUMN IF NOT EXISTS fan_message text
+`);
+
+await db.execute(sql`
+  ALTER TABLE points_redemptions
+  ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'redeemed'
+`);
+
+await db.execute(sql`
+  ALTER TABLE points_redemptions
+  ADD COLUMN IF NOT EXISTS confirmed_at timestamp
+`);
+
+await db.execute(sql`
+  ALTER TABLE points_redemptions
+  ADD COLUMN IF NOT EXISTS cancelled_at timestamp
+`);
+
+await db.execute(sql`
+  ALTER TABLE points_redemptions
+  ADD COLUMN IF NOT EXISTS expires_at timestamp
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS points_redemptions_user_status_idx
+  ON points_redemptions (user_id, status)
+`);
+
+await db.execute(sql`
+  CREATE INDEX IF NOT EXISTS points_redemptions_target_artist_status_idx
+  ON points_redemptions (target_artist_id, status)
+`); 
 
 await db.execute(sql`
   ALTER TABLE supports
