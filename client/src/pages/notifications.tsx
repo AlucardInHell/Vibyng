@@ -112,6 +112,28 @@ function timeAgo(date: Date | string | null, t: typeof notificationsTranslations
 function getNotificationTargetUrl(notification: any, currentUserId?: number): string | null {
   const referenceType = notification.referenceType ?? notification.reference_type;
   const referenceId = notification.referenceId ?? notification.reference_id;
+  const relatedUserId = notification.relatedUserId ?? notification.related_user_id;
+  const relatedPostId = notification.relatedPostId ?? notification.related_post_id;
+
+if (notification.type === "mention" && referenceType && referenceId) {
+  switch (referenceType) {
+    case "post":
+    case "photo":
+    case "video":
+      return `/content/${referenceType}/${referenceId}`;
+
+    case "story":
+      return `/?openStory=${referenceId}`;
+
+    case "song":
+      return relatedUserId
+        ? `/artist/${relatedUserId}?tab=songs&focusSong=${referenceId}`
+        : "/artists";
+
+    default:
+      return null;
+  }
+}  
 
 if (referenceType && referenceId) {
   switch (referenceType) {
@@ -140,8 +162,7 @@ if (referenceType && referenceId) {
       return `/artists?tab=live&focusLive=${referenceId}`;
 
    case "message": {
-   const relatedUserId = notification.relatedUserId ?? notification.related_user_id;
-   return relatedUserId ? `/chat/${relatedUserId}` : "/messages";
+      return relatedUserId ? `/chat/${relatedUserId}` : "/messages";
 }
 
    case "profile":
@@ -158,9 +179,6 @@ if (referenceType && referenceId) {
       return null;
   }
 }
-
- const relatedPostId = notification.relatedPostId ?? notification.related_post_id;
- const relatedUserId = notification.relatedUserId ?? notification.related_user_id;
 
 if (relatedPostId) {
   return `/me?tab=posts&focusPost=${relatedPostId}`;
