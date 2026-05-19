@@ -4,7 +4,12 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 import { api } from "@shared/routes";
-import { awardPoints, getPointsStatus, redeemPoints } from "./vibyng-points";
+import {
+  awardPoints,
+  getPointsStatus,
+  redeemPoints,
+  FAN_REWARDS_CATALOG,
+} from "./vibyng-points";
 import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import crypto from "crypto";
@@ -2462,6 +2467,177 @@ app.get("/api/vpoints/:userId/status", async (req, res) => {
         userId,
         rewardCode: rewardCode as any,
       });
+
+      const fanRedemptionRequestSchema = z.object({
+  userId: z.coerce.number().int().positive(),
+  rewardCode: z.string().min(1),
+  targetArtistId: z.coerce.number().int().positive(),
+  fanMessage: z.string().max(500).optional().default(""),
+});
+
+app.post("/api/vpoints/redemption-requests", async (req, res) => {
+  try {
+    const input = fanRedemptionRequestSchema.parse(req.body);
+
+    const reward =
+      FAN_REWARDS_CATALOG[input.rewardCode as keyof typeof FAN_REWARDS_CATALOG];
+
+    if (!reward) {
+      return res.status(400).json({
+        success: false,
+        reason: "reward_not_found",
+        message: "Premio non valido per i fan",
+      });
+    }
+
+    if (Number(input.userId) === Number(input.targetArtistId)) {
+      return res.status(400).json({
+        success: false,
+        reason: "self_request_not_allowed",
+        message: "Non puoi inviare una richiesta premio al tuo stesso profilo",
+      });
+    }
+
+    const fanResult = await db.execute(sql`
+      SELECT
+        id,
+        display_name,
+        role,
+        COALESCE(vibyng_points, 0) AS vibyng_points,
+        COALESCE(is_deleted, false) AS is_deleted
+      FROM users
+      WHERE id = ${input.userId}
+      LIMIT 1
+    `);
+
+    const fan = fanResult.rows[0] as any;
+
+    if (!fan || fan.is_deleted) {
+      return res.status(404).json({
+        success: false,
+        reason: "fan_not_found",
+        message: "Fan non trovato",
+      });
+    }
+
+    const artistResult = await db.execute(sql`
+      SELECT
+        id,
+        display_name,
+        username,
+        role,
+        COALESCE(is_deleted, false) AS is_deleted
+      FROM users
+      WHERE id = ${input.targetArtistId}
+      LIMIT 1
+    `);
+
+    const artist = artistResult.rows[0] as any;
+
+    if (!artist || artist.is_deleted) {
+      return res.status(404).json({
+        success: false,
+        reason: "artist_not_found",
+        message: "Artista non trovato",
+      });
+    }
+
+    if (artist.role !== "artist") {
+      return res.status(400).json({
+        success: false,
+        reason: "target_not_artist",
+        message: "Il destinatario della richiesta deve essere un profilo artista",
+      });
+    }
+
+    const lockedResult = await db.execute(sql`
+      SELECT COALESCE(SUM(points_spent), 0)::int AS total
+      FROM points_redemptions
+      WHERE user_id = ${input.userId}
+        AND status IN ('pending', 'accepted')
+    `);
+
+    const currentBalance = Number(fan.vibyng_points ?? 0);
+    const lockedPoints = Number(lockedResult.rows[0]?.total ?? 0);
+    const availablePoints = Math.max(0, currentBalance - lockedPoints);
+
+    if (availablePoints < reward.cost) {
+      return res.status(400).json({
+        success: false,
+        reason: "insufficient_available_points",
+        message: "Punti disponibili insufficienti",
+        balance: currentBalance,
+        lockedPoints,
+        availablePoints,
+        requiredPoints: reward.cost,
+      });
+    }
+
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    const inserted = await db.execute(sql`
+      INSERT INTO points_redemptions (
+        user_id,
+        target_artist_id,
+        reward_code,
+        reward_title,
+        points_spent,
+        fan_message,
+        status,
+        expires_at
+      )
+      VALUES (
+        ${input.userId},
+        ${input.targetArtistId},
+        ${input.rewardCode},
+        ${reward.label},
+        ${reward.cost},
+        ${String(input.fanMessage || "").trim() || null},
+        'pending',
+        ${expiresAt}
+      )
+      RETURNING
+        id,
+        user_id,
+        target_artist_id,
+        reward_code,
+        reward_title,
+        points_spent,
+        fan_message,
+        status,
+        created_at,
+        expires_at
+    `);
+
+    const redemption = inserted.rows[0];
+
+    res.status(201).json({
+      success: true,
+      redemption,
+      balance: currentBalance,
+      lockedPoints: lockedPoints + reward.cost,
+      availablePoints: availablePoints - reward.cost,
+    });
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        reason: "validation_error",
+        message: err.errors[0]?.message || "Dati richiesta non validi",
+        field: err.errors[0]?.path?.join("."),
+      });
+    }
+
+    console.error("[vpoints-redemption-request-create]", err?.message || err);
+
+    res.status(400).json({
+      success: false,
+      reason: "redemption_request_error",
+      message: "Errore nella creazione della richiesta premio",
+      detail: err?.message,
+    });
+  }
+});
 
       if (!result.success) {
         const statusCode =
