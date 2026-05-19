@@ -2614,7 +2614,7 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
     {selectedPhoto && (
   <>
     <div
-      className="fixed inset-0 z-[80] bg-black/95 flex flex-col"
+      className="fixed inset-0 z-[80] bg-black/95 flex flex-col overflow-hidden overscroll-contain"
       onClick={() => {
         setSelectedPhoto(null);
         setPhotoCommentsOpen(false);
@@ -2624,27 +2624,51 @@ await apiRequest("POST", `/api/users/${currentUserId}/videos`, {
         className="relative flex-1 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          className="absolute top-4 right-4 z-20 text-white text-2xl"
-          onClick={() => {
-            setSelectedPhoto(null);
-            setPhotoCommentsOpen(false);
-          }}
-        >
-          ✕
-        </button>
+        <div
+  className="absolute inset-x-0 top-4 z-[100] flex justify-end gap-2 px-4 pointer-events-none"
+  onClick={(e) => e.stopPropagation()}
+  onMouseDown={(e) => e.stopPropagation()}
+  onPointerDown={(e) => e.stopPropagation()}
+  onTouchStart={(e) => e.stopPropagation()}
+>
+  <button
+    className="h-10 w-10 rounded-full bg-black/40 text-white text-2xl hover:bg-black/60 flex items-center justify-center pointer-events-auto"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setSelectedPhoto(null);
+      setPhotoCommentsOpen(false);
+    }}
+  >
+    ✕
+  </button>
+</div>
 
-        <div className="absolute inset-x-0 top-0 bottom-[13.5rem] flex items-center justify-center px-2 pt-12">
-          
-          <img
-  src={selectedPhoto.imageUrl ?? undefined}
-  alt={selectedPhoto.title}
-  className="max-w-full max-h-full object-contain"
-/>
-        </div>
+       <div
+  className={
+    selectedPhotoIsTall
+      ? "flex-1 flex items-center justify-center px-0 pt-12 pb-0"
+      : "flex-1 flex items-center justify-center px-2 pt-12 pb-24"
+  }
+>
+  <img
+    src={selectedPhoto.imageUrl ?? undefined}
+    alt={selectedPhoto.title}
+    className={
+      selectedPhotoIsTall
+        ? "w-full h-full max-h-[calc(100dvh-3rem)] object-contain"
+        : "w-full h-full max-h-[62dvh] sm:max-h-[68vh] object-contain"
+    }
+  />
+</div>
 
-       <div className="absolute inset-x-0 bottom-16 z-20 max-h-[13rem] overflow-y-auto bg-gradient-to-t from-black via-black/95 to-black/70 px-4 pt-3 pb-4">
-          {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
+       <div
+  className={
+    selectedPhotoIsTall
+      ? "absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-4 pt-16 pb-4"
+      : "px-4 pb-4"
+  }
+>          {selectedPhoto.title && selectedPhoto.title !== "Foto" && (
             <p className="text-white font-medium whitespace-pre-wrap break-words mb-1">
               <MentionText text={selectedPhoto.title} />
             </p>
