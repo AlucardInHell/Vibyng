@@ -435,8 +435,21 @@ export const pointsTransactions = pgTable("points_transactions", {
 export const pointsRedemptions = pgTable("points_redemptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+
+  targetArtistId: integer("target_artist_id").references(() => users.id, { onDelete: "set null" }),
+
   rewardCode: text("reward_code").notNull(),
+  rewardTitle: text("reward_title"),
   pointsSpent: integer("points_spent").notNull(),
+
+  fanMessage: text("fan_message"),
+
+  status: text("status").notNull().default("redeemed"),
+
+  confirmedAt: timestamp("confirmed_at"),
+  cancelledAt: timestamp("cancelled_at"),
+  expiresAt: timestamp("expires_at"),
+
   createdAt: timestamp("created_at").defaultNow(),
 });
 
