@@ -145,24 +145,42 @@ function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
-async function sendMentionNotifications(content: string, authorId: number) {
+async function sendMentionNotifications(
+  content: string,
+  authorId: number,
+  reference?: {
+    referenceType: "post" | "photo" | "video" | "song" | "story";
+    referenceId: number;
+  }
+) {
   try {
     const mentions = content.match(/@[A-Za-z0-9._-]+/g);
     if (!mentions) return;
+
     for (const mention of mentions) {
       const username = mention.substring(1);
       const mentionedUser = await storage.getUserByUsername(username);
-      if (mentionedUser && mentionedUser.id !== authorId) {
+
+      if (mentionedUser && Number(mentionedUser.id) !== Number(authorId)) {
         const author = await storage.getUser(authorId);
+
         await storage.createNotification({
-          userId: mentionedUser.id,
+          userId: Number(mentionedUser.id),
           type: "mention",
           message: `${author?.displayName || "Qualcuno"} ti ha taggato`,
-          relatedUserId: authorId,
+          relatedUserId: Number(authorId),
+          ...(reference?.referenceType && reference?.referenceId
+            ? {
+                referenceType: reference.referenceType,
+                referenceId: Number(reference.referenceId),
+              }
+            : {}),
         });
       }
     }
-  } catch {}
+  } catch (err: any) {
+    console.error("[mention-notifications]", err?.message || err);
+  }
 }
 
 async function hasAnyUserBlock(userAId: number, userBId: number): Promise<boolean> {
@@ -1119,7 +1137,10 @@ app.post("/api/songs/:songId/comments", async (req, res) => {
       RETURNING *
     `);
 
-    await sendMentionNotifications(content, authorId);
+    await sendMentionNotifications(content, authorId, {
+  referenceType: "song",
+  referenceId: Number(songId),
+});
 
     // Notifica commento song
     const songOwnerId = Number((song as any).artistId ?? (song as any).artist_id);
@@ -3344,7 +3365,10 @@ app.post("/api/uploads/avatar", async (req, res) => {
       console.error("[points-post-create]", pointsErr?.message);
     }
 
-    await sendMentionNotifications(String(post.content ?? ""), Number(post.authorId));
+   await sendMentionNotifications(String(post.content ?? ""), Number(post.authorId), {
+  referenceType: "post",
+  referenceId: Number(post.id),
+});
 
     res.status(201).json(post);
   } catch (err) {
@@ -3550,7 +3574,10 @@ app.post("/api/posts/:postId/comments", async (req, res) => {
       console.error("[points-comment-post]", pointsErr?.message);
     }
 
-   await sendMentionNotifications(String(content ?? ""), Number(authorId));
+   await sendMentionNotifications(String(content ?? ""), Number(authorId), {
+  referenceType: "post",
+  referenceId: Number(postId),
+});
 
     // Notifica commento post
     if (Number(authorId) !== Number(post.authorId)) {
@@ -4214,9 +4241,13 @@ app.post("/api/users/:userId/photos", async (req, res) => {
     });
 
     await sendMentionNotifications(
-      [title, description].filter(Boolean).join(" "),
-      userId
-    );
+  [title, description].filter(Boolean).join(" "),
+  userId,
+  {
+    referenceType: "photo",
+    referenceId: Number(photo.id),
+  }
+);
 
     res.status(201).json(photo);
   } catch (err) {
@@ -4298,7 +4329,10 @@ app.delete("/api/users/:userId/photos/:photoId", async (req, res) => {
       thumbnailUrl: input.thumbnailUrl || null,
     });
 
-    await sendMentionNotifications(String(input.title ?? ""), userId);
+   await sendMentionNotifications(String(input.title ?? ""), userId, {
+  referenceType: "video",
+  referenceId: Number(video.id),
+});
 
     res.status(201).json(video);
   } catch (err) {
