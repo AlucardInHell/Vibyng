@@ -2444,31 +2444,58 @@ res.json({ success: true, blocked: true });
 });
 
 app.get("/api/vpoints/:userId/status", async (req, res) => {
-    try {
-      const userId = Number(req.params.userId);
-      const status = await getPointsStatus(userId);
+  try {
+    const userId = Number(req.params.userId);
+    const status = await getPointsStatus(userId);
 
-      if (!status) {
-        return res.status(404).json({ message: "Utente non trovato" });
-      }
-
-      res.json(status);
-    } catch (err: any) {
-      res.status(400).json({ message: "Errore nel recupero stato VibyngPoints", detail: err?.message });
+    if (!status) {
+      return res.status(404).json({ message: "Utente non trovato" });
     }
-  });
 
-  app.post("/api/vpoints/redeem", async (req, res) => {
-    try {
-      const userId = Number(req.body.userId);
-      const rewardCode = String(req.body.rewardCode ?? "");
+    res.json(status);
+  } catch (err: any) {
+    res.status(400).json({
+      message: "Errore nel recupero stato VibyngPoints",
+      detail: err?.message,
+    });
+  }
+});
 
-      const result = await redeemPoints({
-        userId,
-        rewardCode: rewardCode as any,
-      });
+app.post("/api/vpoints/redeem", async (req, res) => {
+  try {
+    const userId = Number(req.body.userId);
+    const rewardCode = String(req.body.rewardCode ?? "");
 
-      const fanRedemptionRequestSchema = z.object({
+    const result = await redeemPoints({
+      userId,
+      rewardCode: rewardCode as any,
+    });
+
+    if (!result.success) {
+      const statusCode =
+        result.reason === "user_not_found" ? 404 :
+        result.reason === "reward_not_found" ? 400 :
+        result.reason === "insufficient_points" ? 400 :
+        400;
+
+      return res.status(statusCode).json(result);
+    }
+
+    const status = await getPointsStatus(userId);
+
+    res.json({
+      ...result,
+      status,
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      message: "Errore nel riscatto dei VibyngPoints",
+      detail: err?.message,
+    });
+  }
+});
+
+const fanRedemptionRequestSchema = z.object({
   userId: z.coerce.number().int().positive(),
   rewardCode: z.string().min(1),
   targetArtistId: z.coerce.number().int().positive(),
@@ -2609,11 +2636,43 @@ app.post("/api/vpoints/redemption-requests", async (req, res) => {
         expires_at
     `);
 
-    const redemption = inserted.rows[0];
+    const redemption = inserted.rows[0] as any;
+
+    const messageText = [
+      `🎁 Nuova richiesta premio VibyngPoints`,
+      ``,
+      `${fan.display_name || "Un fan"} ha richiesto: ${reward.label}`,
+      `Punti bloccati: ${reward.cost}`,
+      `ID richiesta: #${redemption.id}`,
+      ``,
+      input.fanMessage?.trim()
+        ? `Messaggio del fan: ${input.fanMessage.trim()}`
+        : `Il fan non ha aggiunto un messaggio.`,
+      ``,
+      `La richiesta è in attesa di conferma da parte del fan.`,
+    ].join("\n");
+
+    await db.execute(sql`
+      INSERT INTO messages (
+        sender_id,
+        receiver_id,
+        content,
+        is_read,
+        created_at
+      )
+      VALUES (
+        ${input.userId},
+        ${input.targetArtistId},
+        ${messageText},
+        false,
+        now()
+      )
+    `);
 
     res.status(201).json({
       success: true,
       redemption,
+      messageSent: true,
       balance: currentBalance,
       lockedPoints: lockedPoints + reward.cost,
       availablePoints: availablePoints - reward.cost,
@@ -2638,27 +2697,6 @@ app.post("/api/vpoints/redemption-requests", async (req, res) => {
     });
   }
 });
-
-      if (!result.success) {
-        const statusCode =
-          result.reason === "user_not_found" ? 404 :
-          result.reason === "reward_not_found" ? 400 :
-          result.reason === "insufficient_points" ? 400 :
-          400;
-
-        return res.status(statusCode).json(result);
-      }
-
-      const status = await getPointsStatus(userId);
-
-      res.json({
-        ...result,
-        status,
-      });
-    } catch (err: any) {
-      res.status(400).json({ message: "Errore nel riscatto dei VibyngPoints", detail: err?.message });
-    }
-  });
 
 // === STRIPE SUPPORT CHECKOUT ===
   app.post("/api/stripe/create-support-checkout-session", async (req, res) => {
