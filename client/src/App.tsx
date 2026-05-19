@@ -1553,9 +1553,12 @@ function AppLayout() {
   }`}
   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
 >
-  <div key={routeKey}>
-    <Router />
-  </div>
+  <div
+  key={routeKey}
+  className={isFlowRoute ? "h-full min-h-0 overflow-hidden" : ""}
+>
+  <Router />
+</div>
 </main>
       <AppAudioPlayer />
       <BottomNav />
