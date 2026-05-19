@@ -2698,6 +2698,106 @@ app.post("/api/vpoints/redemption-requests", async (req, res) => {
   }
 });
 
+  app.get("/api/vpoints/redemption-requests/received/:artistId", async (req, res) => {
+  try {
+    const artistId = Number(req.params.artistId);
+    const statusParam = String(req.query.status || "all");
+
+    const allowedStatuses = new Set([
+      "all",
+      "pending",
+      "confirmed",
+      "cancelled",
+      "expired",
+      "redeemed",
+      "accepted",
+    ]);
+
+    if (!artistId) {
+      return res.status(400).json({
+        success: false,
+        reason: "invalid_artist_id",
+        message: "artistId non valido",
+      });
+    }
+
+    if (!allowedStatuses.has(statusParam)) {
+      return res.status(400).json({
+        success: false,
+        reason: "invalid_status",
+        message: "Stato richiesta non valido",
+      });
+    }
+
+    const artistResult = await db.execute(sql`
+      SELECT
+        id,
+        role,
+        COALESCE(is_deleted, false) AS is_deleted
+      FROM users
+      WHERE id = ${artistId}
+      LIMIT 1
+    `);
+
+    const artist = artistResult.rows[0] as any;
+
+    if (!artist || artist.is_deleted) {
+      return res.status(404).json({
+        success: false,
+        reason: "artist_not_found",
+        message: "Artista non trovato",
+      });
+    }
+
+    if (artist.role !== "artist") {
+      return res.status(403).json({
+        success: false,
+        reason: "not_artist",
+        message: "Solo un profilo artista può leggere le richieste ricevute",
+      });
+    }
+
+    const requests = await db.execute(sql`
+      SELECT
+        pr.id,
+        pr.user_id AS "fanId",
+        pr.target_artist_id AS "targetArtistId",
+        pr.reward_code AS "rewardCode",
+        pr.reward_title AS "rewardTitle",
+        pr.points_spent AS "pointsSpent",
+        pr.fan_message AS "fanMessage",
+        pr.status,
+        pr.created_at AS "createdAt",
+        pr.confirmed_at AS "confirmedAt",
+        pr.cancelled_at AS "cancelledAt",
+        pr.expires_at AS "expiresAt",
+        u.display_name AS "fanDisplayName",
+        u.username AS "fanUsername",
+        u.avatar_url AS "fanAvatarUrl"
+      FROM points_redemptions pr
+      JOIN users u ON u.id = pr.user_id
+      WHERE pr.target_artist_id = ${artistId}
+        AND (${statusParam} = 'all' OR pr.status = ${statusParam})
+      ORDER BY pr.created_at DESC
+      LIMIT 100
+    `);
+
+    res.json({
+      success: true,
+      requests: requests.rows,
+    });
+  } catch (err: any) {
+    console.error("[vpoints-redemption-requests-received]", err?.message || err);
+
+    res.status(400).json({
+      success: false,
+      reason: "received_requests_error",
+      message: "Errore nel recupero delle richieste premio ricevute",
+      detail: err?.message,
+    });
+  }
+});
+
 // === STRIPE SUPPORT CHECKOUT ===
   app.post("/api/stripe/create-support-checkout-session", async (req, res) => {
     try {
