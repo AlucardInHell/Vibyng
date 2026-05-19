@@ -144,12 +144,15 @@ if (referenceType && referenceId) {
    return relatedUserId ? `/chat/${relatedUserId}` : "/messages";
 }
 
-    case "profile":
-    case "follow":
-      if (notification.relatedUserId ?? notification.related_user_id) {
-        return `/artist/${notification.relatedUserId ?? notification.related_user_id}`;
-      }
-      return null;
+   case "profile":
+   case "follow": {
+    const followerId =
+    notification.relatedUserId ??
+    notification.related_user_id ??
+    referenceId;
+
+  return followerId ? `/artist/${followerId}` : null;
+}
 
     default:
       return null;
@@ -169,11 +172,9 @@ if (notification.type === "message" && relatedUserId) {
   
 // Solo le notifiche di follow/profilo devono aprire il profilo.
 // Like, commenti, nuove song, video, foto ecc. NON devono cadere sul profilo.
-if (
-  relatedUserId &&
-  (notification.type === "follow" || notification.type === "profile")
-) {
-  return `/artist/${relatedUserId}`;
+if (notification.type === "follow" || notification.type === "profile") {
+  const followerId = relatedUserId ?? referenceId;
+  return followerId ? `/artist/${followerId}` : null;
 }
 
 return null;
